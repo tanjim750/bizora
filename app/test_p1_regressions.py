@@ -350,14 +350,13 @@ class P1RegressionTests(TestCase):
         COR-012: Using networkx.DiGraph instead of MultiDiGraph clobbers parallel relationship edges between identical nodes.
         Expected failure: AssertionError: Edge count is 1 instead of 2 (first edge overwritten)
         """
-        G = nx.DiGraph()
+        from app.services.graph import create_business_graph
+        G = create_business_graph()
         G.add_edge("Customer:1", "Order:100", relationship="PLACED", timestamp="2026-09-11 10:00")
         G.add_edge("Customer:1", "Order:100", relationship="PAID_FOR", timestamp="2026-09-11 10:05")
-        
-        edge_data = G.get_edge_data("Customer:1", "Order:100")
         
         self.assertEqual(
             G.number_of_edges(),
             2,
-            f"COR-012 Defect: nx.DiGraph clobbered parallel relationship! Total edges: {G.number_of_edges()}, only preserved '{edge_data['relationship']}'"
+            f"COR-012 Defect: nx.DiGraph clobbered parallel relationship! Total edges: {G.number_of_edges()}"
         )
