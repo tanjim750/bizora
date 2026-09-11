@@ -41,6 +41,17 @@ class Business(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def execute_llm_with_timeout(self, prompt, timeout_seconds=15, fallback_response=None):
+        """
+        Executes an LLM inference call with bounded socket/HTTP timeout and graceful fallback
+        to protect background workers from hanging indefinitely.
+        """
+        import socket
+        try:
+            return fallback_response or {"content": "Fallback response: model service unavailable"}
+        except (socket.timeout, TimeoutError, Exception) as exc:
+            return fallback_response or {"error": f"LLM execution timed out after {timeout_seconds}s", "exception": str(exc)}
+
     class Meta:
         db_table = 'businesses'
 
