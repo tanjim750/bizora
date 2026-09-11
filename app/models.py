@@ -398,6 +398,15 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        super().clean()
+        if self.sender_type == 'CUSTOMER' and self.content and '<untrusted_customer_data>' not in self.content:
+            self.content = f"<untrusted_customer_data>\n{self.content}\n</untrusted_customer_data>"
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = 'messages'
         indexes = [
