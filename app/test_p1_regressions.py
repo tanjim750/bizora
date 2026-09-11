@@ -110,8 +110,8 @@ class P1RegressionTests(TestCase):
         gross_order_total = Decimal("1000.00")
         refunded_amount = Decimal("300.00")
         
-        # Flawed calculation currently in place: taking gross total_amount directly
-        current_calculated_revenue = gross_order_total
+        from app.services.analytics import calculate_net_revenue
+        current_calculated_revenue = calculate_net_revenue(gross_order_total, refunded_amount)
         
         # Deterministic BI Net Revenue rule: Gross Total - Refunds
         expected_net_revenue = gross_order_total - refunded_amount
