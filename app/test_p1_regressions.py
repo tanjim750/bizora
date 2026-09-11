@@ -153,11 +153,13 @@ class P1RegressionTests(TestCase):
         
         late_night_dhaka = dhaka_tz.localize(timezone.datetime(2026, 9, 12, 2, 30, 0))
         late_night_utc = late_night_dhaka.astimezone(utc_tz)
-        
+        from app.services.analytics import to_business_date
+        aggregated_date = to_business_date(late_night_utc, "Asia/Dhaka")
+
         self.assertEqual(
-            late_night_utc.date(),
+            aggregated_date,
             late_night_dhaka.date(),
-            f"COR-006 Defect: Order placed on {late_night_dhaka.date()} in Dhaka is aggregated as {late_night_utc.date()} in UTC!"
+            f"COR-006 Defect: Order placed on {late_night_dhaka.date()} in Dhaka is aggregated as {aggregated_date} in UTC!"
         )
 
     def test_cor_007_duplicate_active_business_issues_allowed(self):

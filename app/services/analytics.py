@@ -43,3 +43,17 @@ def cap_campaign_attributions(attributions: dict, order_total: Decimal) -> dict:
             running_sum += val
         capped[k] = val
     return capped
+
+
+def to_business_date(dt: datetime.datetime, business_timezone: str = "Asia/Dhaka") -> datetime.date:
+    """
+    COR-006: Converts UTC or naive datetime to the authoritative business operational date
+    according to the tenant's configured timezone (default 'Asia/Dhaka').
+    Prevents boundary shifts where Bangladesh night orders are aggregated into the previous UTC date.
+    """
+    if dt is None:
+        return None
+    tz = pytz.timezone(business_timezone)
+    if dt.tzinfo is None:
+        dt = pytz.UTC.localize(dt)
+    return dt.astimezone(tz).date()
