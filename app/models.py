@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class VectorField(models.Field):
@@ -1029,6 +1030,16 @@ class GraphEdge(models.Model):
     valid_to = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        if self.source_node_id and self.target_node_id:
+            if self.source_node.business_id != self.business_id or self.target_node.business_id != self.business_id:
+                raise ValidationError("Cross-tenant graph edge prohibited: source and target nodes must belong to the edge business.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'graph_edges'

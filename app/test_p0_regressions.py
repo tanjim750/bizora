@@ -100,20 +100,16 @@ class P0RegressionTests(TestCase):
             updated_at=now,
         )
 
-        edge = GraphEdge.objects.create(
-            business=biz1,
-            source_node=node1,
-            target_node=node2,
-            relationship_type="PLACED_ORDER",
-            created_at=now,
-            updated_at=now,
-        )
-        # Required security rule: source_node and target_node must belong to edge.business
-        self.assertEqual(
-            edge.source_node.business_id,
-            edge.target_node.business_id,
-            "Cross-tenant graph edge was created: source and target nodes belong to different businesses!"
-        )
+        # Cross-tenant edge: connects Tenant 1 node to Tenant 2 node under Tenant 1's edge!
+        with self.assertRaises(ValidationError):
+            GraphEdge.objects.create(
+                business=biz1,
+                source_node=node1,
+                target_node=node2,
+                relationship_type="PLACED_ORDER",
+                created_at=now,
+                updated_at=now,
+            )
 
     def test_sec_003_evidence_lacks_business_foreign_key(self):
         """
