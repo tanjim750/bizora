@@ -131,7 +131,7 @@ def detect_business_issues_from_metrics(business: Business, target_date=None) ->
                 "confidence": Decimal("1.0000"),
                 "status": "VERIFIED",
                 "valid_from": now,
-                "valid_to": now + timezone.timedelta(days=7),
+                "valid_to": now + datetime.timedelta(days=7),
                 "detected_at": now,
             },
         )
