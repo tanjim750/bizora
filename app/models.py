@@ -1125,6 +1125,7 @@ class KnowledgeChunk(models.Model):
 
 class KnowledgeEmbedding(models.Model):
     id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
     knowledge_chunk = models.ForeignKey('KnowledgeChunk', models.DO_NOTHING, db_index=True)
     model = models.CharField(max_length=150)
     dimensions = models.IntegerField()
