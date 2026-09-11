@@ -48,7 +48,7 @@ class Business(models.Model):
         """
         try:
             return fallback_response or {"content": "Fallback response: model service unavailable"}
-        except (TimeoutError, Exception) as exc:
+        except Exception as exc:  # noqa: BLE001
             return fallback_response or {"error": f"LLM execution timed out after {timeout_seconds}s", "exception": str(exc)}
 
     class Meta:
@@ -1118,9 +1118,15 @@ class GraphEdge(models.Model):
 
     def clean(self):
         super().clean()
-        if self.source_node_id and self.target_node_id:
-            if self.source_node.business_id != self.business_id or self.target_node.business_id != self.business_id:
-                raise ValidationError("Cross-tenant graph edge prohibited: source and target nodes must belong to the edge business.")
+        if (
+            self.source_node_id
+            and self.target_node_id
+            and (
+                self.source_node.business_id != self.business_id
+                or self.target_node.business_id != self.business_id
+            )
+        ):
+            raise ValidationError("Cross-tenant graph edge prohibited: source and target nodes must belong to the edge business.")
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -1441,9 +1447,16 @@ class AiAction(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         # Transition to FAILED only AFTER clean() succeeds (clean rejects EXECUTING/EXECUTED without approval)
-        if self.execution_result and isinstance(self.execution_result, dict):
-            if 'error' in self.execution_result or 'errors' in self.execution_result or self.execution_result.get('success') is False:
-                self.status = 'FAILED'
+        if (
+            self.execution_result
+            and isinstance(self.execution_result, dict)
+            and (
+                'error' in self.execution_result
+                or 'errors' in self.execution_result
+                or self.execution_result.get('success') is False
+            )
+        ):
+            self.status = 'FAILED'
         super().save(*args, **kwargs)
 
     class Meta:

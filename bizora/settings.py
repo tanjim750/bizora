@@ -10,17 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import copy
+import os
+import sys
 from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-import os
-from urllib.parse import unquote, urlparse
 
 # Load .env if present
 _env_file = BASE_DIR / ".env"
@@ -35,7 +34,6 @@ if _env_file.exists():
                 if _k not in os.environ:
                     os.environ[_k] = _v
 
-from django.core.exceptions import ImproperlyConfigured
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
@@ -205,9 +203,7 @@ REST_FRAMEWORK = {
 }
 
 # Python 3.14 compatibility: copy(super()) in BaseContext.__copy__ fails on Python 3.14
-import sys
 if sys.version_info >= (3, 14):
-    import copy
     from django.template import context as _ctx
 
     def _basecontext_copy(self):

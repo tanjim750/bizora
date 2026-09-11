@@ -8,7 +8,7 @@ Run with:
 """
 import datetime
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -26,17 +26,14 @@ from app.models import (
     BusinessFact,
     BusinessIssue,
     BusinessIssueEvidence,
-    BusinessMetric,
     Call,
     CallTranscript,
     Campaign,
     CampaignMetric,
     Conversation,
     Customer,
-    CustomerContact,
     GraphEdge,
     GraphNode,
-    KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeSource,
     Message,
@@ -44,7 +41,6 @@ from app.models import (
     Order,
     OrderItem,
     Product,
-    ProductVariant,
 )
 
 User = get_user_model()
@@ -54,7 +50,7 @@ User = get_user_model()
 # ──────────────────────────────────────────────────────────────
 
 def make_business(**kwargs):
-    defaults = dict(name="Test Biz", slug="test-biz", currency="BDT", timezone="Asia/Dhaka", status="ACTIVE")
+    defaults = {"name": "Test Biz", "slug": "test-biz", "currency": "BDT", "timezone": "Asia/Dhaka", "status": "ACTIVE"}
     defaults.update(kwargs)
     return Business.objects.create(**defaults)
 
@@ -64,7 +60,7 @@ def make_user(username="testuser", **kwargs):
 
 
 def make_customer(business, **kwargs):
-    defaults = dict(first_name="Alice", last_name="Smith", status="ACTIVE")
+    defaults = {"first_name": "Alice", "last_name": "Smith", "status": "ACTIVE"}
     defaults.update(kwargs)
     return Customer.objects.create(business=business, **defaults)
 
@@ -81,42 +77,42 @@ def make_order(business, customer=None, status="PENDING", total_amount="500.00",
 
 
 def make_conversation(business, customer=None, status="OPEN", channel="WHATSAPP", **kwargs):
-    defaults = dict(channel=channel, status=status, started_at=timezone.now())
+    defaults = {"channel": channel, "status": status, "started_at": timezone.now()}
     defaults.update(kwargs)
     return Conversation.objects.create(business=business, customer=customer, **defaults)
 
 
 def make_business_fact(business, **kwargs):
-    defaults = dict(
-        fact_type="TEST_FACT",
-        statement="Test fact statement",
-        confidence=Decimal("1.0000"),
-        status="VERIFIED",
-        detected_at=timezone.now(),
-    )
+    defaults = {
+        "fact_type": "TEST_FACT",
+        "statement": "Test fact statement",
+        "confidence": Decimal("1.0000"),
+        "status": "VERIFIED",
+        "detected_at": timezone.now(),
+    }
     defaults.update(kwargs)
     return BusinessFact.objects.create(business=business, **defaults)
 
 
 def make_ai_recommendation(business, **kwargs):
-    defaults = dict(
-        recommendation_type="TEST",
-        title="Test Recommendation",
-        description="Test description",
-        priority="MEDIUM",
-        status="SUGGESTED",
-        generated_at=timezone.now(),
-    )
+    defaults = {
+        "recommendation_type": "TEST",
+        "title": "Test Recommendation",
+        "description": "Test description",
+        "priority": "MEDIUM",
+        "status": "SUGGESTED",
+        "generated_at": timezone.now(),
+    }
     defaults.update(kwargs)
     return AiRecommendation.objects.create(business=business, **defaults)
 
 
 def make_ai_action(business, recommendation, **kwargs):
-    defaults = dict(
-        action_type="TEST_ACTION",
-        status="SUGGESTED",
-        is_simulated=True,
-    )
+    defaults = {
+        "action_type": "TEST_ACTION",
+        "status": "SUGGESTED",
+        "is_simulated": True,
+    }
     defaults.update(kwargs)
     return AiAction.objects.create(
         business=business, ai_recommendation=recommendation, **defaults
@@ -164,31 +160,31 @@ class TestCapCampaignAttributions(TestCase):
         self.cap = cap_campaign_attributions
 
     def test_no_capping_when_under_total(self):
-        attrs = {"fb": Decimal("200"), "google": Decimal("100")}
-        result = self.cap(attrs, Decimal("500"))
-        self.assertEqual(result["fb"], Decimal("200"))
-        self.assertEqual(result["google"], Decimal("100"))
+        attrs = {"fb": Decimal(200), "google": Decimal(100)}
+        result = self.cap(attrs, Decimal(500))
+        self.assertEqual(result["fb"], Decimal(200))
+        self.assertEqual(result["google"], Decimal(100))
 
     def test_capping_scales_proportionally(self):
-        attrs = {"fb": Decimal("600"), "google": Decimal("400")}
-        result = self.cap(attrs, Decimal("500"))
+        attrs = {"fb": Decimal(600), "google": Decimal(400)}
+        result = self.cap(attrs, Decimal(500))
         total = sum(result.values())
-        self.assertEqual(total, Decimal("500"))
+        self.assertEqual(total, Decimal(500))
 
     def test_empty_attributions(self):
-        result = self.cap({}, Decimal("500"))
+        result = self.cap({}, Decimal(500))
         self.assertEqual(result, {})
 
     def test_zero_order_total(self):
-        attrs = {"fb": Decimal("100")}
-        result = self.cap(attrs, Decimal("0"))
+        attrs = {"fb": Decimal(100)}
+        result = self.cap(attrs, Decimal(0))
         self.assertEqual(result["fb"], Decimal("0.00"))
 
     def test_last_channel_gets_remainder_for_precision(self):
         """Prevents floating-point drift — last item absorbs remainder."""
-        attrs = {"a": Decimal("1"), "b": Decimal("1"), "c": Decimal("1")}
-        result = self.cap(attrs, Decimal("1"))
-        self.assertEqual(sum(result.values()), Decimal("1"))
+        attrs = {"a": Decimal(1), "b": Decimal(1), "c": Decimal(1)}
+        result = self.cap(attrs, Decimal(1))
+        self.assertEqual(sum(result.values()), Decimal(1))
 
 
 class TestToBusinessDate(TestCase):
@@ -208,7 +204,7 @@ class TestToBusinessDate(TestCase):
         self.assertIsNone(result)
 
     def test_naive_datetime_treated_as_utc(self):
-        naive = datetime.datetime(2024, 6, 1, 12, 0, 0)
+        naive = datetime.datetime(2024, 6, 1, 12, 0, 0)  # noqa: DTZ001
         result = self.fn(naive, "Asia/Dhaka")
         self.assertEqual(result, datetime.date(2024, 6, 1))
 
@@ -345,8 +341,8 @@ class TestApproveAction(TestCase):
             approve_action(self.action, self.user, "note")
 
     def test_approve_dispatches_event(self):
-        from app.services.actions import approve_action
         from app.events.dispatcher import _subscribers
+        from app.services.actions import approve_action
         events = []
         _subscribers["ai.action.approved"].append(lambda e: events.append(e))
         with self.captureOnCommitCallbacks(execute=True):
@@ -822,7 +818,7 @@ class TestExplainCampaignPerformance(TestCase):
     def test_campaign_spend_from_metrics(self):
         CampaignMetric.objects.create(
             campaign=self.campaign,
-            metric_date=datetime.date.today(),
+            metric_date=timezone.now().date(),
             spend=Decimal("1000.00"),
         )
         result = self.fn(self.biz, self.campaign)
@@ -1218,16 +1214,16 @@ class TestBusinessIssueUpsert(TestCase):
 
     def test_duplicate_open_issue_upserted_not_duplicated(self):
         """Regression: BusinessIssue.save() must upsert, not duplicate."""
-        kwargs = dict(
-            business=self.biz,
-            issue_type="DUPLICATE_TEST",
-            subject_entity_type="business",
-            subject_entity_id=self.biz.id,
-            title="Dup Issue",
-            severity="MEDIUM",
-            status="OPEN",
-            detected_at=timezone.now(),
-        )
+        kwargs = {
+            "business": self.biz,
+            "issue_type": "DUPLICATE_TEST",
+            "subject_entity_type": "business",
+            "subject_entity_id": self.biz.id,
+            "title": "Dup Issue",
+            "severity": "MEDIUM",
+            "status": "OPEN",
+            "detected_at": timezone.now(),
+        }
         BusinessIssue.objects.create(**kwargs)
         BusinessIssue.objects.create(**kwargs)
         count = BusinessIssue.objects.filter(
@@ -1236,15 +1232,15 @@ class TestBusinessIssueUpsert(TestCase):
         self.assertLessEqual(count, 1)
 
     def test_resolved_issue_does_not_block_new_open_issue(self):
-        kwargs = dict(
-            business=self.biz,
-            issue_type="RECURRING",
-            subject_entity_type="business",
-            subject_entity_id=self.biz.id,
-            title="Issue",
-            severity="LOW",
-            detected_at=timezone.now(),
-        )
+        kwargs = {
+            "business": self.biz,
+            "issue_type": "RECURRING",
+            "subject_entity_type": "business",
+            "subject_entity_id": self.biz.id,
+            "title": "Issue",
+            "severity": "LOW",
+            "detected_at": timezone.now(),
+        }
         issue = BusinessIssue.objects.create(**kwargs, status="OPEN")
         issue.status = "RESOLVED"
         issue.save()

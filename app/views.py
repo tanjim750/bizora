@@ -35,7 +35,6 @@ from app.services.ai import (
     diagnose_business_issue,
     evaluate_escalation,
     explain_campaign_performance,
-    generate_grounded_recommendation,
     generate_handover_summary,
     generate_suggested_reply,
     summarize_call,

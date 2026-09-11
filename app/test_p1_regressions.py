@@ -155,7 +155,7 @@ class P1RegressionTests(TestCase):
         dhaka_tz = pytz.timezone("Asia/Dhaka")
         utc_tz = pytz.UTC
 
-        late_night_dhaka = dhaka_tz.localize(datetime.datetime(2026, 9, 12, 2, 30, 0))
+        late_night_dhaka = dhaka_tz.localize(datetime.datetime(2026, 9, 12, 2, 30, 0))  # noqa: DTZ001
         late_night_utc = late_night_dhaka.astimezone(utc_tz)
         from app.services.analytics import to_business_date
 
