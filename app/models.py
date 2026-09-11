@@ -930,7 +930,30 @@ class MetricSnapshot(models.Model):
         ]
 
 
+class BusinessFactQuerySet(models.QuerySet):
+    def active_for_context(self, business=None):
+        from django.utils import timezone
+        qs = self.filter(
+            models.Q(status='VERIFIED'),
+            models.Q(valid_to__isnull=True) | models.Q(valid_to__gte=timezone.now())
+        )
+        if business:
+            qs = qs.filter(business=business)
+        return qs
+
+
+class BusinessFactManager(models.Manager.from_queryset(BusinessFactQuerySet)):
+    def get_queryset(self):
+        from django.utils import timezone
+        return super().get_queryset().filter(
+            models.Q(valid_to__isnull=True) | models.Q(valid_to__gte=timezone.now())
+        )
+
+
 class BusinessFact(models.Model):
+    objects = BusinessFactManager()
+    all_objects = models.Manager()
+
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
     fact_type = models.CharField(max_length=100, db_index=True)
