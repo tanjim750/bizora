@@ -1181,6 +1181,24 @@ class KnowledgeDocument(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def get_active_policies_for_intent(cls, business, intent):
+        """
+        Retrieves authoritative, active policy documents for a specific support intent (e.g. refund, return).
+        """
+        qs = cls.objects.filter(
+            business=business,
+            document_type__iexact='POLICY',
+            status='READY'
+        )
+        if intent:
+            qs = qs.filter(
+                models.Q(title__icontains=intent) |
+                models.Q(content__icontains=intent) |
+                models.Q(metadata__intent__iexact=intent)
+            )
+        return qs
+
     class Meta:
         db_table = 'knowledge_documents'
         indexes = [
