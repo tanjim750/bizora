@@ -98,17 +98,8 @@ class P2RegressionTests(TestCase):
         G.add_edge("A", "B")
         G.add_edge("B", "A")  # Cycle: A -> B -> A
 
-        # Naive traversal without visited tracking
-        def naive_traverse(node, depth, max_depth):
-            if depth > max_depth:
-                return []
-            result = [node]
-            for neighbor in G.successors(node):
-                result.extend(naive_traverse(neighbor, depth + 1, max_depth))
-            return result
-
-        # In a graph with cycle, naive traversal explores redundant nodes exponentially
-        path = naive_traverse("A", 0, 10)
+        from app.services.graph import safe_traverse
+        path = safe_traverse(G, "A", max_depth=10)
         # Desired invariant: Visited set ensures each node visited at most once
         unique_nodes = set(path)
         self.assertEqual(
