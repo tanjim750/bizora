@@ -995,6 +995,25 @@ class BusinessIssue(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if self.status == 'OPEN':
+            qs = BusinessIssue.objects.filter(
+                business=self.business,
+                issue_type=self.issue_type,
+                subject_entity_type=self.subject_entity_type,
+                subject_entity_id=self.subject_entity_id,
+                status='OPEN'
+            )
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            existing = qs.first()
+            if existing and not self.pk:
+                self.pk = existing.pk
+                self.id = existing.id
+                kwargs['force_insert'] = False
+                kwargs['force_update'] = True
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = 'business_issues'
         indexes = [
