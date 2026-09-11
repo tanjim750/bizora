@@ -1261,8 +1261,19 @@ class AiRecommendation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        super().clean()
+        if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
+            raise ValidationError({'confidence': 'Confidence score must be between 0.0 and 1.0.'})
+
     class Meta:
         db_table = 'ai_recommendations'
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(confidence__gte=0.0, confidence__lte=1.0) | models.Q(confidence__isnull=True),
+                name='chk_ai_rec_confidence_range'
+            ),
+        ]
         indexes = [
             models.Index(fields=['business', 'status'], name='idx_ar_bs_2e2d551c'),
             models.Index(fields=['business', 'priority'], name='idx_ar_bp_0669d69c'),
