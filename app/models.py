@@ -1374,6 +1374,9 @@ class AiAction(models.Model):
             raise ValidationError("AiAction cannot transition to EXECUTING or EXECUTED without approval (approved_at must be set).")
 
     def save(self, *args, **kwargs):
+        if self.execution_result and isinstance(self.execution_result, dict):
+            if 'error' in self.execution_result or 'errors' in self.execution_result or self.execution_result.get('success') is False:
+                self.status = 'FAILED'
         self.clean()
         super().save(*args, **kwargs)
 
