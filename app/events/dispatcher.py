@@ -13,11 +13,12 @@ def subscribe(event_name, handler):
 
 
 def _execute_dispatch(event):
-    for handler in list(_subscribers[event.name]):
+    event_name = getattr(event, 'name', getattr(event, 'type', str(event)))
+    for handler in list(_subscribers[event_name]):
         try:
             handler(event)
         except Exception as exc:
-            logger.exception("Error executing event handler %s for %s: %s", handler, event.name, exc)
+            logger.exception("Error executing event handler %s for %s: %s", handler, event_name, exc)
 
 
 def dispatch(event):

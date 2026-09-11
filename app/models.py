@@ -1044,6 +1044,8 @@ class BusinessIssue(models.Model):
             if existing and not self.pk:
                 self.pk = existing.pk
                 self.id = existing.id
+                if not self.created_at:
+                    self.created_at = existing.created_at
                 kwargs['force_insert'] = False
                 kwargs['force_update'] = True
         super().save(*args, **kwargs)
