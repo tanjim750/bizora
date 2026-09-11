@@ -7,7 +7,28 @@ class VectorField(models.Field):
     description = "PostgreSQL pgvector field"
 
     def db_type(self, connection):
-        return 'vector'
+        if connection.vendor == 'postgresql':
+            return 'vector'
+        return 'text'
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [float(x) for x in value]
+        if isinstance(value, str):
+            clean_str = value.strip('[]() ')
+            if not clean_str:
+                return []
+            return [float(x.strip()) for x in clean_str.split(',') if x.strip()]
+        return value
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple)):
+            return '[' + ', '.join(str(float(x)) for x in value) + ']'
+        return str(value)
 
 
 class Business(models.Model):
