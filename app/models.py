@@ -15,8 +15,8 @@ class Business(models.Model):
     currency = models.CharField(max_length=10, default='BDT')
     timezone = models.CharField(max_length=100, default='Asia/Dhaka')
     status = models.CharField(max_length=30, default='ACTIVE')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'businesses'
@@ -30,8 +30,8 @@ class IntegrationSource(models.Model):
     connection_type = models.CharField(max_length=50, null=True)
     description = models.TextField(null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'integration_sources'
@@ -49,8 +49,8 @@ class IntegrationConnection(models.Model):
     is_mock = models.BooleanField(default=True)
     last_synced_at = models.DateTimeField(null=True)
     last_successful_sync_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'integration_connections'
@@ -71,7 +71,7 @@ class IntegrationSyncLog(models.Model):
     started_at = models.DateTimeField()
     completed_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'integration_sync_logs'
@@ -90,8 +90,8 @@ class Product(models.Model):
     inventory_quantity = models.IntegerField(null=True)
     image_url = models.TextField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'products'
@@ -109,8 +109,8 @@ class ProductVariant(models.Model):
     price = models.DecimalField(max_digits=18, decimal_places=2, null=True)
     inventory_quantity = models.IntegerField(null=True)
     status = models.CharField(max_length=30, default='ACTIVE')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'product_variants'
@@ -128,8 +128,8 @@ class ProductExternalReference(models.Model):
     external_variant_id = models.CharField(max_length=255, null=True)
     external_sku = models.CharField(max_length=150, null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'product_external_references'
@@ -148,8 +148,8 @@ class Customer(models.Model):
     customer_type = models.CharField(max_length=30, null=True, default='KNOWN')
     notes = models.TextField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'customers'
@@ -166,8 +166,8 @@ class CustomerContact(models.Model):
     normalized_value = models.CharField(max_length=255, null=True)
     is_primary = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'customer_contacts'
@@ -181,7 +181,7 @@ class CustomerTag(models.Model):
     customer = models.ForeignKey('Customer', models.DO_NOTHING, db_index=True)
     tag = models.CharField(max_length=100)
     source = models.CharField(max_length=50, null=True, default='MANUAL')
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'customer_tags'
@@ -197,8 +197,8 @@ class CustomerExternalReference(models.Model):
     external_customer_id = models.CharField(max_length=255)
     external_username = models.CharField(max_length=255, null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'customer_external_references'
@@ -217,7 +217,7 @@ class CustomerTimelineEvent(models.Model):
     description = models.TextField(null=True)
     event_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'customer_timeline_events'
@@ -242,8 +242,8 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     source_metadata = models.JSONField(null=True)
     ordered_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'orders'
@@ -266,7 +266,7 @@ class OrderItem(models.Model):
     discount_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=18, decimal_places=2)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'order_items'
@@ -281,7 +281,7 @@ class OrderStatusHistory(models.Model):
     note = models.TextField(null=True)
     changed_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'order_status_history'
@@ -304,8 +304,8 @@ class Payment(models.Model):
     currency = models.CharField(max_length=10, default='BDT')
     paid_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'payments'
@@ -325,8 +325,8 @@ class Refund(models.Model):
     reason = models.TextField(null=True)
     refunded_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'refunds'
@@ -347,8 +347,8 @@ class Conversation(models.Model):
     last_message_at = models.DateTimeField(null=True)
     resolved_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'conversations'
@@ -368,7 +368,7 @@ class ConversationParticipant(models.Model):
     joined_at = models.DateTimeField(null=True)
     left_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'conversation_participants'
@@ -393,8 +393,8 @@ class Message(models.Model):
     delivered_at = models.DateTimeField(null=True)
     read_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'messages'
@@ -414,7 +414,7 @@ class MessageAttachment(models.Model):
     size_bytes = models.BigIntegerField(null=True)
     external_attachment_id = models.CharField(max_length=255, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'message_attachments'
@@ -431,7 +431,7 @@ class ConversationAssignment(models.Model):
     assigned_at = models.DateTimeField()
     unassigned_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'conversation_assignments'
@@ -449,8 +449,8 @@ class ConversationNote(models.Model):
     content = models.TextField()
     is_ai_generated = models.BooleanField(default=False)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'conversation_notes'
@@ -477,8 +477,8 @@ class Call(models.Model):
     duration_seconds = models.IntegerField(null=True)
     recording_url = models.TextField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'calls'
@@ -493,7 +493,7 @@ class CallEvent(models.Model):
     event_type = models.CharField(max_length=50)
     event_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'call_events'
@@ -512,8 +512,8 @@ class CallTranscript(models.Model):
     confidence = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     generated_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'call_transcripts'
@@ -533,8 +533,8 @@ class Campaign(models.Model):
     started_at = models.DateTimeField(null=True)
     ended_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'campaigns'
@@ -558,8 +558,8 @@ class CampaignMetric(models.Model):
     cpm = models.DecimalField(max_digits=18, decimal_places=4, null=True)
     roas = models.DecimalField(max_digits=18, decimal_places=4, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'campaign_metrics'
@@ -581,7 +581,7 @@ class CampaignConversion(models.Model):
     converted_at = models.DateTimeField()
     external_conversion_id = models.CharField(max_length=255, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'campaign_conversions'
@@ -599,8 +599,8 @@ class WebsiteVisitor(models.Model):
     last_seen_at = models.DateTimeField(null=True)
     is_anonymous = models.BooleanField(default=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'website_visitors'
@@ -635,8 +635,8 @@ class WebsiteSession(models.Model):
     duration_seconds = models.IntegerField(null=True)
     is_converted = models.BooleanField(default=False)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'website_sessions'
@@ -660,7 +660,7 @@ class WebsiteEvent(models.Model):
     currency = models.CharField(max_length=10, null=True)
     occurred_at = models.DateTimeField()
     properties = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'website_events'
@@ -691,8 +691,8 @@ class Shipment(models.Model):
     delivered_at = models.DateTimeField(null=True)
     returned_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'shipments'
@@ -710,7 +710,7 @@ class ShipmentEvent(models.Model):
     location = models.CharField(max_length=255, null=True)
     occurred_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'shipment_events'
@@ -726,8 +726,8 @@ class CanonicalIdentity(models.Model):
     entity_id = models.BigIntegerField()
     canonical_key = models.CharField(max_length=255)
     status = models.CharField(max_length=30, default='ACTIVE')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'canonical_identities'
@@ -750,8 +750,8 @@ class ExternalIdentity(models.Model):
     metadata = models.JSONField(null=True)
     first_seen_at = models.DateTimeField(null=True)
     last_seen_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'external_identities'
@@ -773,7 +773,7 @@ class IdentityLink(models.Model):
     linked_at = models.DateTimeField()
     unlinked_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'identity_links'
@@ -793,8 +793,8 @@ class IdentityMergeCandidate(models.Model):
     evidence = models.JSONField(null=True)
     detected_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'identity_merge_candidates'
@@ -816,8 +816,8 @@ class IdentityConflict(models.Model):
     detected_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True)
     resolution_note = models.TextField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'identity_conflicts'
@@ -840,8 +840,8 @@ class BusinessRelationship(models.Model):
     valid_from = models.DateTimeField(null=True)
     valid_to = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_relationships'
@@ -864,8 +864,8 @@ class BusinessMetric(models.Model):
     unit = models.CharField(max_length=30, null=True)
     description = models.TextField(null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_metrics'
@@ -887,7 +887,7 @@ class MetricSnapshot(models.Model):
     calculation_rule = models.CharField(max_length=100, null=True)
     metadata = models.JSONField(null=True)
     calculated_at = models.DateTimeField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'metric_snapshots'
@@ -914,8 +914,8 @@ class BusinessFact(models.Model):
     valid_to = models.DateTimeField(null=True)
     detected_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_facts'
@@ -936,7 +936,7 @@ class BusinessFactEvidence(models.Model):
     description = models.TextField(null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     evidence_data = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'business_fact_evidence'
@@ -960,8 +960,8 @@ class BusinessIssue(models.Model):
     detected_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_issues'
@@ -983,7 +983,7 @@ class BusinessIssueEvidence(models.Model):
     description = models.TextField(null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     evidence_data = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'business_issue_evidence'
@@ -1003,8 +1003,8 @@ class GraphNode(models.Model):
     properties = models.JSONField(null=True)
     first_seen_at = models.DateTimeField(null=True)
     last_seen_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'graph_nodes'
@@ -1027,8 +1027,8 @@ class GraphEdge(models.Model):
     properties = models.JSONField(null=True)
     valid_from = models.DateTimeField(null=True)
     valid_to = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'graph_edges'
@@ -1049,7 +1049,7 @@ class GraphSnapshot(models.Model):
     filters = models.JSONField(null=True)
     snapshot_data = models.JSONField(null=True)
     generated_at = models.DateTimeField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'graph_snapshots'
@@ -1068,8 +1068,8 @@ class KnowledgeSource(models.Model):
     status = models.CharField(max_length=30, default='ACTIVE')
     source_reference = models.TextField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'knowledge_sources'
@@ -1094,8 +1094,8 @@ class KnowledgeDocument(models.Model):
     metadata = models.JSONField(null=True)
     ingested_at = models.DateTimeField(null=True)
     processed_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'knowledge_documents'
@@ -1113,8 +1113,8 @@ class KnowledgeChunk(models.Model):
     content = models.TextField()
     token_count = models.IntegerField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'knowledge_chunks'
@@ -1129,7 +1129,7 @@ class KnowledgeEmbedding(models.Model):
     model = models.CharField(max_length=150)
     dimensions = models.IntegerField()
     embedding = VectorField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'knowledge_embeddings'
@@ -1150,8 +1150,8 @@ class AiConversation(models.Model):
     metadata = models.JSONField(null=True)
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'ai_conversations'
@@ -1171,7 +1171,7 @@ class AiMessage(models.Model):
     completion_tokens = models.IntegerField(null=True)
     context_reference = models.JSONField(null=True)
     response_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'ai_messages'
@@ -1196,8 +1196,8 @@ class AiRecommendation(models.Model):
     generated_at = models.DateTimeField()
     expires_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'ai_recommendations'
@@ -1222,7 +1222,7 @@ class AiRecommendationEvidence(models.Model):
     description = models.TextField(null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'ai_recommendation_evidence'
@@ -1242,8 +1242,8 @@ class AiAction(models.Model):
     executed_at = models.DateTimeField(null=True)
     execution_result = models.JSONField(null=True)
     is_simulated = models.BooleanField(default=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'ai_actions'
@@ -1264,8 +1264,8 @@ class MockScenario(models.Model):
     start_at = models.DateTimeField(null=True)
     end_at = models.DateTimeField(null=True)
     configuration = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'mock_scenarios'
@@ -1281,7 +1281,7 @@ class MockScenarioEvent(models.Model):
     external_entity_id = models.CharField(max_length=255, null=True)
     event_at = models.DateTimeField()
     payload = models.JSONField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'mock_scenario_events'
@@ -1304,7 +1304,7 @@ class MockExpectedResult(models.Model):
     expected_value = models.JSONField()
     comparison_type = models.CharField(max_length=30, default='EXACT')
     description = models.TextField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'mock_expected_results'
