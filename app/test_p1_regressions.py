@@ -1,3 +1,4 @@
+import datetime
 from decimal import Decimal
 
 import pytz
@@ -154,7 +155,7 @@ class P1RegressionTests(TestCase):
         dhaka_tz = pytz.timezone("Asia/Dhaka")
         utc_tz = pytz.UTC
 
-        late_night_dhaka = dhaka_tz.localize(timezone.datetime(2026, 9, 12, 2, 30, 0))
+        late_night_dhaka = dhaka_tz.localize(datetime.datetime(2026, 9, 12, 2, 30, 0))
         late_night_utc = late_night_dhaka.astimezone(utc_tz)
         from app.services.analytics import to_business_date
 
@@ -288,9 +289,9 @@ class P1RegressionTests(TestCase):
             fact_type="SURGE",
             statement="Delivery delay during storm",
             status="VERIFIED",
-            valid_from=now - timezone.timedelta(days=90),
-            valid_to=now - timezone.timedelta(days=60),
-            detected_at=now - timezone.timedelta(days=90),
+            valid_from=now - datetime.timedelta(days=90),
+            valid_to=now - datetime.timedelta(days=60),
+            detected_at=now - datetime.timedelta(days=90),
             created_at=now,
             updated_at=now,
         )

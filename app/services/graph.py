@@ -30,7 +30,7 @@ def safe_traverse(
     if visited is None:
         visited = set()
 
-    if start_node in visited or max_depth < 0:
+    if start_node not in graph or start_node in visited or max_depth < 0:
         return []
 
     visited.add(start_node)

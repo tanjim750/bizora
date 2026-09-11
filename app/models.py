@@ -1044,6 +1044,7 @@ class BusinessIssue(models.Model):
                 # Upsert: adopt existing PK so Django issues UPDATE instead of INSERT
                 self.pk = existing.pk
                 self.id = existing.id
+                self.created_at = existing.created_at
                 kwargs['force_insert'] = False
                 kwargs['force_update'] = True
         super().save(*args, **kwargs)
@@ -1309,19 +1310,19 @@ class AiMessage(models.Model):
 class AiRecommendation(models.Model):
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
-    ai_conversation = models.ForeignKey('AiConversation', models.DO_NOTHING, null=True, db_index=True)
-    business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, db_index=True)
+    ai_conversation = models.ForeignKey('AiConversation', models.DO_NOTHING, null=True, blank=True, db_index=True)
+    business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, blank=True, db_index=True)
     recommendation_type = models.CharField(max_length=100)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    rationale = models.TextField(null=True)
-    confidence = models.DecimalField(max_digits=5, decimal_places=4, null=True)
+    rationale = models.TextField(null=True, blank=True)
+    confidence = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
     priority = models.CharField(max_length=30, default='MEDIUM')
     status = models.CharField(max_length=30, default='SUGGESTED')
-    suggested_action_type = models.CharField(max_length=100, null=True)
+    suggested_action_type = models.CharField(max_length=100, null=True, blank=True)
     generated_at = models.DateTimeField()
-    expires_at = models.DateTimeField(null=True)
-    metadata = models.JSONField(null=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

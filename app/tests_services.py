@@ -219,8 +219,9 @@ class TestToBusinessDate(TestCase):
 
 class TestComputeDailyBusinessMetrics(TestCase):
     def setUp(self):
+        from app.services.analytics import to_business_date
         self.biz = make_business()
-        self.today = timezone.now().date()
+        self.today = to_business_date(timezone.now(), self.biz.timezone)
 
     def test_empty_no_orders(self):
         from app.services.bi import compute_daily_business_metrics
@@ -241,11 +242,12 @@ class TestComputeDailyBusinessMetrics(TestCase):
 
     def test_refunded_orders_reduce_net(self):
         from app.services.bi import compute_daily_business_metrics
-        make_order(self.biz, total_amount="1000.00", ordered_at=timezone.now())
+        make_order(self.biz, total_amount="800.00", ordered_at=timezone.now())
         make_order(self.biz, status="REFUNDED", total_amount="200.00", ordered_at=timezone.now())
         result = compute_daily_business_metrics(self.biz, self.today)
-        self.assertEqual(result["net_revenue"], Decimal("800.00"))
+        self.assertEqual(result["gross_revenue"], Decimal("1000.00"))
         self.assertEqual(result["refunds"], Decimal("200.00"))
+        self.assertEqual(result["net_revenue"], Decimal("800.00"))
 
     def test_failed_delivery_counted(self):
         from app.services.bi import compute_daily_business_metrics
@@ -337,6 +339,7 @@ class TestApproveAction(TestCase):
     def test_approve_rejects_executing_status(self):
         from app.services.actions import approve_action
         self.action.status = "EXECUTING"
+        self.action.approved_at = timezone.now()
         self.action.save()
         with self.assertRaises(ValidationError):
             approve_action(self.action, self.user, "note")
@@ -346,7 +349,8 @@ class TestApproveAction(TestCase):
         from app.events.dispatcher import _subscribers
         events = []
         _subscribers["ai.action.approved"].append(lambda e: events.append(e))
-        approve_action(self.action, self.user, "approved")
+        with self.captureOnCommitCallbacks(execute=True):
+            approve_action(self.action, self.user, "approved")
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].payload["action_id"], self.action.id)
 
@@ -1079,7 +1083,8 @@ class TestEventDispatcher(TestCase):
 
         class Event:
             type = "test.event"
-        dispatch(Event())
+        with self.captureOnCommitCallbacks(execute=True):
+            dispatch(Event())
         self.assertEqual(len(received), 1)
 
     def test_duplicate_subscribe_not_added(self):
@@ -1108,10 +1113,12 @@ class TestEventDispatcher(TestCase):
             type = "db.event"
 
         from django.db import transaction
-        with transaction.atomic():
-            dispatch(Event())
+        with self.captureOnCommitCallbacks(execute=False) as callbacks:
+            with transaction.atomic():
+                dispatch(Event())
             self.assertEqual(len(called), 0)  # not called inside atomic
-
+        for cb in callbacks:
+            cb()
         self.assertEqual(len(called), 1)  # called after commit
 
 

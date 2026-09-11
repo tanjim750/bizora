@@ -203,3 +203,24 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
+
+# Python 3.14 compatibility: copy(super()) in BaseContext.__copy__ fails on Python 3.14
+import sys
+if sys.version_info >= (3, 14):
+    import copy
+    from django.template import context as _ctx
+
+    def _basecontext_copy(self):
+        dup = object.__new__(self.__class__)
+        dup.dicts = self.dicts[:]
+        return dup
+
+    def _context_copy(self):
+        dup = object.__new__(self.__class__)
+        dup.dicts = self.dicts[:]
+        dup.render_context = copy.copy(self.render_context)
+        return dup
+
+    _ctx.BaseContext.__copy__ = _basecontext_copy
+    _ctx.Context.__copy__ = _context_copy
+
