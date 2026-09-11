@@ -131,7 +131,11 @@ class P1RegressionTests(TestCase):
         meta_attributed = Decimal("100.00")
         google_attributed = Decimal("100.00")
         
-        total_attributed = meta_attributed + google_attributed
+        from app.services.analytics import cap_campaign_attributions
+        raw_attributions = {"meta": meta_attributed, "google": google_attributed}
+        capped_attributions = cap_campaign_attributions(raw_attributions, order_total)
+        total_attributed = sum(capped_attributions.values())
+
         # Desired invariant: Sum of attributed revenue across platforms <= order total
         self.assertLessEqual(
             total_attributed,

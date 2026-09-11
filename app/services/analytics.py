@@ -16,3 +16,30 @@ def calculate_net_revenue(gross_total: Decimal, refunds: Decimal = Decimal('0.00
     gross = Decimal(str(gross_total))
     ref = Decimal(str(refunds)) if refunds is not None else Decimal('0.00')
     return max(Decimal('0.00'), gross - ref)
+
+
+def cap_campaign_attributions(attributions: dict, order_total: Decimal) -> dict:
+    """
+    COR-005: Caps multi-platform campaign attribution so total attributed revenue does not exceed order total.
+    Pro-rates attribution proportionally if the sum exceeds order_total.
+    """
+    order_total = Decimal(str(order_total))
+    if not attributions or order_total <= Decimal('0.00'):
+        return {k: Decimal('0.00') for k in attributions}
+
+    total_raw = sum(Decimal(str(v)) for v in attributions.values())
+    if total_raw <= order_total:
+        return {k: Decimal(str(v)) for k, v in attributions.items()}
+
+    scale = order_total / total_raw
+    capped = {}
+    running_sum = Decimal('0.00')
+    keys = list(attributions.keys())
+    for i, k in enumerate(keys):
+        if i == len(keys) - 1:
+            val = max(Decimal('0.00'), order_total - running_sum)
+        else:
+            val = (Decimal(str(attributions[k])) * scale).quantize(Decimal('0.01'))
+            running_sum += val
+        capped[k] = val
+    return capped
