@@ -77,10 +77,8 @@ class P1RegressionTests(TestCase):
         subscribe("test.crash.event", failing_handler)
         subscribe("test.crash.event", successful_handler)
 
-        try:
+        with self.captureOnCommitCallbacks(execute=True):
             dispatch(EventMock("test.crash.event", {"data": 123}))
-        except ValueError:
-            pass
 
         # Desired behavior: Dispatcher should isolate subscriber exceptions and execute all handlers.
         # Defect: Failing handler aborted loop before successful handler could run.

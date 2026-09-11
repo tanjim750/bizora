@@ -78,7 +78,8 @@ class P2RegressionTests(TestCase):
         subscribe("test.duplicate.event", idempotent_handler)
         subscribe("test.duplicate.event", idempotent_handler)
 
-        dispatch(EventMock("test.duplicate.event", {}))
+        with self.captureOnCommitCallbacks(execute=True):
+            dispatch(EventMock("test.duplicate.event", {}))
 
         # Desired invariant: Handler subscriptions must be deduplicated
         self.assertEqual(
