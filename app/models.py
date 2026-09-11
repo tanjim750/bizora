@@ -1137,7 +1137,7 @@ class KnowledgeChunk(models.Model):
 
 class KnowledgeEmbedding(models.Model):
     id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
+    business = models.ForeignKey('Business', models.CASCADE, null=True, db_index=True)
     knowledge_chunk = models.ForeignKey('KnowledgeChunk', models.DO_NOTHING, db_index=True)
     model = models.CharField(max_length=150)
     dimensions = models.IntegerField()
@@ -1223,7 +1223,7 @@ class AiRecommendation(models.Model):
 
 class AiRecommendationEvidence(models.Model):
     id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
+    business = models.ForeignKey('Business', models.CASCADE, null=True, db_index=True)
     ai_recommendation = models.ForeignKey('AiRecommendation', models.DO_NOTHING, db_index=True)
     business_fact = models.ForeignKey('BusinessFact', models.DO_NOTHING, null=True, db_index=True)
     business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, db_index=True)
@@ -1259,6 +1259,15 @@ class AiAction(models.Model):
     is_simulated = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        if self.status in ('EXECUTING', 'EXECUTED') and not self.approved_at:
+            raise ValidationError("AiAction cannot transition to EXECUTING or EXECUTED without approval (approved_at must be set).")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'ai_actions'

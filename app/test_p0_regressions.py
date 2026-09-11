@@ -152,13 +152,9 @@ class P0RegressionTests(TestCase):
             updated_at=now,
         )
         # Attempting to execute an unapproved action without approval should be rejected
-        action.status = "EXECUTED"
-        action.save()
-        # Security invariant: An action cannot have status='EXECUTED' while approved_at is None
-        self.assertIsNotNone(
-            action.approved_at,
-            "Security violation: Action was marked EXECUTED without being approved (approved_at is None)"
-        )
+        with self.assertRaises(ValidationError):
+            action.status = "EXECUTED"
+            action.save()
 
     def test_sec_006_indirect_prompt_injection_stored_raw(self):
         """
