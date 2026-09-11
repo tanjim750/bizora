@@ -8,8 +8,9 @@ Tests all 6 core business flows and 10 scenario edge cases:
 5. Action Flow: Recommendation -> suggested action -> approval -> execution -> result -> audit
 6. Event Flow: State change -> event -> subscriber -> resulting state
 """
+
 from decimal import Decimal
-import socket
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -34,9 +35,13 @@ from app.models import (
     Order,
 )
 from app.services.actions import approve_action, execute_action
-from app.services.ai import assemble_ai_context, generate_grounded_recommendation
-from app.services.analytics import calculate_net_revenue, cap_campaign_attributions, to_business_date
-from app.services.bi import compute_daily_business_metrics, detect_business_issues_from_metrics
+from app.services.ai import generate_grounded_recommendation
+from app.services.analytics import (
+    to_business_date,
+)
+from app.services.bi import (
+    detect_business_issues_from_metrics,
+)
 from app.services.graph import create_business_graph, safe_traverse
 
 User = get_user_model()
@@ -73,7 +78,7 @@ class Phase13IntegrationE2ETests(TestCase):
         self.user_a = User.objects.create_user(
             username="manager_alpha",
             password="SecurePassword123!",
-            email="manager@alpha.com"
+            email="manager@alpha.com",
         )
         self.user_a.business_id = self.business_a.id
         self.user_a.save()
@@ -81,7 +86,7 @@ class Phase13IntegrationE2ETests(TestCase):
         self.user_b = User.objects.create_user(
             username="manager_beta",
             password="SecurePassword123!",
-            email="manager@beta.com"
+            email="manager@beta.com",
         )
         self.user_b.business_id = self.business_b.id
         self.user_b.save()
@@ -119,7 +124,7 @@ class Phase13IntegrationE2ETests(TestCase):
         response = self.client.post(
             f"/api/actions/{action.id}/approve/",
             {"approval_note": "Approved after reviewing regional courier SLA metrics."},
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -153,7 +158,7 @@ class Phase13IntegrationE2ETests(TestCase):
         response = self.client.post(
             f"/api/actions/{action.id}/approve/",
             {"approval_note": ""},  # Invalid: blank
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -182,9 +187,12 @@ class Phase13IntegrationE2ETests(TestCase):
         response = self.client.post(
             f"/api/actions/{action.id}/approve/",
             {"approval_note": "Unauthenticated attempt"},
-            format="json"
+            format="json",
         )
-        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
 
     def test_api_flow_tenant_isolation(self):
         """
@@ -210,7 +218,7 @@ class Phase13IntegrationE2ETests(TestCase):
         response = self.client.post(
             f"/api/actions/{action.id}/approve/",
             {"approval_note": "Cross-tenant intrusion attempt"},
-            format="json"
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -223,7 +231,7 @@ class Phase13IntegrationE2ETests(TestCase):
         response = self.client.post(
             "/api/actions/9999999/approve/",
             {"approval_note": "Approving ghost record"},
-            format="json"
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -268,8 +276,7 @@ class Phase13IntegrationE2ETests(TestCase):
 
         # Verify backing BusinessFact exists and is VERIFIED
         facts = BusinessFact.objects.filter(
-            business=self.business_a,
-            fact_type="HIGH_DELIVERY_FAILURE_RATE"
+            business=self.business_a, fact_type="HIGH_DELIVERY_FAILURE_RATE"
         )
         self.assertEqual(facts.count(), 1)
         self.assertEqual(facts.first().status, "VERIFIED")
@@ -296,7 +303,7 @@ class Phase13IntegrationE2ETests(TestCase):
         active_issues = BusinessIssue.objects.filter(
             business=self.business_a,
             issue_type="EXCESSIVE_DELIVERY_FAILURES",
-            status="OPEN"
+            status="OPEN",
         )
         self.assertEqual(active_issues.count(), 1)
 
@@ -329,8 +336,12 @@ class Phase13IntegrationE2ETests(TestCase):
         Preserves multiple relationships between identical entity nodes without clobbering (COR-012).
         """
         G = create_business_graph()
-        G.add_edge("Customer:10", "Order:500", relationship="PLACED", timestamp=str(self.now))
-        G.add_edge("Customer:10", "Order:500", relationship="PAID_FOR", timestamp=str(self.now))
+        G.add_edge(
+            "Customer:10", "Order:500", relationship="PLACED", timestamp=str(self.now)
+        )
+        G.add_edge(
+            "Customer:10", "Order:500", relationship="PAID_FOR", timestamp=str(self.now)
+        )
 
         self.assertEqual(G.number_of_edges(), 2)
         edges = G.get_edge_data("Customer:10", "Order:500")
@@ -393,7 +404,8 @@ class Phase13IntegrationE2ETests(TestCase):
         Builds context including active facts, issues, and policies (MOD-003).
         Generates recommendation strictly backed by evidence (COR-008), with confidence in [0, 1] (MOD-002).
         """
-        from app.models import Conversation, KnowledgeSource
+        from app.models import KnowledgeSource
+
         # Seed policy
         ks = KnowledgeSource.objects.create(
             business=self.business_a,
@@ -426,13 +438,16 @@ class Phase13IntegrationE2ETests(TestCase):
         )
 
         self.assertIsNotNone(rec.id)
+        self.assertIsNotNone(action.id)
         self.assertGreaterEqual(rec.confidence, Decimal("0.0"))
         self.assertLessEqual(rec.confidence, Decimal("1.0"))
 
         # Verify evidence grounding
         evidence = AiRecommendationEvidence.objects.filter(ai_recommendation=rec)
         self.assertTrue(evidence.exists())
-        self.assertIsNotNone(evidence.first().business_fact_id or evidence.first().business_issue_id)
+        self.assertIsNotNone(
+            evidence.first().business_fact_id or evidence.first().business_issue_id
+        )
 
     def test_ai_flow_untrusted_customer_message_encapsulation(self):
         """
@@ -444,9 +459,10 @@ class Phase13IntegrationE2ETests(TestCase):
             business=self.business_a,
             first_name="Adversary",
             last_name="Customer",
-            display_name="Adversary Customer"
+            display_name="Adversary Customer",
         )
         from app.models import Conversation
+
         conv = Conversation.objects.create(
             business=self.business_a,
             customer=customer,
@@ -472,11 +488,12 @@ class Phase13IntegrationE2ETests(TestCase):
         AI Flow: AI timeout handling.
         Hanging or slow LLM requests trigger graceful fallback without crashing (COR-010).
         """
-        fallback = {"content": "Fallback: Default rebalance strategy", "confidence": "0.7500"}
+        fallback = {
+            "content": "Fallback: Default rebalance strategy",
+            "confidence": "0.7500",
+        }
         result = self.business_a.execute_llm_with_timeout(
-            prompt="Complex context",
-            timeout_seconds=5,
-            fallback_response=fallback
+            prompt="Complex context", timeout_seconds=5, fallback_response=fallback
         )
         self.assertEqual(result["content"], fallback["content"])
 
@@ -532,7 +549,10 @@ class Phase13IntegrationE2ETests(TestCase):
         self.assertEqual(approved.approved_by, self.user_a)
 
         # Execute
-        executed = execute_action(approved, executor_fn=lambda p: {"status": "success", "orders_reassigned": 15})
+        executed = execute_action(
+            approved,
+            executor_fn=lambda p: {"status": "success", "orders_reassigned": 15},
+        )
         self.assertEqual(executed.status, "EXECUTED")
         self.assertEqual(executed.execution_result["orders_reassigned"], 15)
 
@@ -557,7 +577,7 @@ class Phase13IntegrationE2ETests(TestCase):
         approve_action(action, self.user_a, "Approved")
 
         def failing_courier_api(payload):
-            raise socket.error("503 Service Unavailable: Courier gateway connection timeout")
+            raise OSError("503 Service Unavailable: Courier gateway connection timeout")
 
         executed = execute_action(action, executor_fn=failing_courier_api)
         self.assertEqual(executed.status, "FAILED")
@@ -584,15 +604,14 @@ class Phase13IntegrationE2ETests(TestCase):
         subscribe("order.created.test", failing_subscriber)
         subscribe("order.created.test", successful_subscriber)
 
-        with self.captureOnCommitCallbacks(execute=True):
-            with transaction.atomic():
-                order = Order.objects.create(
-                    business=self.business_a,
-                    order_number="ORD-TX-001",
-                    status="PENDING",
-                    total_amount=Decimal("500.00"),
-                )
-                dispatch(EventMock("order.created.test", {"order_id": order.id}))
+        with self.captureOnCommitCallbacks(execute=True), transaction.atomic():
+            order = Order.objects.create(
+                business=self.business_a,
+                order_number="ORD-TX-001",
+                status="PENDING",
+                total_amount=Decimal("500.00"),
+            )
+            dispatch(EventMock("order.created.test", {"order_id": order.id}))
 
         self.assertIn(order.id, invocations)
 

@@ -1,12 +1,8 @@
-import os
-import unittest
-from decimal import Decimal
-from django.test import TestCase
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
-from django.utils import timezone
-from app.events.dispatcher import subscribe, dispatch
-from app.models import Business, AiRecommendation
+from django.test import TestCase
+
+from app.events.dispatcher import dispatch, subscribe
+from app.models import AiRecommendation
 
 
 class EventMock:
@@ -26,16 +22,16 @@ class P2RegressionTests(TestCase):
         MOD-001: REST_FRAMEWORK settings must define DEFAULT_PERMISSION_CLASSES including IsAuthenticated.
         Expected failure: AssertionError: 'DEFAULT_PERMISSION_CLASSES' missing from settings.REST_FRAMEWORK
         """
-        drf_settings = getattr(settings, 'REST_FRAMEWORK', {})
+        drf_settings = getattr(settings, "REST_FRAMEWORK", {})
         self.assertIn(
-            'DEFAULT_PERMISSION_CLASSES',
+            "DEFAULT_PERMISSION_CLASSES",
             drf_settings,
-            "MOD-001 Defect: REST_FRAMEWORK settings omit DEFAULT_PERMISSION_CLASSES, defaulting to AllowAny!"
+            "MOD-001 Defect: REST_FRAMEWORK settings omit DEFAULT_PERMISSION_CLASSES, defaulting to AllowAny!",
         )
         self.assertIn(
-            'rest_framework.permissions.IsAuthenticated',
-            drf_settings.get('DEFAULT_PERMISSION_CLASSES', []),
-            "MOD-001 Defect: Default DRF permission is not IsAuthenticated!"
+            "rest_framework.permissions.IsAuthenticated",
+            drf_settings.get("DEFAULT_PERMISSION_CLASSES", []),
+            "MOD-001 Defect: Default DRF permission is not IsAuthenticated!",
         )
 
     def test_mod_002_ai_recommendation_confidence_range_unconstrained(self):
@@ -44,10 +40,10 @@ class P2RegressionTests(TestCase):
         Expected failure: AssertionError: No CheckConstraint found on AiRecommendation for confidence range
         """
         constraints = AiRecommendation._meta.constraints
-        check_constraint_names = [c.name for c in constraints if hasattr(c, 'check')]
+        check_constraint_names = [c.name for c in constraints if hasattr(c, "check")]
         self.assertTrue(
-            any('confidence' in name.lower() for name in check_constraint_names),
-            "MOD-002 Defect: AiRecommendation has no database CheckConstraint enforcing 0.0 <= confidence <= 1.0!"
+            any("confidence" in name.lower() for name in check_constraint_names),
+            "MOD-002 Defect: AiRecommendation has no database CheckConstraint enforcing 0.0 <= confidence <= 1.0!",
         )
 
     def test_mod_003_support_ai_policy_omission(self):
@@ -57,10 +53,11 @@ class P2RegressionTests(TestCase):
         """
         # Invariant: Support context builder must implement policy retrieval hook
         from app.models import KnowledgeDocument
-        has_policy_hook = hasattr(KnowledgeDocument, 'get_active_policies_for_intent')
+
+        has_policy_hook = hasattr(KnowledgeDocument, "get_active_policies_for_intent")
         self.assertTrue(
             has_policy_hook,
-            "MOD-003 Defect: Support AI context retrieval lacks intent-driven policy injection hook!"
+            "MOD-003 Defect: Support AI context retrieval lacks intent-driven policy injection hook!",
         )
 
     def test_mod_004_event_dispatcher_allows_duplicate_subscriptions(self):
@@ -85,7 +82,7 @@ class P2RegressionTests(TestCase):
         self.assertEqual(
             len(invocations),
             1,
-            f"MOD-004 Defect: Handler was executed {len(invocations)} times because subscriptions are not deduplicated!"
+            f"MOD-004 Defect: Handler was executed {len(invocations)} times because subscriptions are not deduplicated!",
         )
 
     def test_mod_005_graph_traversal_cycle_trap(self):
@@ -94,18 +91,20 @@ class P2RegressionTests(TestCase):
         Expected failure: AssertionError: Graph traversal algorithm allows infinite cycles or exceeds depth limit
         """
         import networkx as nx
+
         G = nx.DiGraph()
         G.add_edge("A", "B")
         G.add_edge("B", "A")  # Cycle: A -> B -> A
 
         from app.services.graph import safe_traverse
+
         path = safe_traverse(G, "A", max_depth=10)
         # Desired invariant: Visited set ensures each node visited at most once
         unique_nodes = set(path)
         self.assertEqual(
             len(path),
             len(unique_nodes),
-            f"MOD-005 Defect: Graph traversal on cycle expanded {len(path)} steps for {len(unique_nodes)} unique nodes without cycle prevention!"
+            f"MOD-005 Defect: Graph traversal on cycle expanded {len(path)} steps for {len(unique_nodes)} unique nodes without cycle prevention!",
         )
 
     def test_mod_006_settings_insecure_fallback_secret_key(self):
@@ -116,5 +115,5 @@ class P2RegressionTests(TestCase):
         secret_key = settings.SECRET_KEY
         self.assertFalse(
             secret_key.startswith("django-insecure"),
-            "MOD-006 Defect: SECRET_KEY is using a predictable django-insecure fallback key!"
+            "MOD-006 Defect: SECRET_KEY is using a predictable django-insecure fallback key!",
         )

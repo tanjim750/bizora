@@ -3,7 +3,7 @@ Authoritative Business Knowledge Graph Service.
 Uses NetworkX MultiDiGraph to preserve parallel multi-relationships between entities,
 and provides cycle-safe, depth-bounded graph traversals.
 """
-from typing import List, Optional, Set
+
 import networkx as nx
 
 
@@ -20,8 +20,8 @@ def safe_traverse(
     graph: nx.DiGraph,
     start_node: str,
     max_depth: int = 5,
-    visited: Optional[Set[str]] = None
-) -> List[str]:
+    visited: set[str] | None = None,
+) -> list[str]:
     """
     MOD-005: Cycle-safe, depth-bounded graph traversal algorithm.
     Guarantees each node is visited at most once and traversal terminates

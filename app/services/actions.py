@@ -3,8 +3,10 @@ Action Lifecycle and Approval Service.
 Enforces the mandatory Human-in-the-Loop boundary:
 No AI action can execute without explicit user approval and audit trail.
 """
+
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
+
 from app.events.dispatcher import dispatch
 from app.models import AiAction
 
@@ -27,11 +29,13 @@ def approve_action(action: AiAction, user, approval_note: str) -> AiAction:
     if not user or not user.is_authenticated:
         raise PermissionDenied("Authentication required to approve actions.")
 
-    if action.status not in ('SUGGESTED', 'REJECTED'):
-        raise ValidationError(f"Action cannot be approved from state '{action.status}'.")
+    if action.status not in ("SUGGESTED", "REJECTED"):
+        raise ValidationError(
+            f"Action cannot be approved from state '{action.status}'."
+        )
 
     now = timezone.now()
-    action.status = 'APPROVED'
+    action.status = "APPROVED"
     action.approved_by = user
     action.approved_at = now
     action.approval_note = approval_note
@@ -48,10 +52,12 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
     Fails fast if unapproved (SEC-005).
     Captures integration errors and transitions status to FAILED (COR-011).
     """
-    if not action.approved_at or action.status != 'APPROVED':
-        raise ValidationError("AiAction cannot execute without approval (approved_at must be set).")
+    if not action.approved_at or action.status != "APPROVED":
+        raise ValidationError(
+            "AiAction cannot execute without approval (approved_at must be set)."
+        )
 
-    action.status = 'EXECUTING'
+    action.status = "EXECUTING"
     action.save()
 
     now = timezone.now()
@@ -62,15 +68,20 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
             result = executor_fn(action.action_payload)
             action.execution_result = result
         else:
-            action.execution_result = {"status": "success", "message": "Simulated execution completed successfully"}
+            action.execution_result = {
+                "status": "success",
+                "message": "Simulated execution completed successfully",
+            }
 
-        if isinstance(action.execution_result, dict) and ('error' in action.execution_result or 'errors' in action.execution_result):
-            action.status = 'FAILED'
+        if isinstance(action.execution_result, dict) and (
+            "error" in action.execution_result or "errors" in action.execution_result
+        ):
+            action.status = "FAILED"
         else:
-            action.status = 'EXECUTED'
-    except Exception as exc:
-        action.execution_result = {"error": f"Execution failed: {str(exc)}"}
-        action.status = 'FAILED'
+            action.status = "EXECUTED"
+    except Exception as exc:  # noqa: BLE001 - intentional safety guardrail for arbitrary action execution
+        action.execution_result = {"error": f"Execution failed: {exc!s}"}
+        action.status = "FAILED"
 
     action.save()
     return action

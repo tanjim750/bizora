@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+
 from django.db import transaction
 
 logger = logging.getLogger(__name__)
@@ -13,12 +14,14 @@ def subscribe(event_name, handler):
 
 
 def _execute_dispatch(event):
-    event_name = getattr(event, 'name', getattr(event, 'type', str(event)))
+    event_name = getattr(event, "name", getattr(event, "type", str(event)))
     for handler in list(_subscribers[event_name]):
         try:
             handler(event)
-        except Exception as exc:
-            logger.exception("Error executing event handler %s for %s: %s", handler, event_name, exc)
+        except Exception:
+            logger.exception(
+                "Error executing event handler %s for %s", handler, event_name
+            )
 
 
 def dispatch(event):
@@ -27,6 +30,6 @@ def dispatch(event):
         if connection.in_atomic_block:
             transaction.on_commit(lambda: _execute_dispatch(event))
             return
-    except Exception:
+    except Exception:  # noqa: BLE001, S110 - direct execution fallback if transaction context unavailable
         pass
     _execute_dispatch(event)

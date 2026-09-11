@@ -4,8 +4,11 @@ Maintains the Business Brain Boundary:
 AI reads deterministic facts, issues, graph, and policy to produce recommendations.
 AI recommendations NEVER silently create authoritative facts or execute actions.
 """
+
 from decimal import Decimal
+
 from django.utils import timezone
+
 from app.models import (
     AiAction,
     AiRecommendation,
@@ -17,22 +20,30 @@ from app.models import (
 )
 
 
-def assemble_ai_context(business: Business, intent: str = None) -> dict:
+def assemble_ai_context(business: Business, intent: str | None = None) -> dict:
     """
     Retrieves and bundles active facts, open issues, and policies into a secure context payload.
     Excludes expired facts per COR-009 and injects intent-driven policies per MOD-003.
     """
     # Active facts (auto-filtered by BusinessFactManager per COR-009)
-    facts = list(BusinessFact.objects.filter(business=business).values('id', 'fact_type', 'statement', 'confidence'))
+    facts = list(
+        BusinessFact.objects.filter(business=business).values(
+            "id", "fact_type", "statement", "confidence"
+        )
+    )
 
     # Active open issues
-    issues = list(BusinessIssue.objects.filter(business=business, status='OPEN').values('id', 'issue_type', 'title', 'severity'))
+    issues = list(
+        BusinessIssue.objects.filter(business=business, status="OPEN").values(
+            "id", "issue_type", "title", "severity"
+        )
+    )
 
     # Active policies for intent (e.g. refund/delivery policy per MOD-003)
     policies = []
     if intent:
         policy_docs = KnowledgeDocument.get_active_policies_for_intent(business, intent)
-        policies = list(policy_docs.values('id', 'title', 'content', 'version'))
+        policies = list(policy_docs.values("id", "title", "content", "version"))
 
     return {
         "business_id": business.id,
@@ -45,7 +56,7 @@ def assemble_ai_context(business: Business, intent: str = None) -> dict:
 
 def generate_grounded_recommendation(
     business: Business,
-    issue: BusinessIssue = None,
+    issue: BusinessIssue | None = None,
     intent: str = "delivery_optimization",
     timeout_seconds: int = 15,
 ) -> tuple[AiRecommendation, AiAction]:
@@ -60,7 +71,10 @@ def generate_grounded_recommendation(
     llm_output = business.execute_llm_with_timeout(
         prompt=prompt,
         timeout_seconds=timeout_seconds,
-        fallback_response={"content": "Switch secondary courier to reduce failure rates", "confidence": "0.8500"}
+        fallback_response={
+            "content": "Switch secondary courier to reduce failure rates",
+            "confidence": "0.8500",
+        },
     )
 
     confidence = Decimal(str(llm_output.get("confidence", "0.8000")))
@@ -71,7 +85,9 @@ def generate_grounded_recommendation(
         business_issue=issue,
         recommendation_type="COURIER_OPTIMIZATION",
         title="Rebalance Delivery Courier Allocations",
-        description=llm_output.get("content", "Rebalance allocations based on regional performance"),
+        description=llm_output.get(
+            "content", "Rebalance allocations based on regional performance"
+        ),
         rationale="Delivery failure rate exceeded threshold on primary courier.",
         confidence=confidence,
         priority="HIGH",
@@ -89,7 +105,7 @@ def generate_grounded_recommendation(
         business_fact=first_fact,
         evidence_type="VERIFIED_FACT_GROUNDING",
         description="Grounded on authoritative high failure rate metric and fact.",
-        weight=Decimal('1.0000'),
+        weight=Decimal("1.0000"),
     )
 
     # Propose SUGGESTED AiAction requiring approval (SEC-004, SEC-005)

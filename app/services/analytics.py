@@ -3,19 +3,23 @@ Authoritative Business Intelligence and Analytics Calculations.
 Deterministic calculations establish facts and metrics.
 AI advisory never silently alters authoritative metrics.
 """
-from decimal import Decimal
+
 import datetime
+from decimal import Decimal
+
 import pytz
 
 
-def calculate_net_revenue(gross_total: Decimal, refunds: Decimal = Decimal('0.00')) -> Decimal:
+def calculate_net_revenue(
+    gross_total: Decimal, refunds: Decimal = Decimal("0.00")
+) -> Decimal:
     """
     COR-004: Calculates authoritative Net Revenue.
     Rule: Net Revenue = Gross Total - Refunds.
     """
     gross = Decimal(str(gross_total))
-    ref = Decimal(str(refunds)) if refunds is not None else Decimal('0.00')
-    return max(Decimal('0.00'), gross - ref)
+    ref = Decimal(str(refunds)) if refunds is not None else Decimal("0.00")
+    return max(Decimal("0.00"), gross - ref)
 
 
 def cap_campaign_attributions(attributions: dict, order_total: Decimal) -> dict:
@@ -24,8 +28,8 @@ def cap_campaign_attributions(attributions: dict, order_total: Decimal) -> dict:
     Pro-rates attribution proportionally if the sum exceeds order_total.
     """
     order_total = Decimal(str(order_total))
-    if not attributions or order_total <= Decimal('0.00'):
-        return {k: Decimal('0.00') for k in attributions}
+    if not attributions or order_total <= Decimal("0.00"):
+        return {k: Decimal("0.00") for k in attributions}
 
     total_raw = sum(Decimal(str(v)) for v in attributions.values())
     if total_raw <= order_total:
@@ -33,19 +37,21 @@ def cap_campaign_attributions(attributions: dict, order_total: Decimal) -> dict:
 
     scale = order_total / total_raw
     capped = {}
-    running_sum = Decimal('0.00')
+    running_sum = Decimal("0.00")
     keys = list(attributions.keys())
     for i, k in enumerate(keys):
         if i == len(keys) - 1:
-            val = max(Decimal('0.00'), order_total - running_sum)
+            val = max(Decimal("0.00"), order_total - running_sum)
         else:
-            val = (Decimal(str(attributions[k])) * scale).quantize(Decimal('0.01'))
+            val = (Decimal(str(attributions[k])) * scale).quantize(Decimal("0.01"))
             running_sum += val
         capped[k] = val
     return capped
 
 
-def to_business_date(dt: datetime.datetime, business_timezone: str = "Asia/Dhaka") -> datetime.date:
+def to_business_date(
+    dt: datetime.datetime, business_timezone: str = "Asia/Dhaka"
+) -> datetime.date:
     """
     COR-006: Converts UTC or naive datetime to the authoritative business operational date
     according to the tenant's configured timezone (default 'Asia/Dhaka').

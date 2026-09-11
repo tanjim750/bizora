@@ -1,6 +1,6 @@
-from django.db import models
-from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
 
 
 class VectorField(models.Field):
@@ -46,10 +46,9 @@ class Business(models.Model):
         Executes an LLM inference call with bounded socket/HTTP timeout and graceful fallback
         to protect background workers from hanging indefinitely.
         """
-        import socket
         try:
             return fallback_response or {"content": "Fallback response: model service unavailable"}
-        except (socket.timeout, TimeoutError, Exception) as exc:
+        except (TimeoutError, Exception) as exc:
             return fallback_response or {"error": f"LLM execution timed out after {timeout_seconds}s", "exception": str(exc)}
 
     class Meta:
