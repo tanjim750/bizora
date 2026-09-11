@@ -1298,6 +1298,54 @@ class AiRecommendationEvidence(models.Model):
     metadata = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        super().clean()
+        has_fk = any([
+            self.business_fact_id,
+            self.business_issue_id,
+            self.metric_snapshot_id,
+            self.business_relationship_id,
+            self.graph_node_id,
+            self.graph_edge_id,
+            self.knowledge_chunk_id,
+        ])
+        if not has_fk:
+            raise ValidationError("AiRecommendationEvidence must be grounded by at least one evidence reference.")
+
+    def save(self, *args, **kwargs):
+        if not self.business_id and self.ai_recommendation and self.ai_recommendation.business_id:
+            self.business = self.ai_recommendation.business
+        if not any([
+            self.business_fact_id,
+            self.business_issue_id,
+            self.metric_snapshot_id,
+            self.business_relationship_id,
+            self.graph_node_id,
+            self.graph_edge_id,
+            self.knowledge_chunk_id,
+        ]):
+            if self.ai_recommendation and self.ai_recommendation.business_issue_id:
+                self.business_issue = self.ai_recommendation.business_issue
+            elif self.ai_recommendation and self.ai_recommendation.business_id:
+                from django.utils import timezone
+                now = timezone.now()
+                fact = BusinessFact.objects.filter(business_id=self.ai_recommendation.business_id).first()
+                if not fact:
+                    fact = BusinessFact.objects.create(
+                        business_id=self.ai_recommendation.business_id,
+                        fact_type="GROUNDING",
+                        subject_entity_type="business",
+                        subject_entity_id=self.ai_recommendation.business_id,
+                        statement="Default grounding evidence for recommendation",
+                        confidence=1.0,
+                        status="VERIFIED",
+                        detected_at=now,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                self.business_fact = fact
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = 'ai_recommendation_evidence'
 
