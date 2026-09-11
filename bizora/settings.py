@@ -20,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 import os
+from urllib.parse import unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -36,7 +37,11 @@ if not DEBUG and (not SECRET_KEY or SECRET_KEY.startswith("django-insecure")):
         "SECRET_KEY environment variable must be configured in production (DEBUG=False)."
     )
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",")
+    if h.strip()
+]
 
 
 # Application definition
@@ -84,16 +89,42 @@ WSGI_APPLICATION = "bizora.wsgi.application"
 
 
 # Database
-# Authoritative production database: PostgreSQL 16. Local dev fallback: SQLite.
-if os.environ.get("POSTGRES_DB") or os.environ.get("DATABASE_URL"):
+# Authoritative production database: PostgreSQL 16 (Supabase / RDS / Docker). Local dev fallback: SQLite.
+if os.environ.get("DATABASE_URL"):
+    _db_url = urlparse(os.environ["DATABASE_URL"])
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB", "bizora"),
+            "NAME": _db_url.path.lstrip("/") or "postgres",
+            "USER": unquote(_db_url.username or "postgres"),
+            "PASSWORD": unquote(_db_url.password or ""),
+            "HOST": _db_url.hostname or "localhost",
+            "PORT": str(_db_url.port or 5432),
+            "OPTIONS": {
+                "sslmode": os.environ.get(
+                    "POSTGRES_SSLMODE",
+                    "require" if "supabase" in (_db_url.hostname or "") else "prefer",
+                ),
+            },
+        }
+    }
+elif os.environ.get("POSTGRES_DB") or os.environ.get("POSTGRES_HOST"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "postgres"),
             "USER": os.environ.get("POSTGRES_USER", "postgres"),
             "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
             "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
             "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "OPTIONS": {
+                "sslmode": os.environ.get(
+                    "POSTGRES_SSLMODE",
+                    "require"
+                    if "supabase" in os.environ.get("POSTGRES_HOST", "")
+                    else "prefer",
+                ),
+            },
         }
     }
 else:
