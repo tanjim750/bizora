@@ -1222,6 +1222,7 @@ class AiRecommendation(models.Model):
 
 class AiRecommendationEvidence(models.Model):
     id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
     ai_recommendation = models.ForeignKey('AiRecommendation', models.DO_NOTHING, db_index=True)
     business_fact = models.ForeignKey('BusinessFact', models.DO_NOTHING, null=True, db_index=True)
     business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, db_index=True)
