@@ -15,6 +15,7 @@ import datetime
 from decimal import Decimal
 from typing import Any
 
+from django.db.models import Sum
 from django.utils import timezone
 
 from app.models import (
@@ -156,7 +157,9 @@ def assemble_customer_context(
         status__in=["CANCELLED", "REFUNDED", "FAILED_DELIVERY"]
     ).count()
 
-    total_spent = sum((Decimal(str(o.total_amount)) for o in orders), Decimal("0.00"))
+    # DB-side aggregation — avoids loading all orders into Python memory
+    spend_agg = orders.aggregate(total=Sum("total_amount"))
+    total_spent = Decimal(str(spend_agg["total"] or "0.00"))
 
     recent_orders = [
         {
@@ -211,8 +214,11 @@ def assemble_product_context(
     ]
     from app.models import OrderItem
 
-    items = OrderItem.objects.filter(product=product, order__business=business)
-    units_sold = sum((item.quantity for item in items), 0)
+    # DB-side aggregation — avoids loading all OrderItems into Python memory
+    qty_agg = OrderItem.objects.filter(
+        product=product, order__business=business
+    ).aggregate(total_qty=Sum("quantity"))
+    units_sold = qty_agg["total_qty"] or 0
 
     return {
         "product_id": product.id,

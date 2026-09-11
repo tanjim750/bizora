@@ -1041,10 +1041,9 @@ class BusinessIssue(models.Model):
                 qs = qs.exclude(pk=self.pk)
             existing = qs.first()
             if existing and not self.pk:
+                # Upsert: adopt existing PK so Django issues UPDATE instead of INSERT
                 self.pk = existing.pk
                 self.id = existing.id
-                if not self.created_at:
-                    self.created_at = existing.created_at
                 kwargs['force_insert'] = False
                 kwargs['force_update'] = True
         super().save(*args, **kwargs)
@@ -1439,10 +1438,11 @@ class AiAction(models.Model):
             raise ValidationError("AiAction cannot transition to EXECUTING or EXECUTED without approval (approved_at must be set).")
 
     def save(self, *args, **kwargs):
+        self.clean()
+        # Transition to FAILED only AFTER clean() succeeds (clean rejects EXECUTING/EXECUTED without approval)
         if self.execution_result and isinstance(self.execution_result, dict):
             if 'error' in self.execution_result or 'errors' in self.execution_result or self.execution_result.get('success') is False:
                 self.status = 'FAILED'
-        self.clean()
         super().save(*args, **kwargs)
 
     class Meta:

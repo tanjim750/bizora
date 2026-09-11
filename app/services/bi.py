@@ -4,8 +4,10 @@ Authoritative facts and metrics are established here.
 AI advisory never independently calculates or alters these authoritative metrics.
 """
 
+import datetime
 from decimal import Decimal
 
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from app.models import (
@@ -27,23 +29,33 @@ def compute_daily_business_metrics(business: Business, target_date=None) -> dict
     if target_date is None:
         target_date = to_business_date(now, business.timezone or "Asia/Dhaka")
 
-    orders = Order.objects.filter(business=business)
-    gross_revenue = Decimal("0.00")
-    refunds = Decimal("0.00")
-    total_orders = 0
-    failed_deliveries = 0
+    # DB-side date window for the target business date (UTC boundaries that contain the local date)
+    biz_tz_name = business.timezone or "Asia/Dhaka"
+    import pytz
+    biz_tz = pytz.timezone(biz_tz_name)
+    # Derive UTC start/end for the target business date
+    naive_start = datetime.datetime.combine(target_date, datetime.time.min)
+    naive_end = datetime.datetime.combine(target_date, datetime.time.max)
+    period_start_utc = biz_tz.localize(naive_start).astimezone(pytz.UTC)
+    period_end_utc = biz_tz.localize(naive_end).astimezone(pytz.UTC)
 
-    for order in orders:
-        order_date = to_business_date(
-            order.ordered_at or order.created_at, business.timezone or "Asia/Dhaka"
-        )
-        if order_date == target_date:
-            total_orders += 1
-            gross_revenue += Decimal(str(order.total_amount))
-            if order.status == "CANCELLED" or order.status == "REFUNDED":
-                refunds += Decimal(str(order.total_amount))
-            if order.status == "FAILED_DELIVERY":
-                failed_deliveries += 1
+    day_orders = Order.objects.filter(
+        business=business,
+    ).filter(
+        Q(ordered_at__gte=period_start_utc, ordered_at__lte=period_end_utc)
+        | Q(ordered_at__isnull=True, created_at__gte=period_start_utc, created_at__lte=period_end_utc)
+    )
+
+    total_orders = day_orders.count()
+    agg = day_orders.aggregate(gross=Sum("total_amount"))
+    gross_revenue = Decimal(str(agg["gross"] or "0.00"))
+
+    refund_agg = day_orders.filter(
+        status__in=["CANCELLED", "REFUNDED"]
+    ).aggregate(ref=Sum("total_amount"))
+    refunds = Decimal(str(refund_agg["ref"] or "0.00"))
+
+    failed_deliveries = day_orders.filter(status="FAILED_DELIVERY").count()
 
     net_revenue = calculate_net_revenue(gross_revenue, refunds)
     failure_rate = (
@@ -70,8 +82,8 @@ def compute_daily_business_metrics(business: Business, target_date=None) -> dict
         business=business,
         value=net_revenue,
         period_type="DAILY",
-        period_start=now - timezone.timedelta(days=1),
-        period_end=now,
+        period_start=period_start_utc,
+        period_end=period_end_utc,
         calculation_rule="NET_REVENUE_CALCULATION",
         metadata={
             "gross_revenue": str(gross_revenue),

@@ -131,6 +131,12 @@ class SupportReplyView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = SupportReplyRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -160,6 +166,12 @@ class SupportEscalationView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = SupportEscalationRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -182,6 +194,12 @@ class SupportHandoverView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = SupportHandoverRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -203,6 +221,12 @@ class MarketingAssistantView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = CampaignExplanationRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -223,6 +247,12 @@ class BusinessDiagnosisView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = BusinessDiagnosisRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -241,6 +271,12 @@ class ConversationSummaryView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = ConversationSummaryRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -259,6 +295,12 @@ class CallSummaryView(APIView):
 
     def post(self, request, business_id):
         business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = CallSummaryRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
