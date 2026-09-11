@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 class VectorField(models.Field):
@@ -1251,6 +1252,7 @@ class AiAction(models.Model):
     target_entity_id = models.BigIntegerField(null=True)
     action_payload = models.JSONField(null=True)
     approval_note = models.TextField(null=True)
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, db_index=True)
     approved_at = models.DateTimeField(null=True)
     executed_at = models.DateTimeField(null=True)
     execution_result = models.JSONField(null=True)
