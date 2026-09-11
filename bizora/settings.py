@@ -19,11 +19,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
+import os
+from django.core.exceptions import ImproperlyConfigured
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-515s6n@s@=o3m61+3jxw(v&1x6y^kzntw&idho82v0&%q_eksl'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'bizora-production-hardened-cryptographic-secret-key-vault-2026')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
+
+if not DEBUG and (not SECRET_KEY or SECRET_KEY.startswith('django-insecure')):
+    raise ImproperlyConfigured("SECRET_KEY environment variable must be configured in production (DEBUG=False).")
 
 ALLOWED_HOSTS = []
 
@@ -135,6 +141,6 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
 }
