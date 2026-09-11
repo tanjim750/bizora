@@ -140,7 +140,7 @@ class ProductExternalReference(models.Model):
 
 class Customer(models.Model):
     id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
     first_name = models.CharField(max_length=150, null=True)
     last_name = models.CharField(max_length=150, null=True)
     display_name = models.CharField(max_length=255, null=True)
