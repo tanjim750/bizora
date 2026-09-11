@@ -121,3 +121,28 @@ def generate_grounded_recommendation(
     )
 
     return recommendation, action
+
+
+# Re-export modular AI Intelligence services for unified imports
+from app.services.ai_assistant import ask_business_assistant  # noqa: E402
+from app.services.ai_context import (  # noqa: E402
+    assemble_customer_context,
+    assemble_fact_context,
+    assemble_full_ai_context,
+    assemble_graph_context,
+    assemble_memory_context,
+    assemble_order_context,
+    assemble_product_context,
+)
+from app.services.ai_diagnosis import diagnose_business_issue  # noqa: E402
+from app.services.ai_marketing import explain_campaign_performance  # noqa: E402
+from app.services.ai_summarization import (  # noqa: E402
+    summarize_call,
+    summarize_support_conversation,
+)
+from app.services.ai_support import (  # noqa: E402
+    evaluate_escalation,
+    generate_handover_summary,
+    generate_suggested_reply,
+)
+

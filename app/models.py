@@ -1288,6 +1288,18 @@ class AiMessage(models.Model):
     response_metadata = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def model_name(self):
+        return self.model
+
+    @property
+    def tokens_used(self):
+        return (self.prompt_tokens or 0) + (self.completion_tokens or 0)
+
+    @property
+    def context_snapshot(self):
+        return self.context_reference
+
     class Meta:
         db_table = 'ai_messages'
         indexes = [
