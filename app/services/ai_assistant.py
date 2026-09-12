@@ -12,6 +12,24 @@ from app.models import AiConversation, AiMessage, Business, Customer
 from app.services.ai_context import assemble_full_ai_context
 
 
+def classify_user_intent(query: str, default_intent: str = "business_performance_inquiry") -> str:
+    """Classifies user intent from natural language inquiry keywords if default is provided."""
+    if default_intent and default_intent != "business_performance_inquiry":
+        return default_intent
+    q = query.lower()
+    if any(k in q for k in ["refund", "return", "cancel", "exchange"]):
+        return "refund_and_cancellation_inquiry"
+    if any(k in q for k in ["delivery", "courier", "shipping", "shipment", "pathao", "steadfast", "delay", "failed"]):
+        return "delivery_performance_inquiry"
+    if any(k in q for k in ["campaign", "ads", "facebook", "roas", "marketing", "spend", "clicks", "ad"]):
+        return "marketing_performance_inquiry"
+    if any(k in q for k in ["product", "stock", "inventory", "shoe", "variant"]):
+        return "product_inventory_inquiry"
+    if any(k in q for k in ["customer", "churn", "repeat", "ltv", "buyer"]):
+        return "customer_behavior_inquiry"
+    return default_intent
+
+
 def ask_business_assistant(
     business: Business,
     user_query: str,
@@ -23,10 +41,11 @@ def ask_business_assistant(
     """
     Feature 1: Business Assistant.
     Maintains conversational session via AiConversation and AiMessage,
-    assembles cross-domain business context, calls LLM via execute_llm_with_timeout,
-    and returns an evidence-grounded answer.
+    assembles cross-domain business context and multi-turn dialogue history,
+    calls LLM via execute_llm_with_timeout, and returns an evidence-grounded answer.
     """
     now = timezone.now()
+    resolved_intent = classify_user_intent(user_query, intent)
 
     # Retrieve or create conversation session
     if conversation_id:
@@ -53,24 +72,44 @@ def ask_business_assistant(
         )
 
     # Save incoming user message (Audit: Feature 17)
-    AiMessage.objects.create(
+    user_msg = AiMessage.objects.create(
         ai_conversation=conversation,
         role="USER",
         content=user_query,
-        response_metadata={"intent": intent},
+        response_metadata={"intent": resolved_intent},
     )
+
+    # Fetch prior conversation turns (Feature 1: Follow-Up Context)
+    prior_messages = (
+        AiMessage.objects.filter(ai_conversation=conversation)
+        .exclude(id=user_msg.id)
+        .order_by("-created_at")[:6]
+    )
+    history_turns = [
+        f"{m.role}: {m.content}"
+        for m in reversed(list(prior_messages))
+    ]
+    history_block = ""
+    if history_turns:
+        history_block = (
+            "Conversation History (most recent turns):\n"
+            "<conversation_history>\n"
+            + "\n".join(history_turns)
+            + "\n</conversation_history>\n\n"
+        )
 
     # Assemble cross-domain context (Facts, Issues, Metrics, Policies)
     context = assemble_full_ai_context(
-        business=business, intent=intent, customer=customer
+        business=business, intent=resolved_intent, customer=customer
     )
 
     # Formulate structural prompt with XML injection guardrail (SEC-006)
     prompt = (
         f"You are Bizora Business Brain Assistant for {business.name}.\n"
         f"Context Data:\n{context}\n\n"
+        f"{history_block}"
         f"User Query:\n<untrusted_user_input>\n{user_query}\n</untrusted_user_input>\n"
-        f"Provide an evidence-grounded explanation based strictly on the verified facts above."
+        f"Provide an evidence-grounded explanation based strictly on the verified facts and dialogue context above."
     )
 
     # LLM execution with timeout guardrail (COR-010)

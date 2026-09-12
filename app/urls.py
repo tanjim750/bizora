@@ -12,6 +12,7 @@ from app.views import (
     SupportEscalationView,
     SupportHandoverView,
     SupportReplyView,
+    SupportResumeAiView,
 )
 
 urlpatterns = [
@@ -45,6 +46,11 @@ urlpatterns = [
         "businesses/<int:business_id>/ai/support/handover/",
         SupportHandoverView.as_view(),
         name="ai-support-handover",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/support/resume/",
+        SupportResumeAiView.as_view(),
+        name="ai-support-resume",
     ),
     path(
         "businesses/<int:business_id>/ai/marketing/explain-campaign/",

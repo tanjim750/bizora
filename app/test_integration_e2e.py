@@ -122,7 +122,7 @@ class Phase13IntegrationE2ETests(TestCase):
 
         self.client.force_authenticate(user=self.user_a)
         response = self.client.post(
-            f"/api/actions/{action.id}/approve/",
+            f"/api/v1/actions/{action.id}/approve/",
             {"approval_note": "Approved after reviewing regional courier SLA metrics."},
             format="json",
         )
@@ -156,7 +156,7 @@ class Phase13IntegrationE2ETests(TestCase):
 
         self.client.force_authenticate(user=self.user_a)
         response = self.client.post(
-            f"/api/actions/{action.id}/approve/",
+            f"/api/v1/actions/{action.id}/approve/",
             {"approval_note": ""},  # Invalid: blank
             format="json",
         )
@@ -185,7 +185,7 @@ class Phase13IntegrationE2ETests(TestCase):
 
         # No authentication
         response = self.client.post(
-            f"/api/actions/{action.id}/approve/",
+            f"/api/v1/actions/{action.id}/approve/",
             {"approval_note": "Unauthenticated attempt"},
             format="json",
         )
@@ -216,7 +216,7 @@ class Phase13IntegrationE2ETests(TestCase):
         # Authenticate as User B
         self.client.force_authenticate(user=self.user_b)
         response = self.client.post(
-            f"/api/actions/{action.id}/approve/",
+            f"/api/v1/actions/{action.id}/approve/",
             {"approval_note": "Cross-tenant intrusion attempt"},
             format="json",
         )
@@ -229,10 +229,11 @@ class Phase13IntegrationE2ETests(TestCase):
         """
         self.client.force_authenticate(user=self.user_a)
         response = self.client.post(
-            "/api/actions/9999999/approve/",
+            "/api/v1/actions/9999999/approve/",
             {"approval_note": "Approving ghost record"},
             format="json",
         )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # =========================================================================

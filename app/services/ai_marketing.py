@@ -8,6 +8,7 @@ and suggests grounded marketing optimizations.
 from decimal import Decimal
 from typing import Any
 
+from django.db.models import Sum
 from django.utils import timezone
 
 from app.models import Business, Campaign, Order
@@ -30,8 +31,26 @@ def explain_campaign_performance(
     budget = Decimal(str(getattr(campaign, "budget", None) or "0.00"))
     utm_name = getattr(campaign, "utm_campaign", None) or (campaign.source_metadata or {}).get("utm_campaign") or campaign.name
 
-    # Sample downstream orders attributed to campaign
-    orders = Order.objects.filter(business=business)
+    # Scoped downstream orders attributed to campaign (AI-006)
+    from app.models import CampaignConversion, OrderItem
+
+    conv_orders = list(
+        CampaignConversion.objects.filter(campaign=campaign, order__isnull=False).values_list("order_id", flat=True)
+    )
+    utm_orders = list(
+        Order.objects.filter(
+            business=business, source_metadata__contains={"utm_campaign": utm_name}
+        ).values_list("id", flat=True)
+    )
+    matched_order_ids = set(conv_orders) | set(utm_orders)
+    if matched_order_ids:
+        orders = Order.objects.filter(business=business, id__in=matched_order_ids)
+    elif Campaign.objects.filter(business=business).count() > 1:
+        orders = Order.objects.none()
+    else:
+        # Fallback for single-campaign environments without explicit UTM tagging
+        orders = Order.objects.filter(business=business)
+
     total_revenue = sum(
         (Decimal(str(o.total_amount)) for o in orders), Decimal("0.00")
     )
@@ -52,18 +71,37 @@ def explain_campaign_performance(
 
     roas = (attributed_revenue / spend).quantize(Decimal("0.01")) if spend > 0 else Decimal("0.00")
 
+    # Customer Quality Context (AI-007): repeat buyers and fulfillment outcomes
+    campaign_customer_ids = set(orders.values_list("customer_id", flat=True))
+    repeat_customers = 0
+    if campaign_customer_ids:
+        for cid in campaign_customer_ids:
+            if cid and Order.objects.filter(business=business, customer_id=cid).count() > 1:
+                repeat_customers += 1
+    repeat_rate_pct = round((repeat_customers / len(campaign_customer_ids) * 100), 1) if campaign_customer_ids else 0.0
+
+    # Top Products Context
+    top_items = (
+        OrderItem.objects.filter(order__in=orders)
+        .values("product_name")
+        .annotate(units=Sum("quantity"))
+        .order_by("-units")[:3]
+    )
+    top_products = [f"{item['product_name']} ({item['units']} units)" for item in top_items]
+
     explanation = (
         f"Campaign '{campaign.name}' ({campaign.platform}) has spent {business.currency or 'BDT'} {spend} "
         f"against a budget of {budget}. It realized an estimated ROAS of {roas}x on "
-        f"{business.currency or 'BDT'} {attributed_revenue} of attributable gross revenue. "
-        f"Net realized revenue after deducting refunds is {business.currency or 'BDT'} {net_rev}."
+        f"{business.currency or 'BDT'} {attributed_revenue} of attributable gross revenue from {orders.count()} orders. "
+        f"Net realized revenue after deducting refunds is {business.currency or 'BDT'} {net_rev}. "
+        f"Acquired customer repeat purchase rate is {repeat_rate_pct}%."
     )
 
-    # Optimization suggestions based on ROAS and budget utilization
+    # Optimization suggestions based on ROAS, customer quality, and goal alignment
     suggestions = []
     if roas >= Decimal("2.50"):
         suggestions.append(
-            "Strong performance: Consider scaling budget by 15-20% while monitoring courier fulfillment rates."
+            "Strong performance: Exceeds target ROAS. Consider scaling budget by 15-20% while monitoring courier fulfillment rates."
         )
     elif roas < Decimal("1.00"):
         suggestions.append(
@@ -74,15 +112,35 @@ def explain_campaign_performance(
             "Moderate performance: Maintain current budget allocation and focus on improving product page conversion."
         )
 
+    if repeat_rate_pct < 10.0 and orders.count() > 5:
+        suggestions.append(
+            "Low repeat buyer retention: Introduce post-purchase automated re-engagement to improve acquired customer lifetime value."
+        )
+
+    # Record AI Audit Event (Feature 17)
+    from app.services.ai import record_ai_audit_event
+    record_ai_audit_event(
+        business=business,
+        conversation_type="MARKETING_ASSISTANT",
+        action_name="explain_campaign_performance",
+        prompt=f"Analyze campaign performance for {campaign.name}",
+        output_content=explanation,
+        context_reference={"spend": str(spend), "roas": str(roas), "attributed_orders": orders.count()},
+    )
+
     return {
         "campaign_id": campaign.id,
         "campaign_name": campaign.name,
         "platform": campaign.platform,
         "spend": str(spend),
         "budget": str(budget),
+        "attributed_orders_count": orders.count(),
         "attributed_revenue": str(attributed_revenue),
         "net_revenue": str(net_rev),
         "calculated_roas": str(roas),
+        "target_roas": "2.50",
+        "customer_repeat_rate_pct": str(repeat_rate_pct),
+        "top_products": top_products,
         "performance_summary": explanation,
         "optimization_suggestions": suggestions,
         "evaluated_at": timezone.now().isoformat(),

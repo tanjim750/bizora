@@ -46,3 +46,9 @@ class ConversationSummaryRequestSerializer(serializers.Serializer):
 
 class CallSummaryRequestSerializer(serializers.Serializer):
     call_id = serializers.IntegerField(required=True)
+
+
+class SupportResumeAiRequestSerializer(serializers.Serializer):
+    conversation_id = serializers.IntegerField(required=True)
+    agent_notes = serializers.CharField(max_length=2000, required=False, allow_blank=True, allow_null=True)
+

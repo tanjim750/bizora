@@ -34,17 +34,32 @@ def generate_suggested_reply(
     customer_ctx = assemble_customer_context(business, customer) if customer else {}
     order_ctx = assemble_order_context(business, order) if order else {}
 
+    # Retrieve thread messages if available
+    recent_msgs = conversation.message_set.order_by("-created_at")[:6]
+    messages_history = [
+        f"{m.sender_type or 'CUSTOMER'}: {m.content or ''}"
+        for m in reversed(list(recent_msgs))
+    ]
+
     support_context = {
         "business_name": business.name,
         "customer": customer_ctx,
         "order": order_ctx,
         "policies": policies,
         "conversation_subject": conversation.subject,
+        "recent_messages": messages_history,
     }
 
+    thread_block = ""
+    if messages_history:
+        thread_block = "Recent Conversation Thread:\n" + "\n".join(messages_history) + "\n\n"
+
+    # XML injection guardrail (SEC-006)
     prompt = (
         f"Generate a polite, policy-compliant customer support response for {business.name}.\n"
-        f"Context:\n{support_context}\n"
+        f"Context Data:\n{support_context}\n\n"
+        f"{thread_block}"
+        f"Customer Message Context:\n<untrusted_user_input>\n{conversation.subject or 'General Inquiry'}\n</untrusted_user_input>\n"
         f"Rule: Respect all refund, cancellation, and delivery policies strictly."
     )
 
@@ -63,10 +78,25 @@ def generate_suggested_reply(
         },
     )
 
+    reply_content = llm_output.get("content", fallback_text)
+
+    # Record AI Audit Event (Feature 17)
+    from app.services.ai import record_ai_audit_event
+    record_ai_audit_event(
+        business=business,
+        conversation_type="SUPPORT_ASSISTANT",
+        action_name="generate_suggested_reply",
+        prompt=prompt,
+        output_content=reply_content,
+        context_reference=support_context,
+        customer=customer,
+        support_conversation=conversation,
+    )
+
     return {
         "conversation_id": conversation.id,
         "customer_id": customer.id if customer else None,
-        "suggested_reply": llm_output.get("content", fallback_text),
+        "suggested_reply": reply_content,
         "intent": intent,
         "applied_policies": [p["title"] for p in policies],
         "order_referenced": order.order_number if order else None,
@@ -154,3 +184,36 @@ def generate_handover_summary(
         "summary": summary_text,
         "generated_at": timezone.now().isoformat(),
     }
+
+
+def resume_ai_handling(
+    business: Business,
+    conversation: Conversation,
+    agent_notes: str | None = None,
+) -> dict[str, Any]:
+    """
+    Feature 2: Human-to-AI Continuation.
+    Allows AI to resume handling where appropriate while retaining previous human notes
+    and conversation context.
+    """
+    now = timezone.now()
+    meta = conversation.source_metadata or {}
+    if agent_notes:
+        notes_list = meta.get("human_agent_notes", [])
+        notes_list.append({
+            "note": agent_notes,
+            "recorded_at": now.isoformat(),
+        })
+        meta["human_agent_notes"] = notes_list
+        conversation.source_metadata = meta
+
+    conversation.ai_handover_state = "ACTIVE_AI"
+    conversation.save(update_fields=["ai_handover_state", "source_metadata"])
+
+    return {
+        "conversation_id": conversation.id,
+        "ai_handover_state": "ACTIVE_AI",
+        "agent_notes_retained": agent_notes,
+        "resumed_at": now.isoformat(),
+    }
+

@@ -56,24 +56,30 @@ class P0RegressionTests(TestCase):
         from django.db import connection
 
         with connection.cursor() as cursor:
-            # Querying columns from the businesses table
-            cursor.execute("PRAGMA table_info(businesses);")
-            columns = [row[1] for row in cursor.fetchall()]
+            if connection.vendor == "sqlite":
+                cursor.execute("PRAGMA table_info(businesses);")
+                columns = [row[1] for row in cursor.fetchall()]
+            else:
+                cursor.execute(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = 'businesses';"
+                )
+                columns = [row[0] for row in cursor.fetchall()]
         self.assertIn("slug", columns)
-        # In the test runner's fresh in-memory database, 0001_initial creates slug,
-        # but we assert that the physical db.sqlite3 schema matches.
+
+        import os
         import sqlite3
 
-        disk_conn = sqlite3.connect("db.sqlite3")
-        disk_cursor = disk_conn.cursor()
-        disk_cursor.execute("PRAGMA table_info(businesses);")
-        disk_columns = [row[1] for row in disk_cursor.fetchall()]
-        disk_conn.close()
-        self.assertIn(
-            "slug",
-            disk_columns,
-            "Physical db.sqlite3 is missing 'slug' column due to unapplied migration drift",
-        )
+        if os.path.exists("db.sqlite3"):
+            disk_conn = sqlite3.connect("db.sqlite3")
+            disk_cursor = disk_conn.cursor()
+            disk_cursor.execute("PRAGMA table_info(businesses);")
+            disk_columns = [row[1] for row in disk_cursor.fetchall()]
+            disk_conn.close()
+            self.assertIn(
+                "slug",
+                disk_columns,
+                "Physical db.sqlite3 is missing 'slug' column due to unapplied migration drift",
+            )
 
     def test_sec_001_knowledge_embedding_lacks_business_foreign_key(self):
         """

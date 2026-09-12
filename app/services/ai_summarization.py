@@ -22,15 +22,19 @@ def summarize_support_conversation(
     messages = conversation.message_set.order_by("created_at")
     msg_count = messages.count()
 
-    # Extract sample customer intent from conversation subject or content
+    # Extract customer intent from conversation subject AND actual message contents (AI-017)
+    content_blob = " ".join((m.content or "") for m in messages).lower()
+    combined_text = f"{conversation.subject or ''} {content_blob}".lower()
+
     customer_intent = "ORDER_STATUS_INQUIRY"
-    subject_lower = (conversation.subject or "").lower()
-    if "refund" in subject_lower:
+    if any(k in combined_text for k in ["refund", "money back", "bkash return"]):
         customer_intent = "REFUND_REQUEST"
-    elif "cancel" in subject_lower:
+    elif any(k in combined_text for k in ["cancel", "stop order"]):
         customer_intent = "CANCELLATION_REQUEST"
-    elif "broken" in subject_lower or "defect" in subject_lower:
+    elif any(k in combined_text for k in ["broken", "defect", "damaged", "faulty"]):
         customer_intent = "PRODUCT_DEFECT_COMPLAINT"
+    elif any(k in combined_text for k in ["delay", "courier", "late", "where is", "tracking"]):
+        customer_intent = "DELIVERY_DELAY_INQUIRY"
 
     # Identify resolution
     resolution_status = "RESOLVED" if conversation.status in ["RESOLVED", "CLOSED"] else "PENDING_AGENT_ACTION"
@@ -42,11 +46,29 @@ def summarize_support_conversation(
         "total_messages": msg_count,
     }
 
-    summary_text = (
+    fallback_summary = (
         f"Conversation Summary: Customer engaged via {conversation.channel} regarding '{conversation.subject or 'General Inquiry'}'. "
         f"Intent classified as {customer_intent}. Thread contains {msg_count} messages. "
         f"Current resolution state is {resolution_status}."
     )
+
+    if hasattr(conversation.business, "execute_llm_with_timeout"):
+        prompt = (
+            f"Summarize this support conversation for {conversation.business.name}:\n"
+            f"Subject: {conversation.subject}\n"
+            f"Intent: {customer_intent}\n"
+            f"Thread Messages ({msg_count}):\n{content_blob[:800]}\n"
+            f"Resolution: {resolution_status}\n"
+            f"Provide a concise summary of the request, agent responses, and pending actions."
+        )
+        llm_out = conversation.business.execute_llm_with_timeout(
+            prompt=prompt,
+            timeout_seconds=15,
+            fallback_response={"content": fallback_summary},
+        )
+        summary_text = llm_out.get("content", fallback_summary)
+    else:
+        summary_text = fallback_summary
 
     # Store summary in conversation source metadata
     meta = conversation.source_metadata or {}
@@ -74,13 +96,24 @@ def summarize_call(
     """
     Feature 12: Call Summarization.
     Parses call metadata and transcript, determines call purpose, extracts outcome,
-    and updates CallTranscript.
+    and updates CallTranscript without destroying existing audio transcripts.
     """
-    # Sample purpose identification
-    purpose = "ORDER_CONFIRMATION" if call.direction == "OUTBOUND" else "CUSTOMER_SUPPORT_INQUIRY"
+    existing_transcript = CallTranscript.objects.filter(call=call).first()
+    transcript_text = existing_transcript.transcript if (existing_transcript and existing_transcript.transcript) else f"Call transcript for {call.direction} call {call.id}"
 
-    # Outcome evaluation
-    outcome = "CONFIRMED" if call.status == "COMPLETED" else "FOLLOW_UP_REQUIRED"
+    text_lower = transcript_text.lower()
+    if "confirm" in text_lower or (call.direction == "OUTBOUND" and call.status == "COMPLETED"):
+        purpose = "ORDER_CONFIRMATION"
+        outcome = "CONFIRMED"
+    elif "cancel" in text_lower:
+        purpose = "ORDER_CANCELLATION"
+        outcome = "CANCELLED"
+    elif any(w in text_lower for w in ["delay", "late", "support", "refund", "broken"]):
+        purpose = "CUSTOMER_SUPPORT_INQUIRY"
+        outcome = "FOLLOW_UP_REQUIRED"
+    else:
+        purpose = "ORDER_CONFIRMATION" if call.direction == "OUTBOUND" else "CUSTOMER_SUPPORT_INQUIRY"
+        outcome = "CONFIRMED" if call.status == "COMPLETED" else "FOLLOW_UP_REQUIRED"
 
     duration = call.duration_seconds or 0
     concerns = "No customer complaints recorded during call." if duration > 30 else "Short duration; possible unreached customer."
@@ -90,20 +123,20 @@ def summarize_call(
         f"Purpose: {purpose}. Duration: {duration}s. Outcome: {outcome}."
     )
 
-    # Persist or update CallTranscript (Feature 12)
-    transcript, _ = CallTranscript.objects.get_or_create(
-        call=call,
-        defaults={
-            "transcript": f"Automated transcript for call {call.id}",
-            "summary": summary_text,
-            "language": "en",
-            "provider": "BIZORA_AUDIO_AI",
-            "generated_at": timezone.now(),
-        },
-    )
-    if transcript.summary != summary_text:
-        transcript.summary = summary_text
-        transcript.save(update_fields=["summary"])
+    # Persist or update CallTranscript without overwriting real transcript text (AI-017)
+    if existing_transcript:
+        existing_transcript.summary = summary_text
+        existing_transcript.save(update_fields=["summary"])
+        transcript = existing_transcript
+    else:
+        transcript = CallTranscript.objects.create(
+            call=call,
+            transcript=transcript_text,
+            summary=summary_text,
+            language="en",
+            provider="BIZORA_AUDIO_AI",
+            generated_at=timezone.now(),
+        )
 
     return {
         "call_id": call.id,

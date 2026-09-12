@@ -79,6 +79,7 @@ from app.services.ai import (
     generate_grounded_recommendation,
     generate_handover_summary,
     generate_suggested_reply,
+    resume_ai_handling,
     summarize_call,
     summarize_support_conversation,
 )
@@ -268,6 +269,16 @@ class AiIntelligenceFeaturesTests(TestCase):
         messages = AiMessage.objects.filter(ai_conversation_id=result["conversation_id"])
         self.assertEqual(messages.count(), 2)  # USER + ASSISTANT
 
+        # Follow-up conversational turn (Feature 1: Follow-Up Context)
+        follow_up = ask_business_assistant(
+            business=self.business,
+            user_query="Can you explain more about Courier X?",
+            conversation_id=result["conversation_id"],
+        )
+        self.assertEqual(follow_up["conversation_id"], result["conversation_id"])
+        messages_after = AiMessage.objects.filter(ai_conversation_id=result["conversation_id"])
+        self.assertEqual(messages_after.count(), 4)
+
         # Verify DRF API Endpoint
         response = self.client.post(
             f"/api/v1/businesses/{self.business.id}/ai/assistant/query/",
@@ -312,6 +323,24 @@ class AiIntelligenceFeaturesTests(TestCase):
         self.assertEqual(handover_res["handover_state"], "HANDOVER_TO_HUMAN")
         self.assertIn("Handover Summary", handover_res["summary"])
 
+        # 4. Human-to-AI Continuation (Feature 2)
+        resume_res = resume_ai_handling(
+            business=self.business,
+            conversation=self.conversation,
+            agent_notes="Customer agreed to replacement shipment.",
+        )
+        self.assertEqual(resume_res["ai_handover_state"], "ACTIVE_AI")
+        self.conversation.refresh_from_db()
+        self.assertEqual(self.conversation.ai_handover_state, "ACTIVE_AI")
+
+        # Verify DRF API Endpoint for resume
+        resp = self.client.post(
+            f"/api/v1/businesses/{self.business.id}/ai/support/resume/",
+            {"conversation_id": self.conversation.id, "agent_notes": "Operator resumed AI mode."},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
     # --------------------------------------------------------------------------
     # FEATURE 3: Marketing Assistant
     # --------------------------------------------------------------------------
@@ -321,7 +350,31 @@ class AiIntelligenceFeaturesTests(TestCase):
         self.assertEqual(res["campaign_name"], self.campaign.name)
         self.assertIn("performance_summary", res)
         self.assertIn("optimization_suggestions", res)
+        self.assertIn("customer_repeat_rate_pct", res)
         self.assertTrue(len(res["optimization_suggestions"]) > 0)
+
+        # Scoped attribution test (Feature 3, AI-006): create Campaign B with its own order
+        campaign_b = Campaign.objects.create(
+            business=self.business,
+            name="Summer Sale 2026",
+            platform="GOOGLE",
+            budget=Decimal("30000.00"),
+            status="ACTIVE",
+            source_metadata={"utm_campaign": "summer_sale_2026"},
+        )
+        Order.objects.create(
+            business=self.business,
+            customer=self.customer,
+            order_number="ORD-2026-CAMP-B",
+            status="DELIVERED",
+            total_amount=Decimal("1500.00"),
+            currency="BDT",
+            source_metadata={"utm_campaign": "summer_sale_2026"},
+            ordered_at=self.now,
+        )
+        res_b = explain_campaign_performance(business=self.business, campaign=campaign_b)
+        self.assertEqual(res_b["attributed_orders_count"], 1)
+        self.assertEqual(res_b["attributed_revenue"], "1500.00")
 
         # Verify DRF API Endpoint
         response = self.client.post(
@@ -358,6 +411,7 @@ class AiIntelligenceFeaturesTests(TestCase):
         res = diagnose_business_issue(business=self.business, issue=issue)
         self.assertIn("diagnostic_summary", res)
         self.assertIn("impact_explanation", res)
+        self.assertIn("historical_context", res)
         self.assertTrue(len(res["contributing_factors"]) > 0)
         self.assertIn("Gazipur failure rate exceeded 10% threshold", res["supporting_evidence"])
 
@@ -571,7 +625,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # FEATURE 17: AI Audit
     # --------------------------------------------------------------------------
     def test_feature_17_ai_audit_message_and_event_logging(self):
-        """Feature 17: Audit trail of AI tokens, models, context snapshots, and approval notes."""
+        """Feature 17: Audit trail of AI tokens, models, context snapshots, and cross-service audit events."""
         result = ask_business_assistant(
             business=self.business,
             user_query="Audit check on sales",
@@ -581,6 +635,17 @@ class AiIntelligenceFeaturesTests(TestCase):
         self.assertEqual(msg.model_name, "gemini-1.5-pro")
         self.assertIsNotNone(msg.context_snapshot)
         self.assertGreater(msg.tokens_used, 0)
+
+        # Audit events from other AI services
+        generate_suggested_reply(business=self.business, conversation=self.conversation)
+        explain_campaign_performance(business=self.business, campaign=self.campaign)
+
+        conv_types = list(
+            AiConversation.objects.filter(business=self.business).values_list("conversation_type", flat=True)
+        )
+        self.assertIn("BUSINESS_ASSISTANT", conv_types)
+        self.assertIn("SUPPORT_ASSISTANT", conv_types)
+        self.assertIn("MARKETING_ASSISTANT", conv_types)
 
     # --------------------------------------------------------------------------
     # FEATURE 18: AI Guardrails

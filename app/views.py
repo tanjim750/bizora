@@ -28,6 +28,7 @@ from app.serializers.ai import (
     SupportEscalationRequestSerializer,
     SupportHandoverRequestSerializer,
     SupportReplyRequestSerializer,
+    SupportResumeAiRequestSerializer,
 )
 from app.services.actions import approve_action
 from app.services.ai import (
@@ -37,6 +38,7 @@ from app.services.ai import (
     explain_campaign_performance,
     generate_handover_summary,
     generate_suggested_reply,
+    resume_ai_handling,
     summarize_call,
     summarize_support_conversation,
 )
@@ -213,6 +215,35 @@ class SupportHandoverView(APIView):
             conversation=conversation,
         )
         return Response(result, status=status.HTTP_200_OK)
+
+
+class SupportResumeAiView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, business_id):
+        business = get_object_or_404(Business, pk=business_id)
+        user_business_id = getattr(request.user, "business_id", None)
+        if user_business_id is not None and business_id != user_business_id:
+            return Response(
+                {"error": "Cross-tenant access forbidden."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = SupportResumeAiRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation = get_object_or_404(
+            Conversation,
+            pk=serializer.validated_data["conversation_id"],
+            business=business,
+        )
+        result = resume_ai_handling(
+            business=business,
+            conversation=conversation,
+            agent_notes=serializer.validated_data.get("agent_notes"),
+        )
+        return Response(result, status=status.HTTP_200_OK)
+
 
 
 class MarketingAssistantView(APIView):

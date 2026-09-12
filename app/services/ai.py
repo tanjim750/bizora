@@ -54,6 +54,47 @@ def assemble_ai_context(business: Business, intent: str | None = None) -> dict:
     }
 
 
+def record_ai_audit_event(
+    business: Business,
+    conversation_type: str,
+    action_name: str,
+    prompt: str,
+    output_content: str,
+    context_reference: dict | None = None,
+    customer=None,
+    support_conversation=None,
+    model_name: str = "gemini-1.5-pro",
+    tokens_used: int = 150,
+):
+    """
+    Feature 17: AI Audit.
+    Unified audit logger recording interactions across Support, Marketing, and Diagnosis.
+    """
+    from app.models import AiConversation, AiMessage
+    now = timezone.now()
+    conv = AiConversation.objects.create(
+        business=business,
+        customer=customer,
+        support_conversation=support_conversation,
+        conversation_type=conversation_type,
+        status="COMPLETED",
+        title=f"{action_name}: {now.strftime('%Y-%m-%d %H:%M')}",
+        started_at=now,
+        ended_at=now,
+    )
+    msg = AiMessage.objects.create(
+        ai_conversation=conv,
+        role="ASSISTANT",
+        content=output_content,
+        model=model_name,
+        prompt_tokens=tokens_used // 2,
+        completion_tokens=tokens_used // 2,
+        context_reference=context_reference,
+        response_metadata={"action": action_name},
+    )
+    return conv, msg
+
+
 def generate_grounded_recommendation(
     business: Business,
     issue: BusinessIssue | None = None,
@@ -63,16 +104,56 @@ def generate_grounded_recommendation(
     """
     Invokes LLM with timeout wrapper, validates outputs, and creates a recommendation
     strictly grounded with AiRecommendationEvidence and a SUGGESTED AiAction requiring human approval.
+    Supports multi-domain recommendation types (Feature 13 & 14).
     """
     now = timezone.now()
     context = assemble_ai_context(business, intent)
 
-    prompt = f"Analyze business context and propose courier rebalancing: {context}"
+    rec_type = "COURIER_OPTIMIZATION"
+    action_type = "REASSIGN_COURIER"
+    target_type = "courier"
+    target_id = 1
+    action_payload = {"reassign_percentage": 50, "fallback_courier_id": 2}
+    title = "Rebalance Delivery Courier Allocations"
+    rationale = "Delivery failure rate exceeded threshold on primary courier."
+
+    if issue:
+        itype = (issue.issue_type or "").upper()
+        if "CAMPAIGN" in itype or "MARKETING" in itype or (issue.subject_entity_type == "campaign"):
+            rec_type = "MARKETING_OPTIMIZATION"
+            action_type = "PAUSE_CAMPAIGN"
+            target_type = "campaign"
+            target_id = issue.subject_entity_id or 1
+            action_payload = {"action": "adjust_budget", "adjustment_pct": -20}
+            title = f"Adjust Campaign Budget for {issue.title}"
+            rationale = f"Campaign performance flagged by issue {issue.id}."
+        elif "INVENTORY" in itype or "STOCK" in itype or (issue.subject_entity_type == "product"):
+            rec_type = "PRODUCT_STRATEGY"
+            action_type = "RESTOCK_PRODUCT"
+            target_type = "product"
+            target_id = issue.subject_entity_id or 1
+            action_payload = {"reorder_quantity": 100}
+            title = f"Replenish Inventory for {issue.title}"
+            rationale = f"Stock level alert flagged for product {target_id}."
+        elif "SUPPORT" in itype or (issue.subject_entity_type == "conversation"):
+            rec_type = "SUPPORT_IMPROVEMENT"
+            action_type = "CREATE_SUPPORT_TASK"
+            target_type = "conversation"
+            target_id = issue.subject_entity_id or 1
+            action_payload = {"priority": "URGENT"}
+            title = f"Escalate Support Tickets for {issue.title}"
+            rationale = f"Support threshold exceeded on issue {issue.id}."
+        else:
+            title = f"Address Operational Issue: {issue.title}"
+            target_type = issue.subject_entity_type or "courier"
+            target_id = issue.subject_entity_id or 1
+
+    prompt = f"Analyze business context and propose {rec_type.lower()}: {context}"
     llm_output = business.execute_llm_with_timeout(
         prompt=prompt,
         timeout_seconds=timeout_seconds,
         fallback_response={
-            "content": "Switch secondary courier to reduce failure rates",
+            "content": f"Execute action to address {title}",
             "confidence": "0.8500",
         },
     )
@@ -83,40 +164,45 @@ def generate_grounded_recommendation(
     recommendation = AiRecommendation.objects.create(
         business=business,
         business_issue=issue,
-        recommendation_type="COURIER_OPTIMIZATION",
-        title="Rebalance Delivery Courier Allocations",
-        description=llm_output.get(
-            "content", "Rebalance allocations based on regional performance"
-        ),
-        rationale="Delivery failure rate exceeded threshold on primary courier.",
+        recommendation_type=rec_type,
+        title=title,
+        description=llm_output.get("content", f"Execute action to address {title}"),
+        rationale=rationale,
         confidence=confidence,
         priority="HIGH",
         status="SUGGESTED",
-        suggested_action_type="REASSIGN_COURIER",
+        suggested_action_type=action_type,
         generated_at=now,
     )
 
-    # Strictly ground recommendation with evidence (COR-008)
-    first_fact = BusinessFact.objects.filter(business=business).first()
+    # Strictly ground recommendation with evidence (COR-008, Feature 14)
+    evidence_fact = None
+    if issue and hasattr(issue, "businessissueevidence_set"):
+        issue_ev = issue.businessissueevidence_set.filter(business_fact__isnull=False).first()
+        if issue_ev:
+            evidence_fact = issue_ev.business_fact
+    if not evidence_fact:
+        evidence_fact = BusinessFact.objects.filter(business=business).first()
+
     AiRecommendationEvidence.objects.create(
         business=business,
         ai_recommendation=recommendation,
         business_issue=issue,
-        business_fact=first_fact,
+        business_fact=evidence_fact,
         evidence_type="VERIFIED_FACT_GROUNDING",
-        description="Grounded on authoritative high failure rate metric and fact.",
+        description=f"Grounded on authoritative fact for {title}.",
         weight=Decimal("1.0000"),
     )
 
-    # Propose SUGGESTED AiAction requiring approval (SEC-004, SEC-005)
+    # Propose SUGGESTED AiAction requiring approval (SEC-004, SEC-005, Feature 15)
     action = AiAction.objects.create(
         business=business,
         ai_recommendation=recommendation,
-        action_type="REASSIGN_COURIER",
+        action_type=action_type,
         status="SUGGESTED",
-        target_entity_type="courier",
-        target_entity_id=1,
-        action_payload={"reassign_percentage": 50, "fallback_courier_id": 2},
+        target_entity_type=target_type,
+        target_entity_id=target_id,
+        action_payload=action_payload,
         is_simulated=True,
     )
 
@@ -144,5 +230,6 @@ from app.services.ai_support import (  # noqa: E402
     evaluate_escalation,
     generate_handover_summary,
     generate_suggested_reply,
+    resume_ai_handling,
 )
 

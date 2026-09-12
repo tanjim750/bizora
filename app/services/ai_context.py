@@ -35,19 +35,34 @@ def assemble_fact_context(
     entity_type: str | None = None,
     entity_id: int | None = None,
     limit: int = 10,
+    as_of: datetime.datetime | None = None,
 ) -> list[dict[str, Any]]:
     """
     Feature 5: Fact-Aware Context Retrieval.
     Retrieves active, verified, non-expired Business Facts for the business tenant.
     Filters out expired and invalidated facts via BusinessFactManager (COR-009).
+    Eagerly loads supporting evidence and allows time-aware as_of filtering.
     """
     qs = BusinessFact.objects.filter(business=business, status="VERIFIED")
+    if as_of:
+        from django.db.models import Q
+        qs = qs.filter(valid_from__lte=as_of).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=as_of))
+
     if entity_type and entity_id:
         # Filter metadata or statement if entity reference is provided
         qs = qs.filter(metadata__contains={entity_type: entity_id})
 
     facts = []
-    for fact in qs.order_by("-confidence", "-valid_from")[:limit]:
+    for fact in qs.prefetch_related("businessfactevidence_set").order_by("-confidence", "-valid_from")[:limit]:
+        evidence_list = [
+            {
+                "evidence_type": ev.evidence_type,
+                "description": ev.description,
+                "entity_type": ev.entity_type,
+                "entity_id": ev.entity_id,
+            }
+            for ev in fact.businessfactevidence_set.all()[:5]
+        ]
         facts.append(
             {
                 "id": fact.id,
@@ -56,6 +71,7 @@ def assemble_fact_context(
                 "confidence": str(fact.confidence),
                 "valid_from": fact.valid_from.isoformat() if fact.valid_from else None,
                 "metadata": fact.metadata or {},
+                "supporting_evidence": evidence_list,
             }
         )
     return facts
@@ -71,18 +87,56 @@ def assemble_graph_context(
     Feature 6: Graph-Aware Context Retrieval.
     Builds a directed multigraph from business graph edges and traverses relevant connected nodes
     using cycle-safe, depth-bounded traversal (safe_traverse).
+    Bounds edge retrieval to the local BFS neighborhood instead of loading the entire table.
     """
+    from django.db.models import Q
     from app.models import GraphEdge, GraphNode
 
     start_node_key = f"{start_entity_type.lower()}_{start_entity_id}"
-    edges = GraphEdge.objects.filter(business=business).select_related(
-        "source_node", "target_node"
-    )
+    
+    # Identify starting node if it exists
+    start_node = GraphNode.objects.filter(
+        business=business,
+        entity_type__iexact=start_entity_type,
+        entity_id=start_entity_id,
+    ).first()
+
+    # Bounded neighborhood retrieval using BFS expansion
+    current_node_ids = {start_node.id} if start_node else set()
+    visited_node_ids = set(current_node_ids)
+    collected_edges = []
+
+    if current_node_ids:
+        for _ in range(max_depth):
+            if not current_node_ids:
+                break
+            layer_edges = list(
+                GraphEdge.objects.filter(business=business)
+                .filter(Q(source_node_id__in=current_node_ids) | Q(target_node_id__in=current_node_ids))
+                .select_related("source_node", "target_node")[:100]
+            )
+            next_node_ids = set()
+            for edge in layer_edges:
+                collected_edges.append(edge)
+                if edge.source_node_id not in visited_node_ids:
+                    next_node_ids.add(edge.source_node_id)
+                    visited_node_ids.add(edge.source_node_id)
+                if edge.target_node_id not in visited_node_ids:
+                    next_node_ids.add(edge.target_node_id)
+                    visited_node_ids.add(edge.target_node_id)
+            current_node_ids = next_node_ids
+    else:
+        # Fallback if start_node not registered in GraphNode: fetch direct edges by label/string
+        collected_edges = list(
+            GraphEdge.objects.filter(business=business).select_related(
+                "source_node", "target_node"
+            )[:150]
+        )
 
     graph = create_business_graph()
     edge_descriptions = []
 
-    for edge in edges:
+    for edge in collected_edges:
         src = f"{edge.source_node.entity_type.lower()}_{edge.source_node.entity_id}"
         dst = f"{edge.target_node.entity_type.lower()}_{edge.target_node.entity_id}"
         graph.add_edge(src, dst, relationship=edge.relationship_type)
@@ -115,8 +169,11 @@ def assemble_memory_context(
 ) -> list[dict[str, Any]]:
     """
     Feature 7: Memory Retrieval.
-    Retrieves active policies, FAQs, and business guidelines from KnowledgeDocument.
+    Retrieves active policies, FAQs, business guidelines from KnowledgeDocument,
+    as well as historical decisions and approved recommendations.
     """
+    from app.models import AiAction, AiRecommendation
+
     if intent:
         docs = KnowledgeDocument.get_active_policies_for_intent(business, intent)
     else:
@@ -137,6 +194,36 @@ def assemble_memory_context(
                 "version": doc.version,
             }
         )
+
+    # Historical approved recommendations & decisions
+    approved_recs = AiRecommendation.objects.filter(
+        business=business, status__in=["APPROVED", "ACCEPTED", "EXECUTED"]
+    ).order_by("-generated_at")[:3]
+    for rec in approved_recs:
+        memory_items.append(
+            {
+                "id": rec.id,
+                "title": f"Approved Recommendation: {rec.title}",
+                "document_type": "APPROVED_RECOMMENDATION",
+                "content": f"{rec.description} (Action: {rec.suggested_action_type})",
+                "version": 1,
+            }
+        )
+
+    past_actions = AiAction.objects.filter(
+        business=business, status="EXECUTED"
+    ).order_by("-executed_at")[:3]
+    for act in past_actions:
+        memory_items.append(
+            {
+                "id": act.id,
+                "title": f"Executed Decision: {act.action_type}",
+                "document_type": "EXECUTED_ACTION",
+                "content": f"Action on {act.target_entity_type} {act.target_entity_id}: {act.action_payload}",
+                "version": 1,
+            }
+        )
+
     return memory_items
 
 
@@ -181,6 +268,14 @@ def assemble_customer_context(
         or "Customer"
     )
 
+    # Support history and delivery reliability (AI-015)
+    from app.models import Conversation
+    support_history = [
+        {"id": c.id, "subject": c.subject, "status": c.status, "channel": c.channel}
+        for c in Conversation.objects.filter(business=business, customer=customer).order_by("-started_at")[:3]
+    ]
+    cancellation_rate_pct = round((cancelled_orders / total_orders * 100), 1) if total_orders > 0 else 0.0
+
     return {
         "customer_id": customer.id,
         "name": name,
@@ -189,8 +284,10 @@ def assemble_customer_context(
         "total_orders": total_orders,
         "completed_orders": completed_orders,
         "cancelled_orders": cancelled_orders,
+        "cancellation_rate_pct": cancellation_rate_pct,
         "total_spend": str(total_spent),
         "recent_orders": recent_orders,
+        "recent_support_history": support_history,
     }
 
 
@@ -220,6 +317,21 @@ def assemble_product_context(
     ).aggregate(total_qty=Sum("quantity"))
     units_sold = qty_agg["total_qty"] or 0
 
+    # Downstream returns & cancellation findings (AI-016)
+    ret_agg = OrderItem.objects.filter(
+        product=product,
+        order__business=business,
+        order__status__in=["CANCELLED", "REFUNDED", "FAILED_DELIVERY"],
+    ).aggregate(ret_qty=Sum("quantity"))
+    units_returned = ret_agg["ret_qty"] or 0
+    return_rate_pct = round((units_returned / units_sold * 100), 1) if units_sold > 0 else 0.0
+
+    # Product knowledge docs
+    docs = KnowledgeDocument.objects.filter(
+        business=business, title__icontains=product.name
+    )[:2]
+    product_guides = [{"id": d.id, "title": d.title} for d in docs]
+
     return {
         "product_id": product.id,
         "name": product.name,
@@ -228,6 +340,9 @@ def assemble_product_context(
         "base_price": str(product.price) if product.price is not None else "0.00",
         "variants": variants,
         "units_sold": units_sold,
+        "units_returned": units_returned,
+        "return_rate_pct": return_rate_pct,
+        "product_guides": product_guides,
         "is_active": product.status == "ACTIVE",
     }
 
@@ -274,6 +389,21 @@ def assemble_order_context(
         for s in order.shipment_set.all()
     ]
 
+    # Associated conversations and calls (AI-016)
+    from app.models import Conversation
+    order_convs = list(
+        Conversation.objects.filter(
+            business=business,
+            customer_id=order.customer_id,
+            subject__icontains=order.order_number or "",
+        ).values("id", "subject", "status")[:3]
+    ) if order.order_number else []
+
+    attribution = {
+        "utm_campaign": (order.source_metadata or {}).get("utm_campaign"),
+        "channel": (order.source_metadata or {}).get("channel"),
+    }
+
     return {
         "order_id": order.id,
         "order_number": order.order_number,
@@ -285,6 +415,8 @@ def assemble_order_context(
         "items": items,
         "payments": payments,
         "shipments": shipments,
+        "associated_conversations": order_convs,
+        "attribution": attribution,
     }
 
 
