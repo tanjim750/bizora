@@ -240,6 +240,14 @@ def assemble_memory_context(
             }
         )
 
+    from app.models import BusinessGoal
+    for goal in BusinessGoal.objects.filter(business=business, status="ACTIVE")[:5]:
+        memory_items.append({
+            "id": goal.id, "title": f"Business Goal: {goal.name}",
+            "document_type": "BUSINESS_GOAL", "content": f"{goal.metric_key} target {goal.target_value}",
+            "version": 1,
+        })
+
     return memory_items
 
 

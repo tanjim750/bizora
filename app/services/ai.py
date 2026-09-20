@@ -84,6 +84,10 @@ def record_ai_audit_event(
         started_at=now,
         ended_at=now,
     )
+    AiMessage.objects.create(
+        ai_conversation=conv, role="SYSTEM", content=prompt,
+        model=model_name, response_metadata={"action": action_name, "input": True},
+    )
     import json
     safe_context = json.loads(json.dumps(context_reference or {}, default=str))
     msg = AiMessage.objects.create(

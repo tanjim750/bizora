@@ -88,6 +88,21 @@ class BusinessMembership(models.Model):
         db_table = "business_memberships"
 
 
+class BusinessGoal(models.Model):
+    business = models.ForeignKey("Business", models.CASCADE, related_name="goals")
+    name = models.CharField(max_length=255)
+    metric_key = models.CharField(max_length=100)
+    target_value = models.DecimalField(max_digits=24, decimal_places=6, null=True)
+    status = models.CharField(max_length=30, default="ACTIVE")
+    starts_at = models.DateTimeField(null=True)
+    ends_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "business_goals"
+        indexes = [models.Index(fields=["business", "status"], name="idx_bg_bs_status")]
+
+
 class IntegrationSource(models.Model):
     id = models.BigAutoField(primary_key=True)
     key = models.CharField(max_length=100, unique=True)

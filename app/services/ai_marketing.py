@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from app.models import Business, Campaign, Order
 from app.services.analytics import calculate_net_revenue, cap_campaign_attributions
+from app.services.ai_context import assemble_memory_context
 
 
 def explain_campaign_performance(
@@ -98,6 +99,7 @@ def explain_campaign_performance(
 
     # Optimization suggestions based on ROAS, customer quality, and goal alignment
     suggestions = []
+    goals = [item for item in assemble_memory_context(business) if item["document_type"] == "BUSINESS_GOAL"]
     if roas >= Decimal("2.50"):
         suggestions.append(
             "Strong performance: Exceeds target ROAS. Consider scaling budget by 15-20% while monitoring courier fulfillment rates."
@@ -115,6 +117,8 @@ def explain_campaign_performance(
         suggestions.append(
             "Low repeat buyer retention: Introduce post-purchase automated re-engagement to improve acquired customer lifetime value."
         )
+    if goals:
+        suggestions.append(f"Align this review with active goals: {', '.join(goal['title'] for goal in goals[:3])}.")
 
     # Record AI Audit Event (Feature 17)
     from app.services.ai import record_ai_audit_event
@@ -142,5 +146,6 @@ def explain_campaign_performance(
         "top_products": top_products,
         "performance_summary": explanation,
         "optimization_suggestions": suggestions,
+        "active_goals": goals,
         "evaluated_at": timezone.now().isoformat(),
     }
