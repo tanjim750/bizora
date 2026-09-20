@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 
 import pytz
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.test import TestCase
 from django.utils import timezone
@@ -242,37 +243,11 @@ class P1RegressionTests(TestCase):
             updated_at=now,
         )
 
-        # Creating evidence with ALL foreign keys NULL
-        evidence = AiRecommendationEvidence.objects.create(
-            ai_recommendation=rec,
-            evidence_type="UNGROUNDED",
-            business_fact=None,
-            business_issue=None,
-            metric_snapshot=None,
-            business_relationship=None,
-            graph_node=None,
-            graph_edge=None,
-            knowledge_chunk=None,
-            created_at=now,
-        )
-
-        # Desired invariant: At least one evidence FK must be non-null
-        has_fk = any(
-            [
-                evidence.business_fact_id,
-                evidence.business_issue_id,
-                evidence.metric_snapshot_id,
-                evidence.business_relationship_id,
-                evidence.graph_node_id,
-                evidence.graph_edge_id,
-                evidence.knowledge_chunk_id,
-            ]
-        )
-        self.assertTrue(
-            has_fk,
-            "COR-008 Defect: Ghost evidence permitted! AiRecommendationEvidence has all evidence FKs NULL",
-        )
-
+        with self.assertRaises(ValidationError):
+            AiRecommendationEvidence.objects.create(
+                ai_recommendation=rec,
+                evidence_type="UNGROUNDED",
+            )
     def test_cor_009_stale_and_invalid_facts_retrieved_without_filters(self):
         """
         COR-009: Fact retrieval query without freshness filters retrieves expired and invalidated facts.

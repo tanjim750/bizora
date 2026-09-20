@@ -326,11 +326,12 @@ class TestApproveAction(TestCase):
         with self.assertRaises(PermissionDenied):
             approve_action(self.action, anon, "note")
 
-    def test_approve_rejects_already_approved(self):
+    def test_approve_is_idempotent_for_same_user(self):
         from app.services.actions import approve_action
-        approve_action(self.action, self.user, "first")
-        with self.assertRaises(ValidationError):
-            approve_action(self.action, self.user, "second")
+        first = approve_action(self.action, self.user, "first")
+        second = approve_action(self.action, self.user, "second")
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(second.approval_note, "first")
 
     def test_approve_rejects_executing_status(self):
         from app.services.actions import approve_action
@@ -996,6 +997,7 @@ class TestGenerateGroundedRecommendation(TestCase):
         from app.services.ai import generate_grounded_recommendation
         self.fn = generate_grounded_recommendation
         self.biz = make_business()
+        make_business_fact(self.biz)
 
     def test_creates_recommendation_and_action(self):
         rec, action = self.fn(self.biz)
