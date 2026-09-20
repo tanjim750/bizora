@@ -19,6 +19,8 @@ def summarize_support_conversation(
     Condenses chat history, identifies customer intent, extracts order references,
     and classifies resolution status.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(conversation.business, conversation)
     messages = conversation.message_set.order_by("created_at")
     msg_count = messages.count()
 
@@ -99,6 +101,8 @@ def summarize_call(
     Parses call metadata and transcript, determines call purpose, extracts outcome,
     and updates CallTranscript without destroying existing audio transcripts.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(call.business, call)
     existing_transcript = CallTranscript.objects.filter(call=call).first()
     transcript_text = existing_transcript.transcript if (existing_transcript and existing_transcript.transcript) else f"Call transcript for {call.direction} call {call.id}"
 

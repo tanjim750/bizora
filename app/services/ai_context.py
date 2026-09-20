@@ -49,7 +49,7 @@ def assemble_fact_context(
         Q(valid_to__isnull=True) | Q(valid_to__gte=now),
     )
     if as_of:
-        qs = qs.filter(valid_from__lte=as_of).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=as_of))
+        qs = qs.filter(Q(valid_from__isnull=True) | Q(valid_from__lte=as_of)).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=as_of))
 
     if entity_type and entity_id:
         qs = qs.filter(subject_entity_type=entity_type, subject_entity_id=entity_id)
@@ -496,6 +496,8 @@ def assemble_full_ai_context(
     if customer:
         context["customer_context"] = assemble_customer_context(business, customer)
     if order:
+        if customer and order.customer_id != customer.id:
+            raise ValueError("Order and customer context do not refer to the same customer.")
         context["order_context"] = assemble_order_context(business, order)
     if product:
         context["product_context"] = assemble_product_context(business, product)

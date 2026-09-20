@@ -28,6 +28,8 @@ def generate_suggested_reply(
     Feature 2: Customer Support AI - Suggested Replies & Policy Awareness.
     Retrieves customer order history, active refund/delivery policies, and formats a policy-compliant draft reply.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, conversation, customer, order)
     if customer is None:
         customer = conversation.customer
 
@@ -115,6 +117,8 @@ def evaluate_escalation(
     Evaluates whether an inquiry should be escalated to a human agent based on keywords,
     high cancellation rates, or policy dispute signals.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, conversation)
     escalation_triggers = [
         "lawyer",
         "fraud",
@@ -162,6 +166,8 @@ def generate_handover_summary(
     Generates a concise handover summary so human agents understand key details,
     order context, and requested resolution without reading entire message logs.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, conversation)
     customer_name = (
         conversation.customer.display_name
         or f"{conversation.customer.first_name or ''} {conversation.customer.last_name or ''}".strip()
@@ -198,6 +204,8 @@ def resume_ai_handling(
     Allows AI to resume handling where appropriate while retaining previous human notes
     and conversation context.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, conversation)
     now = timezone.now()
     meta = conversation.source_metadata or {}
     if agent_notes:

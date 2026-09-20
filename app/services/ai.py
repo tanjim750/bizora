@@ -85,7 +85,7 @@ def record_ai_audit_event(
         ended_at=now,
     )
     AiMessage.objects.create(
-        ai_conversation=conv, role="SYSTEM", content=prompt,
+        ai_conversation=conv, role="USER", content=prompt,
         model=model_name, response_metadata={"action": action_name, "input": True},
     )
     import json

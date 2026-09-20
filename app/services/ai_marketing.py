@@ -24,6 +24,8 @@ def explain_campaign_performance(
     Feature 3: Marketing Assistant - Campaign Explanation & Cross-Domain Analysis.
     Combines ad spend, clicks, conversions with downstream order returns and delivery outcomes.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, campaign)
     spend_val = getattr(campaign, "spend", None)
     if spend_val is None and hasattr(campaign, "campaignmetric_set") and campaign.campaignmetric_set.exists():
         spend_val = sum((Decimal(str(m.spend or 0)) for m in campaign.campaignmetric_set.all()), Decimal("0.00"))

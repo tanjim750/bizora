@@ -23,6 +23,8 @@ def diagnose_business_issue(
     Explores issue evidence, traverses connected graph entities, identifies contributing factors,
     and produces a concise diagnostic overview.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, issue)
     if hasattr(issue, "businessissueevidence_set"):
         evidence_records = issue.businessissueevidence_set.select_related("business_fact", "metric_snapshot")
     elif hasattr(issue, "evidences"):

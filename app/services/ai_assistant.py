@@ -46,6 +46,8 @@ def ask_business_assistant(
     calls LLM via execute_llm_with_timeout, and returns an evidence-grounded answer.
     """
     now = timezone.now()
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, customer)
     resolved_intent = classify_user_intent(user_query, intent)
 
     # Retrieve or create conversation session
