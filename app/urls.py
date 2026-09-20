@@ -2,6 +2,10 @@ from django.urls import path
 
 from app.views import (
     AiActionApprovalView,
+    AiActionExecuteView,
+    AiActionListView,
+    AiActionRejectView,
+    AiRecommendationListView,
     BusinessAssistantChatView,
     BusinessDiagnosisView,
     BusinessIssueListView,
@@ -22,6 +26,10 @@ urlpatterns = [
         AiActionApprovalView.as_view(),
         name="action-approve",
     ),
+    path("actions/<int:pk>/reject/", AiActionRejectView.as_view(), name="action-reject"),
+    path("actions/<int:pk>/execute/", AiActionExecuteView.as_view(), name="action-execute"),
+    path("businesses/<int:business_id>/ai/recommendations/", AiRecommendationListView.as_view(), name="ai-recommendations"),
+    path("businesses/<int:business_id>/ai/actions/", AiActionListView.as_view(), name="ai-actions"),
     path(
         "businesses/<int:business_id>/issues/",
         BusinessIssueListView.as_view(),
@@ -73,4 +81,3 @@ urlpatterns = [
         name="ai-summarize-call",
     ),
 ]
-

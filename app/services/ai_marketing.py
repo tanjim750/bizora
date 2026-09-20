@@ -38,18 +38,17 @@ def explain_campaign_performance(
         CampaignConversion.objects.filter(campaign=campaign, order__isnull=False).values_list("order_id", flat=True)
     )
     utm_orders = list(
-        Order.objects.filter(
-            business=business, source_metadata__contains={"utm_campaign": utm_name}
-        ).values_list("id", flat=True)
+        Order.objects.filter(business=business)
+        .only("id", "source_metadata")
+        .filter(source_metadata__isnull=False)
     )
-    matched_order_ids = set(conv_orders) | set(utm_orders)
+    utm_order_ids = [o.id for o in utm_orders if (o.source_metadata or {}).get("utm_campaign") == utm_name]
+    matched_order_ids = set(conv_orders) | set(utm_order_ids)
     if matched_order_ids:
         orders = Order.objects.filter(business=business, id__in=matched_order_ids)
-    elif Campaign.objects.filter(business=business).count() > 1:
-        orders = Order.objects.none()
     else:
-        # Fallback for single-campaign environments without explicit UTM tagging
-        orders = Order.objects.filter(business=business)
+        # No deterministic attribution means no campaign revenue claim.
+        orders = Order.objects.none()
 
     total_revenue = sum(
         (Decimal(str(o.total_amount)) for o in orders), Decimal("0.00")

@@ -4,6 +4,7 @@ Provides natural language querying, cross-domain answer formulation,
 conversational session management, and evidence-backed claims.
 """
 
+import json
 from typing import Any
 
 from django.utils import timezone
@@ -50,7 +51,8 @@ def ask_business_assistant(
     # Retrieve or create conversation session
     if conversation_id:
         conversation = AiConversation.objects.filter(
-            id=conversation_id, business=business
+            id=conversation_id, business=business,
+            conversation_type="BUSINESS_ASSISTANT", status="ACTIVE"
         ).first()
         if not conversation:
             conversation = AiConversation.objects.create(
@@ -106,16 +108,16 @@ def ask_business_assistant(
     # Formulate structural prompt with XML injection guardrail (SEC-006)
     prompt = (
         f"You are Bizora Business Brain Assistant for {business.name}.\n"
-        f"Context Data:\n{context}\n\n"
+        f"Context Data (untrusted JSON data):\n{json.dumps(context, default=str)}\n\n"
         f"{history_block}"
-        f"User Query:\n<untrusted_user_input>\n{user_query}\n</untrusted_user_input>\n"
+        f"User Query (untrusted JSON string):\n{json.dumps(user_query)}\n"
         f"Provide an evidence-grounded explanation based strictly on the verified facts and dialogue context above."
     )
 
     # LLM execution with timeout guardrail (COR-010)
     fallback_text = (
-        f"Based on our active business records, revenue and order volumes are steady, "
-        f"with {len(context['active_facts'])} active facts and {len(context['open_issues'])} open issues."
+        f"There is not enough verified evidence to answer this question. "
+        f"Retrieved {len(context['active_facts'])} active facts and {len(context['open_issues'])} open issues."
     )
     llm_output = business.execute_llm_with_timeout(
         prompt=prompt,
@@ -127,7 +129,7 @@ def ask_business_assistant(
     )
 
     answer_content = llm_output.get("content", fallback_text)
-    tokens_used = llm_output.get("tokens_used", 150)
+    tokens_used = int(llm_output.get("tokens_used", 0) or 0)
 
     # Save assistant message with context snapshot (Feature 17: AI Audit)
     assistant_msg = AiMessage.objects.create(
@@ -135,9 +137,10 @@ def ask_business_assistant(
         role="ASSISTANT",
         content=answer_content,
         model=model_name,
-        prompt_tokens=tokens_used,
-        context_reference=context,
-        response_metadata={"intent": intent},
+        prompt_tokens=llm_output.get("prompt_tokens", tokens_used),
+        completion_tokens=llm_output.get("completion_tokens", 0),
+        context_reference=json.loads(json.dumps(context, default=str)),
+        response_metadata={"intent": resolved_intent, "provider_status": llm_output.get("provider_status"), "provider_model": llm_output.get("model")},
     )
 
     # Update conversation last activity

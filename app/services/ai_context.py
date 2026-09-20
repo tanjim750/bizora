@@ -15,7 +15,7 @@ import datetime
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from app.models import (
@@ -43,14 +43,16 @@ def assemble_fact_context(
     Filters out expired and invalidated facts via BusinessFactManager (COR-009).
     Eagerly loads supporting evidence and allows time-aware as_of filtering.
     """
-    qs = BusinessFact.objects.filter(business=business, status="VERIFIED")
+    now = as_of or timezone.now()
+    qs = BusinessFact.objects.active_for_context(business).filter(
+        Q(valid_from__isnull=True) | Q(valid_from__lte=now),
+        Q(valid_to__isnull=True) | Q(valid_to__gte=now),
+    )
     if as_of:
-        from django.db.models import Q
         qs = qs.filter(valid_from__lte=as_of).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=as_of))
 
     if entity_type and entity_id:
-        # Filter metadata or statement if entity reference is provided
-        qs = qs.filter(metadata__contains={entity_type: entity_id})
+        qs = qs.filter(subject_entity_type=entity_type, subject_entity_id=entity_id)
 
     facts = []
     for fact in qs.prefetch_related("businessfactevidence_set").order_by("-confidence", "-valid_from")[:limit]:
@@ -89,7 +91,7 @@ def assemble_graph_context(
     using cycle-safe, depth-bounded traversal (safe_traverse).
     Bounds edge retrieval to the local BFS neighborhood instead of loading the entire table.
     """
-    from django.db.models import Q
+    now = timezone.now()
     from app.models import GraphEdge, GraphNode
 
     start_node_key = f"{start_entity_type.lower()}_{start_entity_id}"
@@ -111,7 +113,9 @@ def assemble_graph_context(
             if not current_node_ids:
                 break
             layer_edges = list(
-                GraphEdge.objects.filter(business=business)
+            GraphEdge.objects.filter(business=business)
+            .filter(Q(valid_from__isnull=True) | Q(valid_from__lte=now))
+            .filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now))
                 .filter(Q(source_node_id__in=current_node_ids) | Q(target_node_id__in=current_node_ids))
                 .select_related("source_node", "target_node")[:100]
             )
@@ -127,19 +131,18 @@ def assemble_graph_context(
             current_node_ids = next_node_ids
     else:
         # Fallback if start_node not registered in GraphNode: fetch direct edges by label/string
-        collected_edges = list(
-            GraphEdge.objects.filter(business=business).select_related(
-                "source_node", "target_node"
-            )[:150]
-        )
+        collected_edges = []
 
     graph = create_business_graph()
     edge_descriptions = []
 
     for edge in collected_edges:
+        if edge.source_node.business_id != business.id or edge.target_node.business_id != business.id:
+            continue
         src = f"{edge.source_node.entity_type.lower()}_{edge.source_node.entity_id}"
         dst = f"{edge.target_node.entity_type.lower()}_{edge.target_node.entity_id}"
         graph.add_edge(src, dst, relationship=edge.relationship_type)
+        graph.add_edge(dst, src, relationship=f"INCOMING_{edge.relationship_type}")
         if src == start_node_key or dst == start_node_key:
             edge_descriptions.append(
                 {
@@ -192,8 +195,21 @@ def assemble_memory_context(
                 "document_type": doc.document_type,
                 "content": doc.content,
                 "version": doc.version,
+                "source_reference": doc.knowledge_source.source_reference,
             }
         )
+        # Prefer bounded, searchable chunks when they are available. This is
+        # deterministic fallback retrieval until a vector index is configured.
+        terms = [term for term in (intent or "").replace("_", " ").lower().split() if len(term) > 2]
+        chunks = doc.knowledgechunk_set.all()
+        if terms:
+            chunks = [chunk for chunk in chunks if any(term in chunk.content.lower() for term in terms)]
+        for chunk in list(chunks)[:3]:
+            memory_items.append({
+                "id": chunk.id, "title": doc.title, "document_type": doc.document_type,
+                "content": chunk.content, "version": doc.version,
+                "source_reference": doc.knowledge_source.source_reference,
+            })
 
     # Historical approved recommendations & decisions
     approved_recs = AiRecommendation.objects.filter(
@@ -235,6 +251,8 @@ def assemble_customer_context(
     Feature 8: Customer-Aware AI.
     Assembles customer profile, order history, lifetime value, and return patterns.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, customer)
     orders = Order.objects.filter(business=business, customer=customer).order_by(
         "-created_at"
     )
@@ -270,6 +288,7 @@ def assemble_customer_context(
 
     # Support history and delivery reliability (AI-015)
     from app.models import Conversation
+    from app.models import Call, Payment, Shipment
     support_history = [
         {"id": c.id, "subject": c.subject, "status": c.status, "channel": c.channel}
         for c in Conversation.objects.filter(business=business, customer=customer).order_by("-started_at")[:3]
@@ -285,9 +304,12 @@ def assemble_customer_context(
         "completed_orders": completed_orders,
         "cancelled_orders": cancelled_orders,
         "cancellation_rate_pct": cancellation_rate_pct,
-        "total_spend": str(total_spent),
+        "total_spend": str(total_spent.quantize(Decimal("0.01"))),
         "recent_orders": recent_orders,
         "recent_support_history": support_history,
+        "recent_calls": list(Call.objects.filter(business=business, customer=customer).order_by("-started_at").values("id", "direction", "status")[:3]),
+        "payments": list(Payment.objects.filter(business=business, customer=customer).order_by("-created_at").values("id", "amount", "status")[:5]),
+        "shipments": list(Shipment.objects.filter(business=business, customer=customer).order_by("-created_at").values("id", "provider", "status")[:5]),
     }
 
 
@@ -299,6 +321,8 @@ def assemble_product_context(
     Feature 9: Product-Aware AI.
     Assembles canonical product attributes, variants, sales volume, and return/cancellation findings.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, product)
     variants = [
         {
             "id": v.id,
@@ -309,7 +333,7 @@ def assemble_product_context(
         }
         for v in product.productvariant_set.all()[:5]
     ]
-    from app.models import OrderItem
+    from app.models import OrderItem, CampaignConversion, BusinessIssue
 
     # DB-side aggregation — avoids loading all OrderItems into Python memory
     qty_agg = OrderItem.objects.filter(
@@ -331,6 +355,9 @@ def assemble_product_context(
         business=business, title__icontains=product.name
     )[:2]
     product_guides = [{"id": d.id, "title": d.title} for d in docs]
+    product_issues = list(BusinessIssue.objects.filter(
+        business=business, subject_entity_type="product", subject_entity_id=product.id
+    ).values("id", "issue_type", "title", "severity")[:5])
 
     return {
         "product_id": product.id,
@@ -343,6 +370,10 @@ def assemble_product_context(
         "units_returned": units_returned,
         "return_rate_pct": return_rate_pct,
         "product_guides": product_guides,
+        "product_issues": product_issues,
+        "campaign_conversions": list(CampaignConversion.objects.filter(
+            order__orderitem__product=product, campaign__business=business
+        ).values("campaign_id", "conversion_type", "conversion_value")[:5]),
         "is_active": product.status == "ACTIVE",
     }
 
@@ -355,6 +386,10 @@ def assemble_order_context(
     Feature 10: Order-Aware AI.
     Assembles order items, payments, shipment status, and tracking context.
     """
+    from app.services.authorization import ensure_same_business
+    ensure_same_business(business, order)
+    if order.customer_id and order.customer.business_id != business.id:
+        raise ValueError("Order customer belongs to another business.")
     items = [
         {
             "product_name": item.product_name,
@@ -390,7 +425,7 @@ def assemble_order_context(
     ]
 
     # Associated conversations and calls (AI-016)
-    from app.models import Conversation
+    from app.models import Conversation, Call, Refund, OrderStatusHistory
     order_convs = list(
         Conversation.objects.filter(
             business=business,
@@ -416,6 +451,9 @@ def assemble_order_context(
         "payments": payments,
         "shipments": shipments,
         "associated_conversations": order_convs,
+        "calls": list(Call.objects.filter(business=business, order=order).values("id", "direction", "status")[:3]),
+        "refunds": list(Refund.objects.filter(order=order).values("id", "amount", "status", "reason")[:5]),
+        "status_history": list(OrderStatusHistory.objects.filter(order=order).order_by("changed_at").values("from_status", "to_status", "changed_at")[:10]),
         "attribution": attribution,
     }
 

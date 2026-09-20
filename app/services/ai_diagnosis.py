@@ -5,6 +5,7 @@ explores root context across graph paths and metrics,
 and identifies contributing factors without assuming causality.
 """
 
+import json
 from typing import Any
 
 from django.utils import timezone
@@ -72,29 +73,25 @@ def diagnose_business_issue(
     # Diagnostic synthesis
     symptom = f"Issue: {issue.title} (Type: {issue.issue_type}, Severity: {issue.severity})"
     impact_explanation = (
-        f"This issue directly impacts customer fulfillment and realized revenue. "
-        f"Unresolved {issue.issue_type} leads to higher return rates, elevated courier penalties, and customer churn."
+        "Impact is not established by the available evidence."
+        if not evidence_descriptions
+        else f"Potential impact is described by the attached evidence for {issue.issue_type}; causation is not established."
     )
-
-    contributing_factors = [
-        f"Fulfillment bottlenecks detected on {issue.subject_entity_type or 'courier'} ID {issue.subject_entity_id or 'general'}.",
-        f"Disproportionate regional failures observed across {len(graph_context.get('traversed_nodes', []))} connected entities.",
-    ]
+    contributing_factors = evidence_descriptions[:5] or ["No verified contributing factor was attached to this issue."]
 
     fallback_summary = (
-        f"Diagnosis for '{issue.title}': The root operational data indicates elevated failure rates "
-        f"concentrated within specific fulfillment channels. While customer demand remains active, "
-        f"downstream courier delivery bottlenecks reduce net realized business revenue."
+        f"Diagnosis for '{issue.title}': verified evidence is insufficient for a causal conclusion. "
+        f"The issue remains {issue.status.lower()} and requires review of the attached evidence."
     )
 
     # Dynamic LLM Diagnostic Synthesis (AI-009)
     prompt = (
         f"You are Bizora Business Brain Diagnostic Engine for {business.name}.\n"
         f"Active Issue: {issue.title} (Type: {issue.issue_type}, Severity: {issue.severity})\n"
-        f"Description: {issue.description}\n"
-        f"Supporting Evidence: {evidence_descriptions}\n"
-        f"Graph Connections: {graph_context.get('traversed_nodes', [])}\n"
-        f"Historical Context: {historical_context}\n\n"
+        f"Description (untrusted): {json.dumps(issue.description)}\n"
+        f"Supporting Evidence (untrusted JSON): {json.dumps(evidence_descriptions)}\n"
+        f"Graph Connections (untrusted JSON): {json.dumps(graph_context.get('traversed_nodes', []))}\n"
+        f"Historical Context (untrusted JSON): {json.dumps(historical_context, default=str)}\n\n"
         f"Task: Provide a concise diagnostic summary explaining the root-cause operational pattern, "
         f"its revenue impact, and contributing factors without assuming unsupported causation."
     )

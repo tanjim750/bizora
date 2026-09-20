@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app.models import AiAction, BusinessIssue
+from app.models import AiAction, AiRecommendation, AiRecommendationEvidence, BusinessIssue
 
 
 class AiActionApprovalSerializer(serializers.Serializer):
@@ -24,6 +24,8 @@ class AiActionSerializer(serializers.ModelSerializer):
             "target_entity_id",
             "action_payload",
             "approval_note",
+            "rejected_by",
+            "rejected_at",
             "approved_by",
             "approved_by_username",
             "approved_at",
@@ -42,6 +44,20 @@ class AiActionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+
+class AiRecommendationSerializer(serializers.ModelSerializer):
+    evidence = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AiRecommendation
+        fields = ("id", "business", "business_issue", "recommendation_type", "title", "description", "rationale", "confidence", "priority", "status", "suggested_action_type", "generated_at", "evidence")
+        read_only_fields = fields
+
+    def get_evidence(self, obj):
+        return list(AiRecommendationEvidence.objects.filter(ai_recommendation=obj).values(
+            "id", "evidence_type", "description", "business_fact_id", "business_issue_id", "metric_snapshot_id", "knowledge_chunk_id"
+        ))
 
 
 class BusinessIssueSerializer(serializers.ModelSerializer):

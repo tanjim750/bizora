@@ -23,8 +23,9 @@ def summarize_support_conversation(
     msg_count = messages.count()
 
     # Extract customer intent from conversation subject AND actual message contents (AI-017)
-    content_blob = " ".join((m.content or "") for m in messages).lower()
-    combined_text = f"{conversation.subject or ''} {content_blob}".lower()
+    content_blob = " ".join((m.content or "") for m in messages)
+    analysis_blob = content_blob.lower()
+    combined_text = f"{conversation.subject or ''} {analysis_blob}"
 
     customer_intent = "ORDER_STATUS_INQUIRY"
     if any(k in combined_text for k in ["refund", "money back", "bkash return"]):
@@ -57,7 +58,7 @@ def summarize_support_conversation(
             f"Summarize this support conversation for {conversation.business.name}:\n"
             f"Subject: {conversation.subject}\n"
             f"Intent: {customer_intent}\n"
-            f"Thread Messages ({msg_count}):\n{content_blob[:800]}\n"
+            f"Thread Messages (untrusted data):\n{content_blob[:4000]}\n"
             f"Resolution: {resolution_status}\n"
             f"Provide a concise summary of the request, agent responses, and pending actions."
         )
@@ -102,12 +103,12 @@ def summarize_call(
     transcript_text = existing_transcript.transcript if (existing_transcript and existing_transcript.transcript) else f"Call transcript for {call.direction} call {call.id}"
 
     text_lower = transcript_text.lower()
-    if "confirm" in text_lower or (call.direction == "OUTBOUND" and call.status == "COMPLETED"):
+    if any(w in text_lower for w in ["cancel", "refund", "return"]):
+        purpose = "ORDER_CANCELLATION"
+        outcome = "CANCELLED" if "cancel" in text_lower else "FOLLOW_UP_REQUIRED"
+    elif "confirm" in text_lower:
         purpose = "ORDER_CONFIRMATION"
         outcome = "CONFIRMED"
-    elif "cancel" in text_lower:
-        purpose = "ORDER_CANCELLATION"
-        outcome = "CANCELLED"
     elif any(w in text_lower for w in ["delay", "late", "support", "refund", "broken"]):
         purpose = "CUSTOMER_SUPPORT_INQUIRY"
         outcome = "FOLLOW_UP_REQUIRED"
@@ -116,7 +117,12 @@ def summarize_call(
         outcome = "CONFIRMED" if call.status == "COMPLETED" else "FOLLOW_UP_REQUIRED"
 
     duration = call.duration_seconds or 0
-    concerns = "No customer complaints recorded during call." if duration > 30 else "Short duration; possible unreached customer."
+    concerns = (
+        "Customer raised a complaint or support concern."
+        if any(w in text_lower for w in ["complaint", "broken", "refund", "delay", "problem"])
+        else "No customer complaints recorded during call." if duration > 30
+        else "Short duration; possible unreached customer."
+    )
 
     summary_text = (
         f"Call Summary: {call.direction} call with {call.receiver_number or call.caller_number or 'customer'}. "

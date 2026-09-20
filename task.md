@@ -112,3 +112,19 @@ Scope: `docs/implementations/features/ai-intelligence.md`, `app/services/ai*.py`
 4. Repair fact/graph/memory retrieval validity, published policy handling, vector/chunk search, and cross-domain entity relations.
 5. Complete the action state machine with atomic/idempotent transitions, rejection/execution APIs, provider result handling, and audit events.
 6. Replace hard-coded diagnosis/recommendation/call logic with evidence-derived outputs and expand regression tests around the confirmed probes.
+
+## Repair pass status (2026-09-20)
+
+Implemented in the current repair commit:
+
+- Persisted `BusinessMembership` authorization with fail-closed business-scoped API access, plus service-layer tenant checks for customer/product/order/recommendation inputs.
+- Removed automatic creation of fabricated verified facts; recommendation generation now requires an issue or active verified fact and runs atomically.
+- Added configured internal LLM gateway support with bounded urllib timeout, response validation, provider status, and honest no-provider fallback.
+- Made fact retrieval status/time aware, removed the PostgreSQL-only entity lookup, accepted published policies, added bounded chunk retrieval and source references.
+- Added graph edge validity checks and breadth-first traversal; graph context now preserves both relationship directions.
+- Added customer calls/payments/shipments, product issue/campaign context, and order refunds/calls/status history; rejected mismatched tenant entities and customer/order pairs.
+- Reworked call outcome/concern precedence, diagnosis fallback language, assistant fallback claims, and structured JSON prompt boundaries.
+- Added atomic action approval/rejection/execution behavior, idempotent same-user approval, explicit rejection and execution endpoints, provider failure parsing, simulation/provider guards, and lifecycle audit records.
+- Added rejection fields and migration `app/migrations/0004_aiaction_rejected_at_aiaction_rejected_by_and_more.py`.
+
+Fresh validation: all 18 AI feature tests pass; Django system checks, migration drift checks, Python compilation, and `git diff --check` pass. The historical regression suite still contains assertions that deliberately expect the previously audited defects (for example, null evidence saving and duplicate approval raising), so those tests need to be rewritten to assert the new secure contract. Remaining product-level work is provider deployment/configuration, vector similarity ranking, explicit business goals/brand-tone models, and provider-backed execution adapters; the code now fails closed where those authoritative inputs are unavailable.

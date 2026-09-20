@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied, ValidationError
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -16,6 +17,7 @@ from app.models import (
 from app.serializers import (
     AiActionApprovalSerializer,
     AiActionSerializer,
+    AiRecommendationSerializer,
     BusinessIssueSerializer,
     MessageSerializer,
 )
@@ -30,7 +32,8 @@ from app.serializers.ai import (
     SupportReplyRequestSerializer,
     SupportResumeAiRequestSerializer,
 )
-from app.services.actions import approve_action
+from app.services.actions import approve_action, execute_action, reject_action
+from app.services.authorization import require_business_access
 from app.services.ai import (
     ask_business_assistant,
     diagnose_business_issue,
@@ -42,6 +45,15 @@ from app.services.ai import (
     summarize_call,
     summarize_support_conversation,
 )
+
+
+class BusinessScopedAPIView(APIView):
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        business_id = kwargs.get("business_id")
+        if business_id is not None:
+            business = get_object_or_404(Business, pk=business_id)
+            require_business_access(request.user, business)
 
 
 class MessageView(APIView):
@@ -58,31 +70,79 @@ class AiActionApprovalView(APIView):
     def post(self, request, pk):
         action = get_object_or_404(AiAction, pk=pk)
 
-        # Tenant isolation check if user has business context
-        user_business_id = getattr(request.user, "business_id", None)
-        if user_business_id is not None and action.business_id != user_business_id:
-            return Response(
-                {
-                    "error": "You do not have permission to approve actions for another business."
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        try:
+            require_business_access(request.user, action.business, roles={"OWNER", "ADMIN", "OPERATOR"})
+        except PermissionDenied:
+            return Response({"error": "Business access required."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = AiActionApprovalSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        approved_action = approve_action(
-            action=action,
-            user=request.user,
-            approval_note=serializer.validated_data["approval_note"],
-        )
+        try:
+            approved_action = approve_action(
+                action=action,
+                user=request.user,
+                approval_note=serializer.validated_data["approval_note"],
+            )
+        except ValidationError as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_409_CONFLICT)
         return Response(
             AiActionSerializer(approved_action).data, status=status.HTTP_200_OK
         )
 
 
-class BusinessIssueListView(APIView):
+class AiActionRejectView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, pk):
+        action = get_object_or_404(AiAction, pk=pk)
+        try:
+            require_business_access(request.user, action.business, roles={"OWNER", "ADMIN", "OPERATOR"})
+            from app.serializers.action import AiActionApprovalSerializer
+            serializer = AiActionApprovalSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            rejected = reject_action(action, request.user, serializer.validated_data["approval_note"])
+        except PermissionDenied:
+            return Response({"error": "Business access required."}, status=status.HTTP_403_FORBIDDEN)
+        except ValidationError as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(AiActionSerializer(rejected).data, status=status.HTTP_200_OK)
+
+
+class AiActionExecuteView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, pk):
+        action = get_object_or_404(AiAction, pk=pk)
+        try:
+            require_business_access(request.user, action.business, roles={"OWNER", "ADMIN", "OPERATOR"})
+            executed = execute_action(action)
+        except PermissionDenied:
+            return Response({"error": "Business operator access required."}, status=status.HTTP_403_FORBIDDEN)
+        except ValidationError as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(AiActionSerializer(executed).data, status=status.HTTP_200_OK)
+
+
+class AiRecommendationListView(BusinessScopedAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, business_id):
+        from app.models import AiRecommendation
+        rows = AiRecommendation.objects.filter(business_id=business_id)
+        return Response(AiRecommendationSerializer(rows, many=True).data)
+
+
+class AiActionListView(BusinessScopedAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, business_id):
+        rows = AiAction.objects.filter(business_id=business_id).order_by("-created_at")
+        return Response(AiActionSerializer(rows, many=True).data)
+
+
+class BusinessIssueListView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, business_id):
@@ -100,7 +160,7 @@ class BusinessIssueListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class BusinessAssistantChatView(APIView):
+class BusinessAssistantChatView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -127,7 +187,7 @@ class BusinessAssistantChatView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class SupportReplyView(APIView):
+class SupportReplyView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -150,7 +210,8 @@ class SupportReplyView(APIView):
         order = None
         if serializer.validated_data.get("order_id"):
             order = Order.objects.filter(
-                pk=serializer.validated_data["order_id"], business=business
+                pk=serializer.validated_data["order_id"], business=business,
+                customer_id=conversation.customer_id,
             ).first()
 
         result = generate_suggested_reply(
@@ -162,7 +223,7 @@ class SupportReplyView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class SupportEscalationView(APIView):
+class SupportEscalationView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -190,7 +251,7 @@ class SupportEscalationView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class SupportHandoverView(APIView):
+class SupportHandoverView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -217,7 +278,7 @@ class SupportHandoverView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class SupportResumeAiView(APIView):
+class SupportResumeAiView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -246,7 +307,7 @@ class SupportResumeAiView(APIView):
 
 
 
-class MarketingAssistantView(APIView):
+class MarketingAssistantView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -272,7 +333,7 @@ class MarketingAssistantView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class BusinessDiagnosisView(APIView):
+class BusinessDiagnosisView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -296,7 +357,7 @@ class BusinessDiagnosisView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class ConversationSummaryView(APIView):
+class ConversationSummaryView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -320,7 +381,7 @@ class ConversationSummaryView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class CallSummaryView(APIView):
+class CallSummaryView(BusinessScopedAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, business_id):
@@ -340,4 +401,3 @@ class CallSummaryView(APIView):
         )
         result = summarize_call(call=call)
         return Response(result, status=status.HTTP_200_OK)
-

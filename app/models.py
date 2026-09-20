@@ -46,13 +46,46 @@ class Business(models.Model):
         Executes an LLM inference call with bounded socket/HTTP timeout and graceful fallback
         to protect background workers from hanging indefinitely.
         """
+        # Keep the provider boundary in one place. Deployments can point this at
+        # an internal model gateway without adding a provider SDK to the domain.
+        import json
+        import os
+        import urllib.request
+
+        endpoint = os.environ.get("BIZORA_LLM_URL")
+        if not endpoint:
+            return {**(fallback_response or {"content": "No AI provider is configured."}),
+                    "provider_status": "unavailable", "model": "fallback"}
         try:
-            return fallback_response or {"content": "Fallback response: model service unavailable"}
-        except Exception as exc:  # noqa: BLE001
-            return fallback_response or {"error": f"LLM execution timed out after {timeout_seconds}s", "exception": str(exc)}
+            request = urllib.request.Request(
+                endpoint,
+                data=json.dumps({"prompt": prompt, "business_id": self.id}).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(request, timeout=max(1, timeout_seconds)) as response:
+                payload = json.loads(response.read().decode())
+            if not isinstance(payload, dict) or not isinstance(payload.get("content"), str):
+                raise ValueError("LLM gateway returned an invalid response")
+            return payload | {"provider_status": "ok"}
+        except Exception as exc:  # noqa: BLE001 - provider failure must not crash a request
+            return {**(fallback_response or {"content": "AI provider unavailable; no conclusion is available."}),
+                    "provider_status": "error", "provider_error": str(exc), "model": "fallback"}
 
     class Meta:
         db_table = 'businesses'
+
+
+class BusinessMembership(models.Model):
+    business = models.ForeignKey("Business", models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name="business_memberships")
+    role = models.CharField(max_length=30, default="MEMBER")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["business", "user"], name="uniq_business_membership")]
+        db_table = "business_memberships"
 
 
 class IntegrationSource(models.Model):
@@ -943,9 +976,11 @@ class MetricSnapshot(models.Model):
 class BusinessFactQuerySet(models.QuerySet):
     def active_for_context(self, business=None):
         from django.utils import timezone
+        now = timezone.now()
         qs = self.filter(
             models.Q(status='VERIFIED'),
-            models.Q(valid_to__isnull=True) | models.Q(valid_to__gte=timezone.now())
+            models.Q(valid_from__isnull=True) | models.Q(valid_from__lte=now),
+            models.Q(valid_to__isnull=True) | models.Q(valid_to__gte=now)
         )
         if business:
             qs = qs.filter(business=business)
@@ -954,10 +989,7 @@ class BusinessFactQuerySet(models.QuerySet):
 
 class BusinessFactManager(models.Manager.from_queryset(BusinessFactQuerySet)):
     def get_queryset(self):
-        from django.utils import timezone
-        return super().get_queryset().filter(
-            models.Q(valid_to__isnull=True) | models.Q(valid_to__gte=timezone.now())
-        )
+        return super().get_queryset().active_for_context()
 
 
 class BusinessFact(models.Model):
@@ -1207,7 +1239,7 @@ class KnowledgeDocument(models.Model):
         qs = cls.objects.filter(
             business=business,
             document_type__iexact='POLICY',
-            status='READY'
+            status__in=['READY', 'PUBLISHED']
         )
         if intent:
             qs = qs.filter(
@@ -1382,39 +1414,13 @@ class AiRecommendationEvidence(models.Model):
         ])
         if not has_fk:
             raise ValidationError("AiRecommendationEvidence must be grounded by at least one evidence reference.")
+        if self.ai_recommendation_id and self.business_id and self.ai_recommendation.business_id != self.business_id:
+            raise ValidationError("Evidence and recommendation must belong to the same business.")
 
     def save(self, *args, **kwargs):
         if not self.business_id and self.ai_recommendation and self.ai_recommendation.business_id:
             self.business = self.ai_recommendation.business
-        if not any([
-            self.business_fact_id,
-            self.business_issue_id,
-            self.metric_snapshot_id,
-            self.business_relationship_id,
-            self.graph_node_id,
-            self.graph_edge_id,
-            self.knowledge_chunk_id,
-        ]):
-            if self.ai_recommendation and self.ai_recommendation.business_issue_id:
-                self.business_issue = self.ai_recommendation.business_issue
-            elif self.ai_recommendation and self.ai_recommendation.business_id:
-                from django.utils import timezone
-                now = timezone.now()
-                fact = BusinessFact.objects.filter(business_id=self.ai_recommendation.business_id).first()
-                if not fact:
-                    fact = BusinessFact.objects.create(
-                        business_id=self.ai_recommendation.business_id,
-                        fact_type="GROUNDING",
-                        subject_entity_type="business",
-                        subject_entity_id=self.ai_recommendation.business_id,
-                        statement="Default grounding evidence for recommendation",
-                        confidence=1.0,
-                        status="VERIFIED",
-                        detected_at=now,
-                        created_at=now,
-                        updated_at=now,
-                    )
-                self.business_fact = fact
+        self.clean()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -1431,6 +1437,8 @@ class AiAction(models.Model):
     target_entity_id = models.BigIntegerField(null=True)
     action_payload = models.JSONField(null=True)
     approval_note = models.TextField(null=True)
+    rejected_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, related_name="rejected_ai_actions")
+    rejected_at = models.DateTimeField(null=True)
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, db_index=True)
     approved_at = models.DateTimeField(null=True)
     executed_at = models.DateTimeField(null=True)

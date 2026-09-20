@@ -7,6 +7,8 @@ AI recommendations NEVER silently create authoritative facts or execute actions.
 
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 
 from app.models import (
@@ -27,7 +29,7 @@ def assemble_ai_context(business: Business, intent: str | None = None) -> dict:
     """
     # Active facts (auto-filtered by BusinessFactManager per COR-009)
     facts = list(
-        BusinessFact.objects.filter(business=business).values(
+        BusinessFact.objects.active_for_context(business).values(
             "id", "fact_type", "statement", "confidence"
         )
     )
@@ -82,6 +84,8 @@ def record_ai_audit_event(
         started_at=now,
         ended_at=now,
     )
+    import json
+    safe_context = json.loads(json.dumps(context_reference or {}, default=str))
     msg = AiMessage.objects.create(
         ai_conversation=conv,
         role="ASSISTANT",
@@ -89,8 +93,8 @@ def record_ai_audit_event(
         model=model_name,
         prompt_tokens=tokens_used // 2,
         completion_tokens=tokens_used // 2,
-        context_reference=context_reference,
-        response_metadata={"action": action_name},
+        context_reference=safe_context,
+        response_metadata={"action": action_name, "prompt": prompt, "tokens_used": tokens_used},
     )
     return conv, msg
 
@@ -107,15 +111,18 @@ def generate_grounded_recommendation(
     Supports multi-domain recommendation types (Feature 13 & 14).
     """
     now = timezone.now()
+    from app.services.authorization import ensure_same_business
+    if issue:
+        ensure_same_business(business, issue)
     context = assemble_ai_context(business, intent)
 
-    rec_type = "COURIER_OPTIMIZATION"
-    action_type = "REASSIGN_COURIER"
-    target_type = "courier"
-    target_id = 1
-    action_payload = {"reassign_percentage": 50, "fallback_courier_id": 2}
-    title = "Rebalance Delivery Courier Allocations"
-    rationale = "Delivery failure rate exceeded threshold on primary courier."
+    rec_type = "EVIDENCE_REVIEW"
+    action_type = "REVIEW_EVIDENCE"
+    target_type = "business"
+    target_id = business.id
+    action_payload = {"requires_human_review": True}
+    title = "Review verified business evidence"
+    rationale = "A verified finding is available for human review; no operational change is authorized."
 
     if issue:
         itype = (issue.issue_type or "").upper()
@@ -145,8 +152,10 @@ def generate_grounded_recommendation(
             rationale = f"Support threshold exceeded on issue {issue.id}."
         else:
             title = f"Address Operational Issue: {issue.title}"
-            target_type = issue.subject_entity_type or "courier"
-            target_id = issue.subject_entity_id or 1
+            target_type = issue.subject_entity_type or "business"
+            target_id = issue.subject_entity_id or business.id
+            action_type = "REVIEW_ISSUE"
+            action_payload = {"requires_human_review": True}
 
     prompt = f"Analyze business context and propose {rec_type.lower()}: {context}"
     llm_output = business.execute_llm_with_timeout(
@@ -158,22 +167,12 @@ def generate_grounded_recommendation(
         },
     )
 
-    confidence = Decimal(str(llm_output.get("confidence", "0.8000")))
-
-    # AI Recommendation (Confidence bounded 0.0 - 1.0 per MOD-002)
-    recommendation = AiRecommendation.objects.create(
-        business=business,
-        business_issue=issue,
-        recommendation_type=rec_type,
-        title=title,
-        description=llm_output.get("content", f"Execute action to address {title}"),
-        rationale=rationale,
-        confidence=confidence,
-        priority="HIGH",
-        status="SUGGESTED",
-        suggested_action_type=action_type,
-        generated_at=now,
-    )
+    try:
+        confidence = Decimal(str(llm_output.get("confidence", "0.8000")))
+    except Exception as exc:
+        raise ValidationError("LLM confidence must be numeric.") from exc
+    if not Decimal("0") <= confidence <= Decimal("1"):
+        raise ValidationError("LLM confidence must be between 0 and 1.")
 
     # Strictly ground recommendation with evidence (COR-008, Feature 14)
     evidence_fact = None
@@ -182,29 +181,27 @@ def generate_grounded_recommendation(
         if issue_ev:
             evidence_fact = issue_ev.business_fact
     if not evidence_fact:
-        evidence_fact = BusinessFact.objects.filter(business=business).first()
+        evidence_fact = BusinessFact.objects.active_for_context(business).first()
+    if evidence_fact is None and issue is None:
+        raise ValidationError("Cannot generate a recommendation without verified evidence or an issue.")
 
-    AiRecommendationEvidence.objects.create(
-        business=business,
-        ai_recommendation=recommendation,
-        business_issue=issue,
-        business_fact=evidence_fact,
-        evidence_type="VERIFIED_FACT_GROUNDING",
-        description=f"Grounded on authoritative fact for {title}.",
-        weight=Decimal("1.0000"),
-    )
-
-    # Propose SUGGESTED AiAction requiring approval (SEC-004, SEC-005, Feature 15)
-    action = AiAction.objects.create(
-        business=business,
-        ai_recommendation=recommendation,
-        action_type=action_type,
-        status="SUGGESTED",
-        target_entity_type=target_type,
-        target_entity_id=target_id,
-        action_payload=action_payload,
-        is_simulated=True,
-    )
+    with transaction.atomic():
+        recommendation = AiRecommendation.objects.create(
+            business=business, business_issue=issue, recommendation_type=rec_type,
+            title=title, description=llm_output.get("content", f"Evidence is insufficient for {title}."),
+            rationale=rationale, confidence=confidence, priority="HIGH", status="SUGGESTED",
+            suggested_action_type=action_type, generated_at=now,
+        )
+        AiRecommendationEvidence.objects.create(
+            business=business, ai_recommendation=recommendation, business_issue=issue,
+            business_fact=evidence_fact, evidence_type="VERIFIED_FACT_GROUNDING",
+            description=f"Grounded on authoritative evidence for {title}.", weight=Decimal("1.0000"),
+        )
+        action = AiAction.objects.create(
+            business=business, ai_recommendation=recommendation, action_type=action_type,
+            status="SUGGESTED", target_entity_type=target_type, target_entity_id=target_id,
+            action_payload=action_payload, is_simulated=True,
+        )
 
     return recommendation, action
 
@@ -232,4 +229,3 @@ from app.services.ai_support import (  # noqa: E402
     generate_suggested_reply,
     resume_ai_handling,
 )
-

@@ -27,20 +27,17 @@ def safe_traverse(
     Guarantees each node is visited at most once and traversal terminates
     cleanly on cyclic graphs.
     """
-    if visited is None:
-        visited = set()
-
-    if start_node not in graph or start_node in visited or max_depth < 0:
+    if start_node not in graph or max_depth < 0:
         return []
-
-    visited.add(start_node)
-    result = [start_node]
-
-    if max_depth == 0:
-        return result
-
-    for neighbor in graph.successors(start_node):
-        if neighbor not in visited:
-            result.extend(safe_traverse(graph, neighbor, max_depth - 1, visited))
-
+    seen = set(visited or ())
+    queue = [(start_node, 0)]
+    result = []
+    while queue:
+        node, depth = queue.pop(0)
+        if node in seen or depth > max_depth:
+            continue
+        seen.add(node)
+        result.append(node)
+        if depth < max_depth:
+            queue.extend((neighbor, depth + 1) for neighbor in graph.successors(node))
     return result

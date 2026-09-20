@@ -22,6 +22,21 @@ class ActionApprovedEvent:
         }
 
 
+def _record_action_audit(action, event_name, user=None, result=None):
+    from app.models import AiConversation, AiMessage
+    now = timezone.now()
+    conversation = AiConversation.objects.create(
+        business_id=action.business_id, conversation_type="ACTION_AUDIT",
+        status="COMPLETED", title=event_name, started_at=now, ended_at=now,
+    )
+    AiMessage.objects.create(
+        ai_conversation=conversation, role="SYSTEM", content=event_name,
+        model="lifecycle", context_reference={
+            "action_id": action.id, "user_id": getattr(user, "id", None), "result": result or {}
+        }, response_metadata={"event": event_name},
+    )
+
+
 def approve_action(action: AiAction, user, approval_note: str) -> AiAction:
     """
     Approves an action with full user identity audit trail (SEC-004)
@@ -30,21 +45,41 @@ def approve_action(action: AiAction, user, approval_note: str) -> AiAction:
     if not user or not user.is_authenticated:
         raise PermissionDenied("Authentication required to approve actions.")
 
-    if action.status not in ("SUGGESTED", "REJECTED"):
-        raise ValidationError(
-            f"Action cannot be approved from state '{action.status}'."
-        )
-
-    now = timezone.now()
-    action.status = "APPROVED"
-    action.approved_by = user
-    action.approved_at = now
-    action.approval_note = approval_note
-    action.save()
+    with transaction.atomic():
+        action = AiAction.objects.select_for_update().get(pk=action.pk)
+        if action.status == "APPROVED" and action.approved_by_id == user.id:
+            return action
+        if action.status not in ("SUGGESTED", "REJECTED"):
+            raise ValidationError(f"Action cannot be approved from state '{action.status}'.")
+        now = timezone.now()
+        action.status = "APPROVED"
+        action.approved_by = user
+        action.approved_at = now
+        action.approval_note = approval_note
+        action.save()
 
     # Dispatch audit event
     dispatch(ActionApprovedEvent(action.id, action.business_id, user.id))
+    _record_action_audit(action, "ACTION_APPROVED", user, {"approval_note": approval_note})
     return action
+
+
+def reject_action(action: AiAction, user, note: str) -> AiAction:
+    if not user or not user.is_authenticated:
+        raise PermissionDenied("Authentication required to reject actions.")
+    with transaction.atomic():
+        locked = AiAction.objects.select_for_update().get(pk=action.pk)
+        if locked.status == "REJECTED" and locked.rejected_by_id == user.id:
+            return locked
+        if locked.status not in ("SUGGESTED", "APPROVED"):
+            raise ValidationError(f"Action cannot be rejected from state '{locked.status}'.")
+        locked.status = "REJECTED"
+        locked.rejected_by = user
+        locked.rejected_at = timezone.now()
+        locked.approval_note = note
+        locked.save(update_fields=["status", "rejected_by", "rejected_at", "approval_note", "updated_at"])
+        _record_action_audit(locked, "ACTION_REJECTED", user, {"approval_note": note})
+        return locked
 
 
 def execute_action(action: AiAction, executor_fn=None) -> AiAction:
@@ -54,14 +89,16 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
     Captures integration errors and transitions status to FAILED (COR-011).
     Wrapped in transaction.atomic to prevent stuck EXECUTING state on partial failure.
     """
-    if not action.approved_at or action.status != "APPROVED":
-        raise ValidationError(
-            "AiAction cannot execute without approval (approved_at must be set)."
-        )
-
     with transaction.atomic():
+        action = AiAction.objects.select_for_update().get(pk=action.pk)
+        if not action.approved_at or action.status != "APPROVED":
+            if action.status == "EXECUTED":
+                return action
+            raise ValidationError("AiAction cannot execute without approval (approved_at must be set).")
+        if not action.is_simulated and executor_fn is None:
+            raise ValidationError("A provider executor is required for non-simulated actions.")
         action.status = "EXECUTING"
-        action.save()
+        action.save(update_fields=["status", "updated_at"])
 
         now = timezone.now()
         action.executed_at = now
@@ -76,9 +113,7 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
                     "message": "Simulated execution completed successfully",
                 }
 
-            if isinstance(action.execution_result, dict) and (
-                "error" in action.execution_result or "errors" in action.execution_result
-            ):
+            if not isinstance(action.execution_result, dict) or action.execution_result.get("status") in {"failed", "error"} or action.execution_result.get("success") is False or "error" in action.execution_result or "errors" in action.execution_result:
                 action.status = "FAILED"
             else:
                 action.status = "EXECUTED"
@@ -87,4 +122,5 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
             action.status = "FAILED"
 
         action.save()
+        _record_action_audit(action, f"ACTION_{action.status}", result=action.execution_result)
     return action

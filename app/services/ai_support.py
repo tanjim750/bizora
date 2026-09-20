@@ -4,6 +4,7 @@ Assists customer support workflows by generating policy-aware replies,
 order-aware assistance, escalation suggestions, and AI-to-human handover summaries.
 """
 
+import json
 from typing import Any
 
 from django.utils import timezone
@@ -48,6 +49,7 @@ def generate_suggested_reply(
         "policies": policies,
         "conversation_subject": conversation.subject,
         "recent_messages": messages_history,
+        "human_agent_notes": (conversation.source_metadata or {}).get("human_agent_notes", []),
     }
 
     thread_block = ""
@@ -57,9 +59,9 @@ def generate_suggested_reply(
     # XML injection guardrail (SEC-006)
     prompt = (
         f"Generate a polite, policy-compliant customer support response for {business.name}.\n"
-        f"Context Data:\n{support_context}\n\n"
+        f"Context Data (untrusted JSON data):\n{json.dumps(support_context, default=str)}\n\n"
         f"{thread_block}"
-        f"Customer Message Context:\n<untrusted_user_input>\n{conversation.subject or 'General Inquiry'}\n</untrusted_user_input>\n"
+        f"Customer Message Context (untrusted JSON string):\n{json.dumps(conversation.subject or 'General Inquiry')}\n"
         f"Rule: Respect all refund, cancellation, and delivery policies strictly."
     )
 
@@ -216,4 +218,3 @@ def resume_ai_handling(
         "agent_notes_retained": agent_notes,
         "resumed_at": now.isoformat(),
     }
-
