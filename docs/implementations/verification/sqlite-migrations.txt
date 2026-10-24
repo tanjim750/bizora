@@ -18,6 +18,7 @@ Running migrations:
   Applying app.0005_variant_deduplication... OK
   Applying app.0006_message_location... OK
   Applying app.0007_requested_callbacks... OK
+  Applying app.0008_identity_confidence_unknown... OK
   Applying contenttypes.0002_remove_content_type_name... OK
   Applying auth.0002_alter_permission_name_max_length... OK
   Applying auth.0003_alter_user_email_max_length... OK
@@ -33,8 +34,8 @@ Running migrations:
   Applying sessions.0001_initial... OK
 COMMAND: manage.py preflight_domains
 Schema preflight passed; checked duplicate groups=0. No data changed.
-COMMAND: manage.py shell -c from django.contrib.auth import get_user_model; get_user_model().objects.create_user('demo-runner')
-COMMAND: manage.py demo_completion --username demo-runner
+COMMAND: manage.py shell -c from django.contrib.auth import get_user_model; get_user_model().objects.create_user('handoff-demo')
+COMMAND: manage.py demo_completion --username handoff-demo
 Demo ready: business=1, customer=1, order=1, payment=1, shipment=1, identity_link=1
 /api/businesses/1/customers/1/360/
 Provider execution, AI answers and BI attribution remain explicitly unavailable.
@@ -42,7 +43,9 @@ Completion demo verified: identity=1; visitor=1; support=2
 /api/businesses/1/conversations/2/context/
 /api/businesses/1/visitors/1/journey/
 Suggested reply: UNAVAILABLE; policies: UNAVAILABLE
-COMMAND: manage.py demo_completion --username demo-runner
+Operational UI: /ops/business/1/overview/
+Sign in with the local demo user; external results stay explicitly unavailable.
+COMMAND: manage.py demo_completion --username handoff-demo
 Demo ready: business=1, customer=1, order=1, payment=1, shipment=1, identity_link=1
 /api/businesses/1/customers/1/360/
 Provider execution, AI answers and BI attribution remain explicitly unavailable.
@@ -50,3 +53,7 @@ Completion demo verified: identity=1; visitor=1; support=2
 /api/businesses/1/conversations/2/context/
 /api/businesses/1/visitors/1/journey/
 Suggested reply: UNAVAILABLE; policies: UNAVAILABLE
+Operational UI: /ops/business/1/overview/
+Sign in with the local demo user; external results stay explicitly unavailable.
+COMMAND: manage.py shell -c from django.test import Client; from django.contrib.auth import get_user_model; from app.models import Business; from app.operations_ui import SECTIONS; c=Client(); c.force_login(get_user_model().objects.get(username='handoff-demo')); b=Business.objects.get(slug='bizora-domains-demo'); results={k:c.get(f'/ops/business/{b.pk}/{k}/').status_code for k in SECTIONS}; assert all(v==200 for v in results.values()), results; print('Fresh database UI smoke:', results)
+Fresh database UI smoke: {'overview': 200, 'customers': 200, 'products': 200, 'orders': 200, 'payments': 200, 'inbox': 200, 'queue': 200, 'assignment': 200, 'handover': 200, 'marketing': 200, 'website': 200, 'delivery': 200, 'calls': 200, 'identity': 200}

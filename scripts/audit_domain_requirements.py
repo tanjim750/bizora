@@ -78,7 +78,7 @@ assess('Cross-Source Matching', 'Deterministic Multi-Field Matching', 'PARTIAL',
 assess('Cross-Source Matching', 'Cross-Platform Product Matching', 'PARTIAL', 'A', 'Source references and explicit manager-verified SKU rule are implemented; ambiguous SKU creates conflict. General configurable product matching rules are not implemented.')
 assess('Anonymous Identity Linking', 'Identity Transition Detection', 'PARTIAL', 'B', 'Purchase/order and verified LOGIN/SIGNUP/FORM_SUBMISSION command paths work. Automatic provider checkout/communication event dispatch requires an authenticated external adapter; no background detector is claimed.')
 assess('Anonymous Identity Linking', 'Attribution Continuity', 'PARTIAL', 'B', 'Original visitor/session/event/campaign links and timestamps survive recovery. This supplies attribution inputs, not BI attribution decisions.')
-assess('Merge Detection', 'Merge Confidence', 'PARTIAL', 'A', 'Shared verified-contact candidates retain deterministic confidence; product SKU candidates intentionally keep unknown confidence. A calibrated graded confidence policy needs a team decision.')
+assess('Merge Detection', 'Merge Confidence', 'PARTIAL', 'A', 'SHARED_VERIFIED_CONTACT confidence=1 denotes the current matching predicate, not a calibrated same-entity probability; SHARED_SKU_REVIEW remains unknown. Team lead must choose numeric semantics, rule-specific evidence/thresholds and versioning before graded scores or backfills. Candidate approval never executes a merge.')
 assess('Merge Detection', 'Merge Candidate Review', 'PARTIAL', 'C', 'Pending/approved/rejected review works. MERGED terminal outcome depends on blocked execution; approval never silently merges.')
 assess('Merge Detection', 'Canonical Identity Consolidation|Relationship Preservation', 'BLOCKED', 'C', 'execute_merge refuses with BI_GRAPH_AI_MERGE_CONTRACT. BI/Graph/AI owners must agree generic-reference redirect/reprojection and audit preservation before destructive consolidation.')
 assess('Identity History', 'Merge History', 'BLOCKED', 'C', 'Candidate/review/block attempts are audited. No real completed-merge history exists because consolidation is blocked; no fake merge record is emitted.')
@@ -98,7 +98,7 @@ for group, names in {
  'Delivery Operations': 'Courier Performance Context|Regional Delivery Context|AI Delivery Recommendations|Suggested Courier Actions',
  'Call Operations': 'Recording Access|AI Call Summary',
 }.items():
-    assess(group, names, 'PARTIAL', 'B', 'Canonical/persisted evidence can be read and absent capabilities are explicit. Full documented behavior needs the external BI/Graph/AI/Memory/Configuration/Integrations owner; no generated result or full operational screen is claimed.')
+    assess(group, names, 'PARTIAL', 'B', 'Canonical/persisted evidence can be read and absent capabilities are explicit. Full documented behavior needs the external BI/Graph/AI/Memory/Configuration/Integrations owner; no generated result is claimed. The local Django screen and unavailable/fixture contracts exist; authoritative external behavior remains absent.')
 
 # Narrower notes prevent a generic persisted reader from being mistaken for the feature.
 assess('Customer 360', 'Customer Graph View', 'PARTIAL', 'B', 'Tenant-safe persisted one-hop graph context exists; full customer relationship/journey visualization and Graph generation/traversal remain unavailable.')
@@ -109,6 +109,51 @@ assess('Support Queue', 'Overdue Support Detection', 'PARTIAL', 'B', 'Queue expo
 assess('AI ↔ Human Handover', 'Customer Transparency', 'PARTIAL', 'B', 'Handover reason/history and human summary are persisted; customer-facing notification transport/policy and UI are absent.')
 assess('Marketing Operations', 'Approval Flow', 'PARTIAL', 'B', 'Manager review checks current verified tenant-safe evidence and records approval/rejection. Execution and outcome tracking require an external execution contract; no execution is claimed.')
 assess('Call Operations', 'AI Call Summary', 'PARTIAL', 'B', 'Imported/provider summary text is visible; local AI generation is unavailable.')
+
+
+# Final readiness increment: explicit UI acceptance review, not a blanket upgrade.
+UI_COMPLETE = {
+ 'Business Overview': 'Recent Business Activity|Operational Drill-Down',
+ 'Customer 360': 'Unified Customer Profile|Cross-Source Identity Context|Order History|Payment History|Conversation History|Call History|Delivery History|Website Journey|Customer Timeline',
+ 'Product Operations': 'Product Catalog View|Product Variant Management|External Mapping View|Product Order History|Product Delivery Context|Product Support Context',
+ 'Order Operations': 'Order List|Order Detail View|Order Status Management|Order Lifecycle History|Customer Context|Payment Context|Shipment Context|Conversation Context|Call Context',
+ 'Payment Operations': 'Payment List|Payment Detail View|Order Mapping|Customer Mapping|Payment Status Tracking|Refund Management View|Payment Failure Investigation|Financial Timeline',
+ 'Unified Inbox': 'Multi-Channel Inbox|Conversation List|Conversation View|Customer Context Panel|Message Delivery State|Internal Notes|Conversation Search & Filtering',
+ 'Support Queue': 'Open Conversation Queue|Priority-Based Queueing|Assignment-Based Views|Unassigned Queue|Pending Conversations',
+ 'AI ↔ Human Handover': 'AI-to-Human Escalation|Human-to-AI Return|Handover Reason|Ownership Update|Handover History',
+ 'Marketing Operations': 'Campaign List|Campaign Detail View|Campaign Metrics|Suggested Marketing Actions|Approval Flow',
+ 'Website Performance': 'Traffic Overview|Product Behavior View|Experience Signals',
+ 'Delivery Operations': 'Shipment List|Tracking Timeline|Order Context|Customer Context|Failed Delivery Queue|Return Tracking',
+ 'Call Operations': 'Call List|Call Detail View|Incoming Call History|Outgoing Call History|Call Status Tracking|Call Event Timeline|Transcript View|Customer Context|Order Context|Conversation Context',
+}
+for group,names in UI_COMPLETE.items():
+    assess(group,names,'COMPLETE','A','Canonical service/API and authenticated Django operational UI are implemented. Group integration tests exercise rendering, role/tenant isolation and relevant commands. Stored/source-reported data is displayed without claiming live transport or generated conclusions.')
+for group in UI_COMPLETE.keys() | {'Conversation Assignment'}:
+    code,tests=GROUPS[group]
+    GROUPS[group]=(code+';app/operations_ui.py:section,detail,command',tests+';app/test_integration_readiness.py:OperationsUITests,AdditionalUIWorkflowTests,FinancialAndActionUITests,ProductRelationshipContextTests')
+assess('Product','Product Deduplication','COMPLETE','A','Source mappings and reviewed source identity links reuse canonical products; shared SKU requires explicit review without creating a record. A manager can authorize a distinct product with evidence. Ambiguous/contradictory matches fail closed; replay and PostgreSQL concurrent SKU intake are tested.')
+assess('Identity Linking','Confidence Tracking','COMPLETE','A','Exact/deterministic rule satisfaction is stored; manual confidence remains NULL rather than an invented score. DB range constraints remain. No probabilistic calibration is claimed or required by confidence storage.')
+assess('Cross-Source Matching','Deterministic Multi-Field Matching','COMPLETE','A','The explicit CUSTOMER corroboration rule combines 2–20 verified independent identifiers atomically, preserves evidence and rejects contradiction/incomplete batches. Arbitrary unverified attributes are not treated as identity evidence.')
+assess('Cross-Source Matching','Cross-Platform Product Matching','COMPLETE','A','Source references and manager-configured verified SKU rule resolve canonical products; source intake follows reviewed links. Ambiguous SKU or contradictory source mapping requires review, never an automatic merge.')
+assess('Product Operations','Product Customer Context','COMPLETE','A','UI combines purchasing customers with current owned persisted DETERMINISTIC/MANUAL product/customer relationships in either direction. Future and foreign-tenant relationships are excluded; no relationship is generated.')
+assess('Delivery Operations','Shipment Detail View','PARTIAL','A','Canonical recipient, charges, COD, status, tracking and source IDs are displayed. Raw provider metadata stays private. Team lead/Integrations must approve a versioned public field allowlist, types, redaction rules and role visibility before a local diagnostic projection is added.')
+assess('Unified Inbox','Attachment Support','PARTIAL','B','Validated media/file references can be saved in pending outgoing messages and opened from authenticated views. Replay is safe. Live media sending and authorized provider download/storage transport require Integrations; no upload/antivirus/storage service is claimed.')
+assess('Customer 360','Customer Graph View','PARTIAL','B','A persisted one-hop graph read is shown in the UI; full journey traversal/interactive graph exploration still needs Graph.')
+assess('Product Operations','Product Graph View','PARTIAL','B','UI displays existing one-hop graph context; full product journey traversal/visualization still needs Graph.')
+assess('Order Operations','Order Graph View','PARTIAL','B','UI displays existing one-hop graph context; full order journey traversal/visualization still needs Graph.')
+assess('AI ↔ Human Handover','Customer Transparency','PARTIAL','B','Internal handover state, history and human-provided context are visible. Customer-facing notification transport and policy remain unavailable.')
+for group in ('Product','Communication','Courier','Calling'):
+    code,tests=GROUPS[group]
+    GROUPS[group]=(code+';app/domains/catalog.py:assess_product;app/domains/mock_transport.py:MockCanonicalTransport',tests+';app/test_integration_readiness.py:ProductIntakeReviewTests,AttachmentContractTests,FinalCorrectnessTests')
+code,tests=GROUPS['Identity Linking']
+GROUPS['Identity Linking']=(code,tests+';app/test_integration_readiness.py:FinalCorrectnessTests')
+for group in ('Merge Detection','Identity History','Canonical Identity'):
+    code,tests=GROUPS[group]
+    GROUPS[group]=(code+';app/domains/merge.py:plan,dry_run',tests+';app/test_integration_readiness.py:MergeReadinessTests,SourceContradictionAndMergeRaceTests')
+# External seams are executable, fixture-tested and replaceable through trusted settings.
+for group in GROUPS:
+    code,tests=GROUPS[group]
+    GROUPS[group]=(code+';app/domains/boundaries.py:exchange,configured_adapter',tests+';app/test_integration_readiness.py:ExternalBoundaryContractTests,AdapterConfigurationTests')
 
 
 @lru_cache(maxsize=None)
@@ -149,7 +194,7 @@ def build():
                     break
                 if text.strip():
                     description.append(text.strip())
-            default = ('PARTIAL', 'A', 'Backend list/detail/context/commands are available as evidenced below. No operational frontend screen exists; a complete documented view/workflow is not claimed.') if domain == 'business-oparations' else ('COMPLETE', 'A', 'Documented canonical storage/service behavior is implemented and covered by the cited group integration tests. This does not imply a live provider connection or generated analytics.')
+            default = ('PARTIAL', 'A', 'Backend/API and local operational UI exist, but this full requirement has remaining behavior described in the group/dependency assessment; no model or generic page alone is treated as completion.') if domain == 'business-oparations' else ('COMPLETE', 'A', 'Documented canonical storage/service behavior is implemented and covered by the cited group integration tests. This does not imply a live provider connection or generated analytics.')
             if group == 'Conversation Assignment':
                 default = ('COMPLETE', 'A', 'Documented assignment foundation, history, release/reassign, metadata and callable future routing hook are tested; no automatic routing policy is claimed.')
             key = (group, name)
@@ -170,7 +215,7 @@ def build():
 def main():
     records = build()
     counts = Counter(r['status'] for r in records)
-    payload = {'scope': 'Full documented feature statuses; backend tests alone do not complete operational frontend views.',
+    payload = {'scope': 'Full documented feature statuses, including authenticated Django operational UI; external engines are not fabricated.',
         'total': len(records), 'status_counts': dict(counts), 'requirements': records}
     (OUT / 'domain-requirements-audit.json').write_text(json.dumps(payload, indent=2, ensure_ascii=False) + '\n')
     text = ['# Bizora: 298 documented subfeature audit', '', '24 October 2026. Generated from explicit reviewed assessments in `scripts/audit_domain_requirements.py`.', '',
@@ -179,7 +224,7 @@ def main():
         'Categories describe responsibility, not completion. COMPLETE/A rows are already done. PARTIAL/A rows below remain honest local limitations. No model-presence heuristic or passing-test count upgrades status.', '',
         'Tests cited under each group are actual integration classes; they are not a claim of a dedicated acceptance test for every sentence. JSON retains every original requirement description and exact evidence symbol line.', '',
         f'**Total: {len(records)}.** ' + '; '.join(f'{key}: {value}' for key, value in sorted(counts.items())) + '.', '',
-        'External blockers: Integrations (transport/provider schemas), BI (authoritative calculations/attribution), Graph (building/traversal/merge redirect), AI (generation/execution), Memory (policies), Configuration (SLA/escalation policy). UI implementation is local unfinished work, not a fabricated external blocker.', '']
+        'External blockers: Integrations (transport/provider schemas), BI (authoritative calculations/attribution), Graph (building/traversal/merge redirect), AI (generation/execution), Memory (policies), Configuration (SLA/escalation policy). Django operational UI covers all 13 groups. Remaining local UI/context limitations are A; missing owner outputs remain B/C.', '']
     previous = None
     for row in records:
         key = (row['domain'], row['group'])

@@ -16,6 +16,7 @@ Running migrations:
   Applying app.0005_variant_deduplication... OK
   Applying app.0006_message_location... OK
   Applying app.0007_requested_callbacks... OK
+  Applying app.0008_identity_confidence_unknown... OK
   Applying contenttypes.0002_remove_content_type_name... OK
   Applying auth.0002_alter_permission_name_max_length... OK
   Applying auth.0003_alter_user_email_max_length... OK
@@ -32,11 +33,11 @@ Running migrations:
 No changes detected
 Schema preflight passed; checked duplicate groups=0. No data changed.
 Creating test database for alias 'default'...
-Found 195 test(s).
+Found 245 test(s).
 System check identified no issues (0 silenced).
-................s..............................................................................................................s...................................................................
+................s..............................................................................................................s.....................................................................................................................
 ----------------------------------------------------------------------
-Ran 195 tests in 26.235s
+Ran 245 tests in 30.666s
 
 OK (skipped=2)
 Destroying test database for alias 'default'...

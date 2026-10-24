@@ -1,0 +1,1 @@
+{% extends 'operations/base.html' %}{% block content %}<p>Select a business you belong to.</p><div class="grid">{% for item in members %}<section><h2><a href="{% url 'ops-section' item.business_id 'overview' %}">{{ item.business.name }}</a></h2><p>{{ item.role }}</p></section>{% empty %}<p>No active business membership.</p>{% endfor %}</div>{% endblock %}

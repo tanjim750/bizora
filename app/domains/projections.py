@@ -108,7 +108,17 @@ def detail(business, name, pk):
             result[field] = serialize(related(obj._meta.get_field(field).related_model, getattr(obj, field + '_id'), business))
     if name == 'products':
         orders = scoped('orders', business).filter(orderitem__product=obj).distinct()
-        result['customers'] = section(scoped('customers', business).filter(order__in=orders).distinct())
+        now = timezone.now()
+        verified_customers = safe_records(m.BusinessRelationship.objects.filter(business=business,
+            relationship_source__in=['DETERMINISTIC', 'MANUAL']).filter(
+            Q(source_entity_type='PRODUCT', source_entity_id=obj.pk, target_entity_type='CUSTOMER') |
+            Q(target_entity_type='PRODUCT', target_entity_id=obj.pk, source_entity_type='CUSTOMER')).filter(
+            Q(valid_from__isnull=True) | Q(valid_from__lte=now)).filter(
+            Q(valid_to__isnull=True) | Q(valid_to__gt=now)), business)
+        linked_customer_ids = {row.target_entity_id if row.source_entity_type == 'PRODUCT' else row.source_entity_id
+                               for row in verified_customers}
+        result['customers'] = section(scoped('customers', business).filter(
+            Q(order__in=orders) | Q(pk__in=linked_customer_ids)).distinct())
         result['shipments'] = section(scoped('shipments', business).filter(order__in=orders))
         result['calls'] = section(scoped('calls', business).filter(order__in=orders))
     if name in ('orders', 'products'):

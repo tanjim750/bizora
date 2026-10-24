@@ -2,7 +2,7 @@
 from django.db import transaction
 from django.utils import timezone
 from app import models as m
-from .common import require, normalize_contact, related, create, authorize, business_id
+from .common import require, normalize_contact, related, create, authorize, business_id, external_identifier
 
 ENTITY_MODELS = {k.upper(): v for k, v in {
     'customer': m.Customer, 'product': m.Product, 'order': m.Order, 'payment': m.Payment,
@@ -59,6 +59,7 @@ def register(business, actor, connection_id, entity_type, identity_type, value, 
     normalized = normalize_contact(identity_type, value)
     require(external_id is not None and str(external_id).strip() and len(str(external_id)) <= 255,
             'INVALID_IDENTIFIER', 'A source-scoped external identifier is required.')
+    external_id = external_identifier(external_id)
     lookup = dict(business=business, integration_connection=connection, entity_type=entity_type,
                   identity_type=identity_type, external_id=str(external_id))
     old = m.ExternalIdentity.objects.filter(**lookup).first()
@@ -88,7 +89,7 @@ def _link(business, actor, external, target, kind, rule, evidence):
                          {'active_identity_id': active.canonical_identity_id})
         return None, issue
     obj, _ = m.IdentityLink.objects.update_or_create(canonical_identity=target, external_identity=external,
-        defaults={'match_type': kind, 'confidence': 1, 'status': 'ACTIVE', 'resolved_by': 'MANUAL' if kind == 'MANUAL' else 'SYSTEM',
+        defaults={'match_type': kind, 'confidence': None if kind == 'MANUAL' else 1, 'status': 'ACTIVE', 'resolved_by': 'MANUAL' if kind == 'MANUAL' else 'SYSTEM',
                   'rule_key': rule, 'linked_at': timezone.now(), 'unlinked_at': None,
                   'metadata': evidence, 'created_at': timezone.now()})
     history(business, actor, 'LINKED', target, external, rule, evidence)

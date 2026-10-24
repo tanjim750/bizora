@@ -52,3 +52,6 @@ class Command(BaseCommand):
         self.stdout.write(f'/api/businesses/{business.pk}/conversations/{conversation.pk}/context/')
         self.stdout.write(f'/api/businesses/{business.pk}/visitors/{visitor.pk}/journey/')
         self.stdout.write('Suggested reply: ' + context['suggested_reply']['status'] + '; policies: ' + context['policy_context']['status'])
+
+        self.stdout.write(f'Operational UI: /ops/business/{business.pk}/overview/')
+        self.stdout.write('Sign in with the local demo user; external results stay explicitly unavailable.')

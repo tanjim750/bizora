@@ -1,6 +1,8 @@
 """Transactional canonical intake. Transport, signatures and provider execution live outside this module."""
 import hashlib
 import json
+import re
+from urllib.parse import urlsplit
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -8,7 +10,7 @@ from django.db import models, transaction
 from django.db.models import Sum
 from django.utils import timezone
 from app import models as m
-from .common import DomainError, require, money, normalize_contact, related, create, audit, authorize, validate
+from .common import DomainError, require, money, normalize_contact, related, create, audit, authorize, validate, external_identifier
 from .registry import resource, scoped, NESTED, READ_ONLY
 from .states import TRANSITIONS, ALIASES
 
@@ -34,6 +36,10 @@ def _prepare(model, business, raw, allowed_extra=()):
                 data[key] = field.to_python(value)
             except (ValidationError, ValueError, TypeError):
                 raise DomainError('INVALID_DATA', 'Invalid ' + key)
+            if value is not None and key.startswith('external_'):
+                data[key] = external_identifier(value)
+            if key == 'sku' and isinstance(value, str):
+                data[key] = value.strip() or None
             if isinstance(field, models.IntegerField) and value is not None:
                 require(not isinstance(value, bool) and str(value) == str(data[key]), 'INVALID_DATA', 'Integer field must contain an integer.')
             if isinstance(field, models.DecimalField) and value is not None:
@@ -45,6 +51,31 @@ def _prepare(model, business, raw, allowed_extra=()):
                 require(timezone.is_aware(data[key]), 'INVALID_TIME', 'Timestamps must include a UTC offset.')
     if any(f.name == 'business' for f in model._meta.fields):
         data['business'] = business
+    return data
+
+
+
+def _attachment(data):
+    kind = str(data.get('attachment_type', '')).strip().upper()
+    require(kind in ('IMAGE','VIDEO','AUDIO','FILE','OTHER'), 'INVALID_ATTACHMENT', 'Unsupported attachment type.')
+    data['attachment_type'] = kind
+    require(data.get('metadata') is None or isinstance(data['metadata'],dict), 'INVALID_ATTACHMENT', 'Attachment metadata must be an object.')
+    require(data.get('size_bytes') is None or data['size_bytes'] >= 0, 'INVALID_ATTACHMENT', 'Attachment size must be nonnegative.')
+    filename=data.get('file_name')
+    require(filename is None or filename and not any(x in filename for x in ('/',chr(92),chr(0),'\r','\n')), 'INVALID_ATTACHMENT', 'Use a plain filename without path components.')
+    mime=data.get('mime_type')
+    if mime:
+        require(not any(x in mime for x in ('\r','\n')), 'INVALID_ATTACHMENT', 'Invalid MIME type.')
+        mime=mime.split(';',1)[0].strip().lower()
+        require(bool(re.fullmatch(r'[a-z0-9!#$&^_.+\-]+/[a-z0-9!#$&^_.+\-]+',mime)), 'INVALID_ATTACHMENT', 'Invalid MIME type.')
+        require(kind not in ('IMAGE','VIDEO','AUDIO') or mime.startswith(kind.lower()+'/'), 'INVALID_ATTACHMENT', 'MIME type contradicts attachment type.')
+        data['mime_type']=mime
+    try:
+        URLValidator(schemes=['https','http'])(data.get('url'))
+        parsed=urlsplit(data['url'])
+        require(not parsed.username and not parsed.password,'INVALID_ATTACHMENT','Attachment URL must not contain credentials.')
+    except (ValidationError,TypeError,ValueError):
+        raise DomainError('INVALID_ATTACHMENT','Attachment URL must be an HTTP(S) reference.')
     return data
 
 
@@ -112,7 +143,7 @@ def ingest(business, actor, name, raw, key, occurred_at=None, connection_id=None
     require(timezone.is_aware(occurred_at), 'INVALID_TIME', 'Event time must include timezone.')
     require(isinstance(raw, dict), 'INVALID_DATA', 'Canonical payload must be an object.')
     for nested in NESTED.get(name, set()) & raw.keys():
-        expected = dict if nested == 'external_reference' else list
+        expected = dict if nested in ('external_reference', 'deduplication') else list
         require(isinstance(raw[nested], expected), 'INVALID_DATA', nested + ' has an invalid structure.')
         if expected is list and nested != 'tags':
             require(all(isinstance(item, dict) for item in raw[nested]), 'INVALID_DATA', nested + ' entries must be objects.')
@@ -170,12 +201,16 @@ def ingest(business, actor, name, raw, key, occurred_at=None, connection_id=None
     existing = None
     if name == 'products' and raw.get('external_reference'):
         ref = raw['external_reference']
+        require(set(ref)<={'external_product_id','metadata'} and (ref.get('metadata') is None or isinstance(ref['metadata'],dict)), 'INVALID_REFERENCE', 'Unsupported product reference fields/metadata.')
+        ref = {**ref, 'external_product_id': external_identifier(ref.get('external_product_id'))}
         require(connection and ref.get('external_product_id') is not None and str(ref['external_product_id']).strip().strip(), 'INVALID_IDENTIFIER', 'Source and external product ID are required.')
         found = m.ProductExternalReference.objects.filter(integration_connection=connection,
                   external_product_id=str(ref['external_product_id']).strip(), external_variant_id__isnull=True).first()
         existing = found.product if found else None
     elif name == 'customers' and raw.get('external_reference'):
         ref = raw['external_reference']
+        require(set(ref)<={'external_customer_id'}, 'INVALID_REFERENCE', 'Unsupported customer reference fields.')
+        ref = {**ref, 'external_customer_id': external_identifier(ref.get('external_customer_id'))}
         require(connection and ref.get('external_customer_id') is not None and str(ref['external_customer_id']).strip().strip(), 'INVALID_IDENTIFIER', 'Source and external customer ID are required.')
         found = m.CustomerExternalReference.objects.filter(integration_connection=connection,
                       external_customer_id=str(ref['external_customer_id']).strip()).first()
@@ -187,6 +222,12 @@ def ingest(business, actor, name, raw, key, occurred_at=None, connection_id=None
             if parent in data:
                 lookup[parent] = data[parent]
         existing = scoped(name, business).filter(**lookup).first()
+    if name == 'products':
+        from .catalog import assess_product
+        assessment = assess_product(business, actor, raw, connection)
+        require(assessment['decision'] != 'REVIEW', 'PRODUCT_REVIEW_REQUIRED', 'SKU overlaps an existing product. Review the source identity or authorize a distinct product; no record was created.')
+        if existing is None and assessment['decision'] == 'REUSE':
+            existing = related(m.Product, assessment['product_id'], business)
     if name == 'product-images':
         existing = scoped(name, business).filter(product=data.get('product'), url=data.get('url')).first()
     if name == 'product-references':
@@ -233,6 +274,8 @@ def ingest(business, actor, name, raw, key, occurred_at=None, connection_id=None
             URLValidator(schemes=['https', 'http'])(data['image_url'])
         except ValidationError:
             raise DomainError('INVALID_IMAGE', 'Product images must use HTTP(S).')
+    if name == 'attachments':
+        _attachment(data)
     if name in ('attachments', 'product-images'):
         try:
             URLValidator(schemes=['https', 'http'])(data.get('url'))
@@ -318,10 +361,10 @@ def ingest(business, actor, name, raw, key, occurred_at=None, connection_id=None
                 URLValidator(schemes=['https', 'http'])(attachment.get('url'))
             except (ValidationError, TypeError):
                 raise DomainError('INVALID_ATTACHMENT', 'Attachment URL must be HTTP(S).')
-            create(m.MessageAttachment, message=obj, **_prepare(m.MessageAttachment, business, attachment))
+            create(m.MessageAttachment, message=obj, **_attachment(_prepare(m.MessageAttachment, business, attachment)))
     m.ProcessingReceipt.objects.create(business=business, connection=connection, key=receipt_key,
         resource=name, payload_hash=digest, entity_id=obj.pk, occurred_at=occurred_at)
-    audit(business, actor, 'INGESTED' if created else 'UPDATED', obj, {'receipt_key': receipt_key})
+    audit(business, actor, 'INGESTED' if created else 'UPDATED', obj, {'receipt_key': receipt_key, **({'deduplication': assessment} if name == 'products' else {})})
     if created:
         _timeline(obj, name.upper() + '_CREATED')
     return obj, created
@@ -445,6 +488,9 @@ def transition(business, actor, name, pk, status, reason='', expected_status=Non
         require(previous == status or status in TRANSITIONS[name].get(previous, set()), 'INVALID_TRANSITION', 'Invalid status transition.')
     if previous == status:
         return obj
+    if name == 'orders' and status == 'REFUNDED':
+        refunded = m.Refund.objects.filter(payment__order=obj, status='COMPLETED').aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        require(refunded > 0 and refunded >= obj.total_amount, 'REFUND_LEDGER_REQUIRED', 'A full recorded refund is required before marking the order refunded.')
     setattr(obj, field, status)
     if hasattr(obj, 'updated_at'):
         obj.updated_at = timezone.now()

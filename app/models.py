@@ -816,7 +816,7 @@ class IdentityLink(models.Model):
     canonical_identity = models.ForeignKey('CanonicalIdentity', models.DO_NOTHING, db_index=True)
     external_identity = models.ForeignKey('ExternalIdentity', models.DO_NOTHING, db_index=True)
     match_type = models.CharField(max_length=50)
-    confidence = models.DecimalField(max_digits=5, decimal_places=4, default=1)
+    confidence = models.DecimalField(max_digits=5, decimal_places=4, default=1, null=True)
     status = models.CharField(max_length=30, default='ACTIVE')
     resolved_by = models.CharField(max_length=30, default='SYSTEM')
     rule_key = models.CharField(max_length=100, null=True)

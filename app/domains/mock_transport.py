@@ -49,3 +49,32 @@ class MockMessageTransport:
         transition(business, actor, 'messages', message.pk, 'SENT', 'Mock transport accepted message')
         return {'simulated': True, 'status': 'SENT', 'message_id': message.pk,
                 'provider_reference': f'mock-message-{message.pk}'}
+
+
+class MockCanonicalTransport:
+    """Versioned fixture ingress for all canonical resources; never a provider webhook."""
+    version = 'bizora.ingest.v1'
+
+    def __init__(self,business,actor,connection):
+        from .common import authorize, ensure_owned
+        authorize(actor,business,write=True)
+        ensure_owned(connection,business)
+        require(connection.is_mock,'INVALID_SOURCE','Fixture intake requires an explicitly simulated source.')
+        self.business,self.actor,self.connection=business,actor,connection
+
+    def receive(self,envelope):
+        from django.utils.dateparse import parse_datetime
+        from .projections import serialize
+        require(isinstance(envelope,dict) and set(envelope)<={'version','business_id','connection_id','event_id','resource','data','occurred_at'},
+            'INVALID_CONTRACT','Unsupported canonical fixture envelope.')
+        require(envelope.get('version')==self.version and type(envelope.get('business_id')) is int and envelope['business_id']==self.business.pk
+            and type(envelope.get('connection_id')) is int and envelope['connection_id']==self.connection.pk,
+            'INVALID_SOURCE','Fixture envelope scope/version differs.')
+        require(all(key in envelope for key in ('event_id','resource','data')),'INVALID_CONTRACT','Event, resource and data are required.')
+        require(isinstance(envelope['resource'],str) and isinstance(envelope['data'],dict),'INVALID_CONTRACT','Resource must be text and data must be an object.')
+        occurred=envelope.get('occurred_at')
+        if occurred is not None:
+            occurred=parse_datetime(occurred) if isinstance(occurred,str) else None
+            require(occurred is not None,'INVALID_TIME','Use an offset-aware ISO timestamp.')
+        obj,created=ingest(self.business,self.actor,envelope['resource'],envelope['data'],envelope['event_id'],occurred,self.connection.pk)
+        return {'version':self.version,'simulated':True,'created':created,'record':serialize(obj)}

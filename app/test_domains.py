@@ -1003,6 +1003,17 @@ class PostgresConcurrencyTests(TransactionTestCase):
         self.assertEqual(m.Refund.objects.count(), 1)
 
 
+    def test_concurrent_product_sku_intake_requires_review_instead_of_duplicate(self):
+        def event(index):
+            try:
+                data.ingest(self.business,self.actor,'products',{'name':'One catalog product','sku':'NEW-SKU'},f'product-{index}')
+                return 'CREATED'
+            except DomainError as exc:
+                return exc.code
+        self.assertCountEqual(self.parallel(event),['CREATED','PRODUCT_REVIEW_REQUIRED'])
+        self.assertEqual(m.Product.objects.count(),1)
+        self.assertEqual(m.ProcessingReceipt.objects.count(),1)
+
     def test_concurrent_variant_events_upsert_one_parent_sku(self):
         product = create(m.Product, business=self.business, name='Concurrent product')
         def event(index):

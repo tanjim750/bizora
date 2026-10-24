@@ -37,3 +37,10 @@ urlpatterns += [
 urlpatterns.append(path('businesses/<int:business_id>/graph-context/<slug:kind>/<int:pk>/', domain.GraphContextView.as_view()))
 
 urlpatterns.append(path('businesses/<int:business_id>/callbacks/<int:pk>/schedule/', domain.CallbackScheduleView.as_view()))
+
+urlpatterns += [
+    path('businesses/<int:business_id>/identity/merge-candidates/<int:pk>/dry-run/',domain.MergeDryRunView.as_view()),
+    path('businesses/<int:business_id>/products/assess/',domain.ProductAssessmentView.as_view()),
+]
+
+urlpatterns.append(path('businesses/<int:business_id>/contracts/<slug:owner>/<slug:capability>/',domain.DomainContractView.as_view()))

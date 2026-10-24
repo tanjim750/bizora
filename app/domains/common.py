@@ -154,3 +154,9 @@ def ensure_owned(obj, business, seen=None):
                 and field.related_model is not m.IntegrationSource and getattr(obj, field.attname)):
             ensure_owned(getattr(obj, field.name), business, seen)
     return obj
+
+
+def external_identifier(value):
+    require(isinstance(value,(str,int)) and not isinstance(value,bool) and 0<len(str(value).strip())<=255,
+        'INVALID_IDENTIFIER','External identifiers must be nonempty text or integer values, max 255 characters.')
+    return str(value).strip()

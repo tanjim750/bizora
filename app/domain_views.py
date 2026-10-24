@@ -321,3 +321,33 @@ class CallbackScheduleView(DomainAPIView):
         business = self.business(request, business_id, write=True)
         return Response(projections.serialize(operations.schedule_callback(business, request.user, pk,
                     **self.validated(ScheduleSerializer, request))))
+
+
+class MergeDryRunView(DomainAPIView):
+    def post(self,request,business_id,pk):
+        from app.domains.merge import dry_run
+        business=self.business(request,business_id,manager=True)
+        require(isinstance(request.data,dict) and set(request.data)<={'expected_fingerprint'},'INVALID_CONTRACT','Only an optional expected_fingerprint is accepted; adapters cannot be supplied by clients.')
+        return Response(dry_run(business,request.user,pk,expected_fingerprint=request.data.get('expected_fingerprint')))
+
+
+class ProductAssessmentView(DomainAPIView):
+    def post(self,request,business_id):
+        from app.domains.catalog import assess_product
+        from app.domains.common import related
+        business=self.business(request,business_id,write=True)
+        values=self.validated(EventInputSerializer,request)
+        connection=related(m.IntegrationConnection,values['connection_id'],business) if values.get('connection_id') else None
+        return Response(assess_product(business,request.user,values['data'],connection))
+
+
+class DomainContractView(DomainAPIView):
+    OWNERS={'integrations':'Integrations','bi':'Business Intelligence','graph':'Business Graph','ai':'AI Intelligence',
+        'memory':'Business Memory','configuration':'Configuration','monitoring':'Monitoring'}
+
+    def post(self,request,business_id,owner,capability):
+        from app.domains.boundaries import exchange
+        business=self.business(request,business_id,write=owner=='integrations')
+        require(owner in self.OWNERS and capability!='prepare_merge','UNSUPPORTED_CONTRACT','Use the scoped merge dry-run for merge reconciliation.')
+        require(isinstance(request.data,dict) and set(request.data)=={'request_id','payload'},'INVALID_CONTRACT','Provide request_id and payload only.')
+        return Response(exchange(business,request.user,self.OWNERS[owner],capability,request.data['payload'],request.data['request_id']))

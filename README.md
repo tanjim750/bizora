@@ -3,8 +3,10 @@
 Django/DRF backend for canonical business data, deterministic identity resolution and
 business operations. See the [implementation report](docs/implementations/my-domains-implementation-report.md)
 for the complete 31-group / 298-subfeature checklist, limitations, APIs and test evidence.
-This is a tested backend increment; live provider integrations, AI/BI engines and a frontend
-are not included.
+This increment includes a replaceable Django operational UI at `/ops/` for all thirteen
+operations groups. Live provider transport and AI/BI/Graph engines remain externally owned.
+See the [team-lead handoff](docs/implementations/TEAM_LEAD_HANDOFF.md) and
+[versioned contracts](docs/implementations/contracts/README.md) before integration.
 
 ## Isolated local setup
 
@@ -27,6 +29,7 @@ python manage.py runserver 127.0.0.1:8000
 The demo prints the business/customer IDs for authenticated API requests. The public status
 endpoint remains `/api/`; business endpoints require explicit membership. Use the same
 `BIZORA_DATA_DIR` and secret when restarting the local server.
+Open `http://127.0.0.1:8000/ops/`, sign in with the demo user and select the business.
 
 ## Verification
 
@@ -39,7 +42,7 @@ python scripts/verify_domains_postgres.py
 
 The PostgreSQL verifier requires Docker. It uses a newly created local PostgreSQL 16/pgvector
 container, tmpfs data, random credentials and a random localhost port, then removes only
-its own temporary container. It includes real concurrent replay/refund, variant deduplication
+its own temporary container. It includes real concurrent replay/refund, product/variant deduplication
 and identity lifecycle tests. The existing
 Compose setup is not the isolated verifier and does not bootstrap the vector extension.
 

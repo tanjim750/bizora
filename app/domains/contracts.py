@@ -81,6 +81,6 @@ def prepare_operation(business, actor, operation, entity_id):
                    'external_conversation_id': obj.conversation.external_conversation_id,
                    'message_type': obj.message_type, 'content': obj.content, 'location': obj.location,
                    'attachments': list(obj.messageattachment_set.values('attachment_type', 'url', 'mime_type'))}
-    return {**capability('Integrations', operation), 'request': {'operation': operation,
-            'business_id': business.pk, 'connection_id': connection.pk, 'entity_type': type(obj).__name__,
+    return {'version': 'bizora.outbound.v1', **capability('Integrations', operation), 'request': {'operation': operation,
+            'business_id': business.pk, 'connection_id': connection.pk, 'entity_type': type(obj).__name__.upper(),
             'entity_id': obj.pk, 'payload': payload}, 'execution': 'NOT_EXECUTED', 'simulated_source': connection.is_mock}

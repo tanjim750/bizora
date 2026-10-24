@@ -54,6 +54,6 @@ def scoped(name, business):
 READ_ONLY = {'id', 'business', 'created_at', 'updated_at', 'total_amount', 'subtotal',
              'normalized_value', 'ai_handover_state', 'last_message_at', 'resolved_at',
              'author_type', 'author_id', 'is_ai_generated', 'is_verified'}
-NESTED = {'products': {'variants', 'external_reference'},
+NESTED = {'products': {'variants', 'external_reference', 'deduplication'},
           'customers': {'contacts', 'tags', 'external_reference'}, 'orders': {'items'},
           'messages': {'attachments'}}
