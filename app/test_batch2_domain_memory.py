@@ -9,14 +9,10 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from app.exceptions import DomainBoundaryViolationError, TenantIsolationError, UnapprovedMemoryPromotionError
+from app.exceptions import TenantIsolationError, UnapprovedMemoryPromotionError
 from app.models import (
     AiRecommendation,
-    ApprovedSuggestion,
     Business,
-    BusinessGoal,
-    BusinessMemory,
-    HistoricalDecision,
     Product,
 )
 from app.services.domain_memory import (

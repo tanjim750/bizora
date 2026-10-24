@@ -62,13 +62,12 @@ class Batch1KnowledgePipelineTests(TestCase):
             "ANOMALY_STREAM",
         ]
         for bad_type in prohibited_types:
-            with self.subTest(bad_type=bad_type):
-                with self.assertRaises(DomainBoundaryViolationError):
-                    register_knowledge_source(
-                        business=self.business_a,
-                        name=f"Invalid {bad_type}",
-                        source_type=bad_type,
-                    )
+            with self.subTest(bad_type=bad_type), self.assertRaises(DomainBoundaryViolationError):
+                register_knowledge_source(
+                    business=self.business_a,
+                    name=f"Invalid {bad_type}",
+                    source_type=bad_type,
+                )
 
     def test_feature_11_register_knowledge_source_tenant_isolation(self):
         with self.assertRaises(TenantIsolationError):
@@ -291,7 +290,7 @@ class Batch1KnowledgePipelineTests(TestCase):
             name="Courier SLA",
             source_type="POLICY_FILE",
         )
-        v1 = KnowledgeDocument.objects.create(
+        _v1 = KnowledgeDocument.objects.create(
             business=self.business_a,
             knowledge_source=source,
             title="Courier SLA v1",
@@ -345,7 +344,7 @@ class Batch1KnowledgePipelineTests(TestCase):
             ingest_document(business=self.business_a, request=req)
 
     def test_mutation_ingest_into_archived_source_is_rejected(self):
-        archived_source = KnowledgeSource.objects.create(
+        _archived_source = KnowledgeSource.objects.create(
             business=self.business_a,
             name="Decommissioned Policy",
             source_type="DOCUMENT_UPLOAD",

@@ -8,10 +8,9 @@ from django.test import TestCase
 
 from app.exceptions import (
     EmbeddingDimensionMismatchError,
-    StaleVersionError,
     TenantIsolationError,
 )
-from app.models import Business, KnowledgeChunk, KnowledgeDocument, KnowledgeEmbedding, KnowledgeSource
+from app.models import Business, KnowledgeChunk, KnowledgeDocument, KnowledgeSource
 from app.services.hybrid_retrieval import (
     cosine_similarity,
     generate_or_store_embedding,

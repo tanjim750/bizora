@@ -5,15 +5,15 @@ Delivery Policy, Return & Refund Policy, Brand Tone, Support Knowledge,
 Business Goals, Historical Decisions, and Human-in-the-Loop Approved Suggestions.
 """
 
-from dataclasses import asdict, dataclass
 import re
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.utils import timezone
 
-from app.exceptions import DomainBoundaryViolationError, TenantIsolationError, UnapprovedMemoryPromotionError
+from app.exceptions import TenantIsolationError, UnapprovedMemoryPromotionError
 from app.models import (
     AiRecommendation,
     ApprovedSuggestion,

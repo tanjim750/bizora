@@ -4,14 +4,13 @@ Production-grade implementation of vector storage, cosine similarity search,
 keyword lexical search, Reciprocal Rank Fusion (RRF), tenant isolation, and citation grounding.
 """
 
-from dataclasses import dataclass
 import math
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from app.exceptions import (
     EmbeddingDimensionMismatchError,
-    StaleVersionError,
     TenantIsolationError,
 )
 from app.models import Business, KnowledgeChunk, KnowledgeEmbedding

@@ -4,10 +4,10 @@ Implementation of Knowledge Source registration, Document Ingestion, Processing,
 Chunking, and Versioning with strict domain boundary and tenant isolation guardrails.
 """
 
-from dataclasses import dataclass
-from enum import Enum
 import hashlib
 import re
+from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from django.db import transaction
