@@ -5,12 +5,15 @@ AI reads deterministic facts, issues, graph, and policy to produce recommendatio
 AI recommendations NEVER silently create authoritative facts or execute actions.
 """
 
+import re
 from decimal import Decimal
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from app.exceptions import TenantIsolationError, UnapprovedMemoryPromotionError
 from app.models import (
     AiAction,
     AiRecommendation,
@@ -20,6 +23,14 @@ from app.models import (
     BusinessIssue,
     KnowledgeDocument,
 )
+from app.services.domain_memory import (
+    check_repeat_decision_conflict,
+    get_active_business_goals,
+    get_brand_tone,
+    get_business_profile,
+    promote_approved_suggestion,
+)
+from app.services.hybrid_retrieval import hybrid_retrieval
 
 
 def assemble_ai_context(business: Business, intent: str | None = None) -> dict:
@@ -175,7 +186,7 @@ def generate_grounded_recommendation(
         confidence = Decimal(str(llm_output.get("confidence", "0.8000")))
     except Exception as exc:
         raise ValidationError("LLM confidence must be numeric.") from exc
-    if not Decimal("0") <= confidence <= Decimal("1"):
+    if not Decimal(0) <= confidence <= Decimal(1):
         raise ValidationError("LLM confidence must be between 0 and 1.")
 
     # Strictly ground recommendation with evidence (COR-008, Feature 14)
@@ -210,9 +221,238 @@ def generate_grounded_recommendation(
     return recommendation, action
 
 
+def assemble_grounded_memory_context(
+    business: Business,
+    query: str | None = None,
+    intent: str | None = None,
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """
+    Connects AI Intelligence to Business Memory via HybridRetrieval,
+    active policies, brand tone, and business goals.
+    """
+    if business is None or not getattr(business, "id", None):
+        raise TenantIsolationError("Tenant isolation violation: a non-null Business instance is required.")
+
+    profile = get_business_profile(business)
+    goals = get_active_business_goals(business)
+    brand_tone = get_brand_tone(business)
+
+    retrieved_knowledge = []
+    if query:
+        raw_results = hybrid_retrieval(business=business, query=query, top_k=top_k)
+        for item in raw_results:
+            retrieved_knowledge.append({
+                "chunk_id": item.chunk_id,
+                "document_id": item.document_id,
+                "document_title": item.document_title,
+                "content": item.content,
+                "score": item.rrf_score if item.rrf_score > 0 else (item.sparse_score or item.dense_score),
+                "version": item.version,
+                "source_reference": item.source_reference,
+                "citations": f"{item.document_title} (v{item.version})",
+            })
+
+    return {
+        "profile": profile,
+        "active_goals": [
+            {
+                "id": g.id,
+                "name": g.name,
+                "category": g.category,
+                "priority": g.priority,
+                "target_text": g.target_text,
+                "timeframe": g.timeframe,
+            }
+            for g in goals
+        ],
+        "brand_tone": brand_tone,
+        "retrieved_knowledge": retrieved_knowledge,
+        "query": query,
+        "intent": intent,
+    }
+
+
+def generate_goal_aligned_recommendation(
+    business: Business,
+    issue_type: str | None = None,
+    candidate_action_type: str = "CHANGE_COURIER",
+    candidate_entity_type: str = "COURIER",
+    candidate_entity_id: int | None = None,
+) -> tuple[AiRecommendation, Any]:
+    """
+    Generates a recommendation prioritized against active BusinessGoals and
+    checked against rejected HistoricalDecisions to prevent repeat failures.
+    """
+    if business is None or not getattr(business, "id", None):
+        raise TenantIsolationError("Tenant isolation violation: a non-null Business instance is required.")
+
+    conflict = check_repeat_decision_conflict(
+        business=business,
+        decision_type=candidate_action_type,
+        target_entity_type=candidate_entity_type,
+        target_entity_id=candidate_entity_id,
+    )
+
+    metadata: dict[str, Any] = {}
+    now = timezone.now()
+
+    if conflict:
+        metadata["repeat_decision_conflict"] = True
+        metadata["conflict_decision_id"] = conflict.id
+        metadata["conflict_outcome"] = conflict.outcome
+        rationale = (
+            f"Candidate action was previously rejected or ineffective in decision "
+            f"'{conflict.title}' ({conflict.outcome}): {conflict.rationale}"
+        )
+        priority = "LOW"
+        confidence = Decimal("0.2000")
+    else:
+        goals = get_active_business_goals(business)
+        matched_goal = None
+        for g in goals:
+            if g.category in ["LOGISTICS", "OPERATIONS", "DELIVERY"] and "DELIVERY" in (issue_type or candidate_action_type):
+                matched_goal = g
+                break
+            if g.category.lower() in (issue_type or "").lower() or g.name.lower() in (issue_type or "").lower():
+                matched_goal = g
+                break
+        if not matched_goal and goals:
+            matched_goal = goals[0]
+
+        if matched_goal:
+            metadata["aligned_goal"] = matched_goal.name
+            metadata["goal_category"] = matched_goal.category
+            metadata["goal_priority"] = matched_goal.priority
+            rationale = (
+                f"Directly advances business goal '{matched_goal.name}' ({matched_goal.target_text}) "
+                f"by resolving {issue_type or 'issue'} via {candidate_action_type}."
+            )
+            priority = "HIGH"
+            confidence = Decimal("0.9200")
+        else:
+            rationale = f"Candidate recommendation {candidate_action_type} for {candidate_entity_type} {candidate_entity_id}."
+            priority = "MEDIUM"
+            confidence = Decimal("0.7500")
+
+    issue = None
+    if issue_type:
+        issue = BusinessIssue.objects.filter(business=business, issue_type=issue_type, status="OPEN").first()
+    if not issue:
+        issue = BusinessIssue.objects.filter(business=business, status="OPEN").first()
+
+    evidence_fact = BusinessFact.objects.filter(business=business, status="VERIFIED").first()
+
+    with transaction.atomic():
+        recommendation = AiRecommendation.objects.create(
+            business=business,
+            business_issue=issue,
+            recommendation_type=candidate_action_type,
+            title=f"Recommendation: {candidate_action_type} for {candidate_entity_type} {candidate_entity_id}",
+            description=f"Automated recommendation targeting {candidate_entity_type} {candidate_entity_id}.",
+            rationale=rationale,
+            confidence=confidence,
+            priority=priority,
+            status="SUGGESTED",
+            suggested_action_type=candidate_action_type,
+            generated_at=now,
+            metadata=metadata,
+        )
+
+        if evidence_fact or issue:
+            AiRecommendationEvidence.objects.create(
+                business=business,
+                ai_recommendation=recommendation,
+                business_issue=issue,
+                business_fact=evidence_fact,
+                evidence_type="VERIFIED_FACT_GROUNDING" if evidence_fact else "ISSUE_GROUNDING",
+                description=rationale,
+                weight=Decimal("1.0000"),
+            )
+
+        action = AiAction.objects.create(
+            business=business,
+            ai_recommendation=recommendation,
+            action_type=candidate_action_type,
+            status="SUGGESTED",
+            target_entity_type=candidate_entity_type,
+            target_entity_id=candidate_entity_id,
+            action_payload={"entity_type": candidate_entity_type, "entity_id": candidate_entity_id},
+            is_simulated=True,
+        )
+
+    return recommendation, action
+
+
+def enforce_brand_tone_on_output(
+    business: Business,
+    text: str,
+    channel: str | None = None,
+) -> str:
+    """
+    Validates text against active BrandTone and sanitizes/flags restricted terms.
+    """
+    if business is None or not getattr(business, "id", None):
+        raise TenantIsolationError("Tenant isolation violation: a non-null Business instance is required.")
+
+    tone_cfg = get_brand_tone(business, channel=channel)
+    restricted = tone_cfg.get("restricted_words", [])
+    if not restricted or not text:
+        return text
+
+    sanitized = text
+    standard_replacements = {
+        "cheap": "affordable",
+        "guarantee 100%": "strive for complete",
+        "100% guarantee": "dedicated commitment",
+        "dirt cheap": "cost-effective",
+        "unlimited": "flexible",
+    }
+    for word in restricted:
+        w_lower = word.lower()
+        replacement = standard_replacements.get(w_lower, "[redacted]")
+        pattern = rf"(?<![a-zA-Z0-9]){re.escape(word)}(?![a-zA-Z0-9])"
+        sanitized = re.sub(pattern, replacement, sanitized, flags=re.IGNORECASE)
+
+    return sanitized
+
+
+def promote_recommendation_to_memory(
+    business: Business,
+    recommendation: AiRecommendation,
+    user,
+    approved_at=None,
+):
+    """
+    Promotes an approved recommendation to durable ApprovedSuggestion memory with audit trail.
+    """
+    if business is None or not getattr(business, "id", None):
+        raise TenantIsolationError("Tenant isolation violation: a non-null Business instance is required.")
+
+    if recommendation.business_id != business.id:
+        raise TenantIsolationError(
+            f"Tenant isolation violation: recommendation belongs to business {recommendation.business_id}, not {business.id}."
+        )
+
+    if recommendation.status != "APPROVED":
+        raise UnapprovedMemoryPromotionError(
+            f"Cannot promote unapproved AI recommendation to durable Business Memory. "
+            f"Status is '{recommendation.status}', must be 'APPROVED'."
+        )
+
+    now = approved_at or timezone.now()
+    return promote_approved_suggestion(
+        business=business,
+        recommendation=recommendation,
+        approved_by=user,
+        approved_at=now,
+    )
+
+
 # Re-export modular AI Intelligence services for unified imports
-from app.services.ai_assistant import ask_business_assistant  # noqa: E402
-from app.services.ai_context import (  # noqa: E402
+
+from app.services.ai_assistant import ask_business_assistant
+from app.services.ai_context import (
     assemble_customer_context,
     assemble_fact_context,
     assemble_full_ai_context,
@@ -221,15 +461,41 @@ from app.services.ai_context import (  # noqa: E402
     assemble_order_context,
     assemble_product_context,
 )
-from app.services.ai_diagnosis import diagnose_business_issue  # noqa: E402
-from app.services.ai_marketing import explain_campaign_performance  # noqa: E402
-from app.services.ai_summarization import (  # noqa: E402
+from app.services.ai_diagnosis import diagnose_business_issue
+from app.services.ai_marketing import explain_campaign_performance
+from app.services.ai_summarization import (
     summarize_call,
     summarize_support_conversation,
 )
-from app.services.ai_support import (  # noqa: E402
+from app.services.ai_support import (
     evaluate_escalation,
     generate_handover_summary,
     generate_suggested_reply,
     resume_ai_handling,
 )
+
+__all__ = [
+    "ask_business_assistant",
+    "assemble_ai_context",
+    "assemble_customer_context",
+    "assemble_fact_context",
+    "assemble_full_ai_context",
+    "assemble_graph_context",
+    "assemble_grounded_memory_context",
+    "assemble_memory_context",
+    "assemble_order_context",
+    "assemble_product_context",
+    "diagnose_business_issue",
+    "enforce_brand_tone_on_output",
+    "evaluate_escalation",
+    "explain_campaign_performance",
+    "generate_goal_aligned_recommendation",
+    "generate_grounded_recommendation",
+    "generate_handover_summary",
+    "generate_suggested_reply",
+    "promote_recommendation_to_memory",
+    "resume_ai_handling",
+    "summarize_call",
+    "summarize_support_conversation",
+]
+
