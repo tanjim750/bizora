@@ -91,16 +91,23 @@ class BusinessMembership(models.Model):
 class BusinessGoal(models.Model):
     business = models.ForeignKey("Business", models.CASCADE, related_name="goals")
     name = models.CharField(max_length=255)
-    metric_key = models.CharField(max_length=100)
-    target_value = models.DecimalField(max_digits=24, decimal_places=6, null=True)
-    status = models.CharField(max_length=30, default="ACTIVE")
-    starts_at = models.DateTimeField(null=True)
-    ends_at = models.DateTimeField(null=True)
+    category = models.CharField(max_length=100, default="GENERAL", db_index=True)
+    priority = models.CharField(max_length=30, default="MEDIUM", db_index=True)
+    metric_key = models.CharField(max_length=100, null=True, blank=True)
+    target_value = models.DecimalField(max_digits=24, decimal_places=6, null=True, blank=True)
+    target_text = models.CharField(max_length=255, null=True, blank=True)
+    timeframe = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=30, default="ACTIVE", db_index=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "business_goals"
-        indexes = [models.Index(fields=["business", "status"], name="idx_bg_bs_status")]
+        indexes = [
+            models.Index(fields=["business", "status"], name="idx_bg_bs_status"),
+            models.Index(fields=["business", "priority"], name="idx_bg_bp_priority"),
+        ]
 
 
 class IntegrationSource(models.Model):
@@ -1548,3 +1555,67 @@ class MockExpectedResult(models.Model):
         indexes = [
             models.Index(fields=['mock_scenario', 'result_key'], name='idx_mer_mr_89ccd74d'),
         ]
+
+
+class BusinessMemory(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
+    memory_type = models.CharField(max_length=100, db_index=True)
+    subject_entity_type = models.CharField(max_length=50, null=True, blank=True, db_index=True)
+    subject_entity_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    content = models.TextField()
+    metadata = models.JSONField(null=True, blank=True)
+    source_reference = models.CharField(max_length=1000, null=True, blank=True)
+    version = models.IntegerField(default=1)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'business_memory'
+        indexes = [
+            models.Index(fields=['business', 'memory_type', 'is_active'], name='idx_bm_bmi_8f921a'),
+        ]
+
+
+class HistoricalDecision(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
+    decision_type = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=500)
+    rationale = models.TextField(null=True, blank=True)
+    context = models.JSONField(null=True, blank=True)
+    outcome = models.CharField(max_length=50, default='APPROVED', db_index=True)
+    target_entity_type = models.CharField(max_length=50, null=True, blank=True, db_index=True)
+    target_entity_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, blank=True)
+    decided_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'historical_decisions'
+        indexes = [
+            models.Index(fields=['business', 'decision_type'], name='idx_hd_bdt_4c991b'),
+            models.Index(fields=['business', 'outcome'], name='idx_hd_out_91ab23'),
+        ]
+
+
+class ApprovedSuggestion(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
+    ai_recommendation = models.ForeignKey('AiRecommendation', models.SET_NULL, null=True, blank=True, db_index=True)
+    suggestion_type = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=500)
+    suggestion = models.TextField()
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, db_index=True)
+    approved_at = models.DateTimeField()
+    status = models.CharField(max_length=30, default='APPROVED', db_index=True)
+    context = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'approved_suggestions'
+        indexes = [
+            models.Index(fields=['business', 'suggestion_type'], name='idx_as_bst_3a10cf'),
+        ]
+
