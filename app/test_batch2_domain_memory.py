@@ -13,6 +13,7 @@ from app.exceptions import TenantIsolationError, UnapprovedMemoryPromotionError
 from app.models import (
     AiRecommendation,
     Business,
+    BusinessMembership,
     Product,
 )
 from app.services.domain_memory import (
@@ -54,6 +55,7 @@ class Batch2DomainMemoryTests(TestCase):
             currency="BDT",
             timezone="Asia/Dhaka",
         )
+        BusinessMembership.objects.create(business=self.business_a, user=self.user, role="OPERATOR")
         self.business_b = Business.objects.create(
             name="Barisal Gadgets",
             slug="barisal-gadgets",

@@ -18,6 +18,7 @@ from app.models import (
     BusinessFact,
     BusinessGoal,
     BusinessIssue,
+    BusinessMembership,
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeSource,
@@ -49,6 +50,7 @@ class Batch4AiIntelligenceIntegrationTests(TestCase):
             currency="BDT",
             timezone="Asia/Dhaka",
         )
+        BusinessMembership.objects.create(business=self.business_a, user=self.user, role="OPERATOR")
         self.business_b = Business.objects.create(
             name="Barisal Gadgets",
             slug="barisal-gadgets",

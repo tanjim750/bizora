@@ -1446,6 +1446,19 @@ class AiRecommendationEvidence(models.Model):
             raise ValidationError("AiRecommendationEvidence must be grounded by at least one evidence reference.")
         if self.ai_recommendation_id and self.business_id and self.ai_recommendation.business_id != self.business_id:
             raise ValidationError("Evidence and recommendation must belong to the same business.")
+        for field_name in (
+            'business_fact',
+            'business_issue',
+            'metric_snapshot',
+            'business_relationship',
+            'graph_node',
+            'graph_edge',
+            'knowledge_chunk',
+        ):
+            if getattr(self, f'{field_name}_id'):
+                referenced = getattr(self, field_name)
+                if referenced.business_id != self.business_id:
+                    raise ValidationError(f'{field_name} evidence must belong to the recommendation business.')
 
     def save(self, *args, **kwargs):
         if not self.business_id and self.ai_recommendation and self.ai_recommendation.business_id:

@@ -23,6 +23,7 @@ from app.models import (
     HistoricalDecision,
     Product,
 )
+from app.services.authorization import require_business_access
 
 User = get_user_model()
 
@@ -491,6 +492,7 @@ def promote_approved_suggestion(
             "Cannot promote unapproved AI recommendation to durable Business Memory. "
             "A recommendation must be explicitly human-approved (status='APPROVED', approved_by, approved_at)."
         )
+    require_business_access(approved_by, business, roles={"OWNER", "ADMIN", "OPERATOR"})
 
 
     # Check for existing promotion

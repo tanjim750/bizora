@@ -21,6 +21,7 @@ from app.models import (
     Business,
     BusinessFact,
     BusinessIssue,
+    BusinessMembership,
     Product,
 )
 from app.services.ai import (
@@ -87,6 +88,7 @@ class BusinessMemoryKnowledgeE2EValidationTests(TestCase):
             currency="BDT",
             timezone="Asia/Dhaka",
         )
+        BusinessMembership.objects.create(business=self.business_primary, user=self.user, role="OPERATOR")
         self.business_rival = Business.objects.create(
             name="Barisal Tech Hub",
             slug="barisal-tech-hub",

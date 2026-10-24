@@ -5,11 +5,13 @@ Chunking, and Versioning with strict domain boundary and tenant isolation guardr
 """
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -76,10 +78,11 @@ def _contains_prohibited_keys(payload: Any) -> str | None:
     """Recursively checks whether any dictionary in payload contains prohibited keys."""
     if isinstance(payload, dict):
         for k, v in payload.items():
-            if k in PROHIBITED_PAYLOAD_KEYS:
-                return k
-            if k in ("event_type", "source_type") and v in PROHIBITED_SOURCE_TYPES:
-                return f"{k}:{v}"
+            normalized_key = str(k).strip().lower()
+            if normalized_key in PROHIBITED_PAYLOAD_KEYS:
+                return normalized_key
+            if normalized_key in ("event_type", "source_type") and isinstance(v, str) and v.strip().upper() in PROHIBITED_SOURCE_TYPES:
+                return f"{normalized_key}:{v}"
             found = _contains_prohibited_keys(v)
             if found:
                 return found
@@ -97,13 +100,19 @@ def validate_domain_boundaries(source_type: str, metadata: dict[str, Any] | None
     - Business Memory != Business Data (no transactional events/keys)
     - Business Memory != Business Intelligence (no live metrics/anomalies)
     """
-    if source_type in PROHIBITED_SOURCE_TYPES:
+    if isinstance(source_type, str) and source_type.strip().upper() in PROHIBITED_SOURCE_TYPES:
         raise DomainBoundaryViolationError(
             f"Prohibited source type '{source_type}'. Business Memory does not store raw transactional events or live BI metrics."
         )
 
-    meta = metadata or {}
-    prohibited_match = _contains_prohibited_keys(meta)
+    prohibited_match = _contains_prohibited_keys(metadata or {})
+    stripped_content = (content or "").strip()
+    if not prohibited_match and stripped_content.startswith(("{", "[")):
+        try:
+            structured_content = json.loads(stripped_content)
+        except (TypeError, ValueError):
+            structured_content = None
+        prohibited_match = _contains_prohibited_keys(structured_content)
     if prohibited_match:
         raise DomainBoundaryViolationError(
             f"Prohibited transactional or metric payload detected ('{prohibited_match}'). "
@@ -208,6 +217,7 @@ def ingest_document(
 
 
 
+@transaction.atomic
 def process_document(
     document: KnowledgeDocument,
 ) -> KnowledgeDocument:
@@ -216,19 +226,35 @@ def process_document(
     Normalizes content, preserves structure, calculates SHA-256 hash for deduplication,
     validates content presence, and marks document as READY.
     """
-    if not document.content or not document.content.strip():
+    document = (
+        KnowledgeDocument.objects.select_for_update()
+        .select_related("knowledge_source")
+        .get(pk=document.pk)
+    )
+    if document.knowledge_source.business_id != document.business_id:
+        raise TenantIsolationError("Knowledge source and document belong to different businesses.")
+    if document.status in ("SUPERSEDED", "ARCHIVED") or document.knowledge_source.status == "ARCHIVED":
+        raise StaleVersionError("Retired knowledge cannot be processed as an active document.")
+    validate_domain_boundaries(
+        document.knowledge_source.source_type,
+        document.metadata,
+        document.content,
+    )
+
+    cleaned_content = (document.content or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not cleaned_content:
+        if document.status in ("READY", "PUBLISHED"):
+            raise ValidationError("An active knowledge document cannot be empty.")
         document.status = "FAILED"
-        document.save(update_fields=["status"])
+        document.save(update_fields=["status", "updated_at"])
         return document
 
-    # Clean and normalize text
-    raw_content = document.content
-    cleaned_content = raw_content.replace("\r\n", "\n").replace("\r", "\n").strip()
-
-    # Generate SHA-256 content hash
     content_hash = hashlib.sha256(cleaned_content.encode("utf-8")).hexdigest()
+    if document.status in ("READY", "PUBLISHED") and document.content_hash:
+        if document.content_hash != content_hash:
+            raise ValidationError("Active document content changed; create a new version instead.")
+        return document
 
-    # Check for deduplication against existing processed documents for this business
     existing = (
         KnowledgeDocument.objects.filter(
             business=document.business,
@@ -239,16 +265,17 @@ def process_document(
         .first()
     )
 
-    metadata = document.metadata or {}
+    metadata = dict(document.metadata or {})
+    metadata["is_duplicate"] = existing is not None
     if existing:
-        metadata["is_duplicate"] = True
         metadata["duplicate_of_id"] = existing.id
     else:
-        metadata["is_duplicate"] = False
+        metadata.pop("duplicate_of_id", None)
 
     document.content = cleaned_content
     document.content_hash = content_hash
-    document.status = "READY"
+    if document.status != "PUBLISHED":
+        document.status = "READY"
     document.metadata = metadata
     document.processed_at = timezone.now()
     document.save()
@@ -256,6 +283,7 @@ def process_document(
     return document
 
 
+@transaction.atomic
 def chunk_document(
     document: KnowledgeDocument,
     chunk_size: int = 500,
@@ -266,6 +294,25 @@ def chunk_document(
     Splits document content into ordered, section-aware, token-bounded chunks
     while preserving document and tenant associations.
     """
+    if (
+        not isinstance(chunk_size, int)
+        or isinstance(chunk_size, bool)
+        or not isinstance(chunk_overlap, int)
+        or isinstance(chunk_overlap, bool)
+        or chunk_size <= 0
+        or not 0 <= chunk_overlap < chunk_size
+    ):
+        raise ValidationError("Chunk size must be positive and overlap must be smaller than chunk size.")
+
+    document = (
+        KnowledgeDocument.objects.select_for_update()
+        .select_related("knowledge_source")
+        .get(pk=document.pk)
+    )
+    if document.knowledge_source.business_id != document.business_id:
+        raise TenantIsolationError("Knowledge source and document belong to different businesses.")
+    if document.status not in ("READY", "PUBLISHED") or document.knowledge_source.status == "ARCHIVED":
+        raise StaleVersionError("Only active processed documents can be chunked.")
     if not document.content:
         return []
 
@@ -311,23 +358,36 @@ def chunk_document(
     for idx, (heading, chunk_text) in enumerate(chunks_data):
         approx_tokens = max(1, len(chunk_text.split()))
         chunk_meta = {
+            **(document.metadata or {}),
             "section": heading,
             "version": document.version,
-            "is_current": (document.status in ["READY", "PUBLISHED"]),
+            "is_current": True,
             "content_hash": document.content_hash,
-            **(document.metadata or {}),
         }
-        chunk = KnowledgeChunk.objects.create(
+        created_chunks.append(KnowledgeChunk(
             business=document.business,
             knowledge_document=document,
             chunk_index=idx,
             content=chunk_text,
             token_count=approx_tokens,
             metadata=chunk_meta,
-        )
-        created_chunks.append(chunk)
+        ))
 
-    return created_chunks
+    existing_chunks = list(
+        KnowledgeChunk.objects.filter(knowledge_document=document).order_by("chunk_index")
+    )
+    if existing_chunks:
+        if len(existing_chunks) == len(created_chunks) and all(
+            existing.business_id == document.business_id
+            and existing.chunk_index == proposed.chunk_index
+            and existing.content == proposed.content
+            and existing.metadata == proposed.metadata
+            for existing, proposed in zip(existing_chunks, created_chunks)
+        ):
+            return existing_chunks
+        raise ValidationError("Document chunks already exist with different content; create a new document version.")
+
+    return KnowledgeChunk.objects.bulk_create(created_chunks, batch_size=500)
 
 
 def bump_document_version(
@@ -343,31 +403,37 @@ def bump_document_version(
     """
     with transaction.atomic():
         locked_doc = (
-            KnowledgeDocument.objects.select_for_update()
+            KnowledgeDocument.objects.select_for_update().select_related("knowledge_source")
             .get(pk=current_document.pk)
         )
+        if locked_doc.knowledge_source.business_id != locked_doc.business_id:
+            raise TenantIsolationError("Knowledge source and document belong to different businesses.")
         if locked_doc.status not in ("READY", "PUBLISHED") or locked_doc.knowledge_source.status == "ARCHIVED":
             raise StaleVersionError(
                 f"Knowledge document {locked_doc.id} is not an active version and cannot be superseded."
             )
+        cleaned_content = new_content.replace("\r\n", "\n").replace("\r", "\n").strip()
+        if not cleaned_content:
+            raise ValidationError("A new knowledge version must contain content.")
+        meta = dict(updated_metadata) if updated_metadata is not None else dict(locked_doc.metadata or {})
+        validate_domain_boundaries(locked_doc.knowledge_source.source_type, meta, cleaned_content)
+
         # Mark previous document as SUPERSEDED
         locked_doc.status = "SUPERSEDED"
         locked_doc.save(update_fields=["status", "updated_at"])
 
         # Atomically mark previous chunks as non-current
         for chunk in locked_doc.knowledgechunk_set.select_for_update():
-            meta = chunk.metadata or {}
-            meta["is_current"] = False
-            meta["superseded_at"] = timezone.now().isoformat()
-            chunk.metadata = meta
+            chunk_meta = dict(chunk.metadata or {})
+            chunk_meta["is_current"] = False
+            chunk_meta["superseded_at"] = timezone.now().isoformat()
+            chunk.metadata = chunk_meta
             chunk.save(update_fields=["metadata", "updated_at"])
 
         # Create new version
         new_version = locked_doc.version + 1
-        cleaned_content = new_content.replace("\r\n", "\n").strip()
         new_hash = hashlib.sha256(cleaned_content.encode("utf-8")).hexdigest()
 
-        meta = updated_metadata or dict(locked_doc.metadata or {})
         meta["supersedes_version"] = locked_doc.version
 
         new_doc = KnowledgeDocument.objects.create(

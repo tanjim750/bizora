@@ -9,6 +9,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 from app.exceptions import (
@@ -73,11 +74,36 @@ def generate_or_store_embedding(
     Stores chunk embedding with dimension and model tracking.
     Enforces EmbeddingDimensionMismatchError if vector length does not match expected_dimensions.
     """
-    target_dim = expected_dimensions or MODEL_DIMENSIONS.get(model_name)
+    chunk = (
+        KnowledgeChunk.objects.select_related("knowledge_document__knowledge_source")
+        .get(pk=chunk.pk)
+    )
+    document = chunk.knowledge_document
+    if (
+        chunk.business_id != document.business_id
+        or document.business_id != document.knowledge_source.business_id
+    ):
+        raise TenantIsolationError("Embedding chunk, document and source must belong to one business.")
+
+    known_dim = MODEL_DIMENSIONS.get(model_name)
+    if known_dim is not None and expected_dimensions is not None and known_dim != expected_dimensions:
+        raise EmbeddingDimensionMismatchError(
+            f"Embedding dimension mismatch for model '{model_name}': expected {known_dim}, got {expected_dimensions}."
+        )
+    target_dim = known_dim if known_dim is not None else expected_dimensions
+    if not isinstance(vector, (list, tuple)) or not vector:
+        raise ValidationError("Embedding must be a non-empty vector.")
     if target_dim is not None and len(vector) != target_dim:
         raise EmbeddingDimensionMismatchError(
             f"Embedding dimension mismatch for model '{model_name}': expected {target_dim}, got {len(vector)}."
         )
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        for value in vector
+    ) or not any(value != 0 for value in vector):
+        raise ValidationError("Embedding must contain finite numeric values and have non-zero magnitude.")
 
     embedding_obj, _ = KnowledgeEmbedding.objects.update_or_create(
         knowledge_chunk=chunk,
@@ -115,7 +141,18 @@ def vector_search(
     """
     if business is None or not getattr(business, "id", None):
         raise TenantIsolationError("Tenant isolation violation: valid business required.")
-    if top_k <= 0:
+    if (
+        top_k <= 0
+        or not isinstance(query_vector, (list, tuple))
+        or not query_vector
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            for value in query_vector
+        )
+        or not any(value != 0 for value in query_vector)
+    ):
         return []
 
     # Fetch candidate embeddings for this tenant and model
