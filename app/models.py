@@ -11,6 +11,9 @@ class VectorField(models.Field):
             return 'vector'
         return 'text'
 
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
+
     def to_python(self, value):
         if value is None:
             return None
