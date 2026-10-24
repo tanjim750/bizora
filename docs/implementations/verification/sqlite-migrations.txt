@@ -1,0 +1,52 @@
+COMMAND: manage.py check
+System check identified no issues (0 silenced).
+COMMAND: manage.py makemigrations --check --dry-run
+No changes detected
+COMMAND: manage.py migrate --noinput
+Operations to perform:
+  Apply all migrations: admin, app, auth, contenttypes, sessions
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying app.0001_initial... OK
+  Applying app.0002_domain_foundations... OK
+  Applying app.0003_domain_integrity... OK
+  Applying app.0004_product_images... OK
+  Applying app.0005_variant_deduplication... OK
+  Applying app.0006_message_location... OK
+  Applying app.0007_requested_callbacks... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying sessions.0001_initial... OK
+COMMAND: manage.py preflight_domains
+Schema preflight passed; checked duplicate groups=0. No data changed.
+COMMAND: manage.py shell -c from django.contrib.auth import get_user_model; get_user_model().objects.create_user('demo-runner')
+COMMAND: manage.py demo_completion --username demo-runner
+Demo ready: business=1, customer=1, order=1, payment=1, shipment=1, identity_link=1
+/api/businesses/1/customers/1/360/
+Provider execution, AI answers and BI attribution remain explicitly unavailable.
+Completion demo verified: identity=1; visitor=1; support=2
+/api/businesses/1/conversations/2/context/
+/api/businesses/1/visitors/1/journey/
+Suggested reply: UNAVAILABLE; policies: UNAVAILABLE
+COMMAND: manage.py demo_completion --username demo-runner
+Demo ready: business=1, customer=1, order=1, payment=1, shipment=1, identity_link=1
+/api/businesses/1/customers/1/360/
+Provider execution, AI answers and BI attribution remain explicitly unavailable.
+Completion demo verified: identity=1; visitor=1; support=2
+/api/businesses/1/conversations/2/context/
+/api/businesses/1/visitors/1/journey/
+Suggested reply: UNAVAILABLE; policies: UNAVAILABLE
