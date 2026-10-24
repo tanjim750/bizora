@@ -187,7 +187,7 @@ def assemble_memory_context(
             docs = docs.filter(document_type=document_type)
 
     memory_items = []
-    for doc in docs[:5]:
+    for doc in docs.select_related("knowledge_source")[:5]:
         memory_items.append(
             {
                 "id": doc.id,
@@ -203,8 +203,11 @@ def assemble_memory_context(
         terms = [term for term in (intent or "").replace("_", " ").lower().split() if len(term) > 2]
         chunks = doc.knowledgechunk_set.all()
         if terms:
-            chunks = [chunk for chunk in chunks if any(term in chunk.content.lower() for term in terms)]
-        for chunk in list(chunks)[:3]:
+            match_terms = Q()
+            for term in terms:
+                match_terms |= Q(content__icontains=term)
+            chunks = chunks.filter(match_terms)
+        for chunk in chunks[:3]:
             memory_items.append({
                 "id": chunk.id, "title": doc.title, "document_type": doc.document_type,
                 "content": chunk.content, "version": doc.version,
@@ -242,9 +245,14 @@ def assemble_memory_context(
 
     from app.models import BusinessGoal
     for goal in BusinessGoal.objects.filter(business=business, status="ACTIVE")[:5]:
+        target = (
+            f"{goal.metric_key} target {goal.target_value}"
+            if goal.metric_key and goal.target_value is not None
+            else goal.target_text or goal.name
+        )
         memory_items.append({
             "id": goal.id, "title": f"Business Goal: {goal.name}",
-            "document_type": "BUSINESS_GOAL", "content": f"{goal.metric_key} target {goal.target_value}",
+            "document_type": "BUSINESS_GOAL", "content": target,
             "version": 1,
         })
 

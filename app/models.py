@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -1267,11 +1269,14 @@ class KnowledgeDocument(models.Model):
             status__in=['READY', 'PUBLISHED']
         ).exclude(knowledge_source__status='ARCHIVED')
         if intent:
-            qs = qs.filter(
-                models.Q(title__icontains=intent) |
-                models.Q(content__icontains=intent) |
-                models.Q(metadata__intent__iexact=intent)
-            )
+            relevant_terms = [
+                term for term in re.split(r'[_\W]+', intent.lower())
+                if term and term not in {'and', 'or', 'business', 'inquiry', 'performance', 'question'}
+            ]
+            intent_filter = models.Q(metadata__intent__iexact=intent)
+            for term in relevant_terms:
+                intent_filter |= models.Q(title__icontains=term) | models.Q(content__icontains=term)
+            qs = qs.filter(intent_filter)
         return qs
 
     class Meta:

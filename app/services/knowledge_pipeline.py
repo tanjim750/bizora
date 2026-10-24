@@ -346,6 +346,10 @@ def bump_document_version(
             KnowledgeDocument.objects.select_for_update()
             .get(pk=current_document.pk)
         )
+        if locked_doc.status not in ("READY", "PUBLISHED") or locked_doc.knowledge_source.status == "ARCHIVED":
+            raise StaleVersionError(
+                f"Knowledge document {locked_doc.id} is not an active version and cannot be superseded."
+            )
         # Mark previous document as SUPERSEDED
         locked_doc.status = "SUPERSEDED"
         locked_doc.save(update_fields=["status", "updated_at"])

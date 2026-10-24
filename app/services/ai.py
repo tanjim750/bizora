@@ -192,10 +192,12 @@ def generate_grounded_recommendation(
     # Strictly ground recommendation with evidence (COR-008, Feature 14)
     evidence_fact = None
     if issue and hasattr(issue, "businessissueevidence_set"):
-        issue_ev = issue.businessissueevidence_set.filter(business_fact__isnull=False).first()
+        issue_ev = issue.businessissueevidence_set.filter(
+            business_fact__in=BusinessFact.objects.active_for_context(business)
+        ).select_related("business_fact").first()
         if issue_ev:
             evidence_fact = issue_ev.business_fact
-    if not evidence_fact:
+    if not evidence_fact and issue is None:
         evidence_fact = BusinessFact.objects.active_for_context(business).first()
     if evidence_fact is None and issue is None:
         raise ValidationError("Cannot generate a recommendation without verified evidence or an issue.")
@@ -209,7 +211,8 @@ def generate_grounded_recommendation(
         )
         AiRecommendationEvidence.objects.create(
             business=business, ai_recommendation=recommendation, business_issue=issue,
-            business_fact=evidence_fact, evidence_type="VERIFIED_FACT_GROUNDING",
+            business_fact=evidence_fact,
+            evidence_type="VERIFIED_FACT_GROUNDING" if evidence_fact else "ISSUE_GROUNDING",
             description=f"Grounded on authoritative evidence for {title}.", weight=Decimal("1.0000"),
         )
         action = AiAction.objects.create(
@@ -336,10 +339,19 @@ def generate_goal_aligned_recommendation(
     issue = None
     if issue_type:
         issue = BusinessIssue.objects.filter(business=business, issue_type=issue_type, status="OPEN").first()
-    if not issue:
-        issue = BusinessIssue.objects.filter(business=business, status="OPEN").first()
 
-    evidence_fact = BusinessFact.objects.filter(business=business, status="VERIFIED").first()
+    evidence_fact = None
+    if issue:
+        issue_evidence = issue.businessissueevidence_set.filter(
+            business_fact__in=BusinessFact.objects.active_for_context(business)
+        ).select_related("business_fact").first()
+        if issue_evidence:
+            evidence_fact = issue_evidence.business_fact
+    elif candidate_entity_id is not None:
+        evidence_fact = BusinessFact.objects.active_for_context(business).filter(
+            subject_entity_type__iexact=candidate_entity_type,
+            subject_entity_id=candidate_entity_id,
+        ).first()
 
     with transaction.atomic():
         recommendation = AiRecommendation.objects.create(

@@ -13,8 +13,11 @@ from django.utils import timezone
 
 from app.exceptions import StaleVersionError
 from app.models import (
+    AiRecommendationEvidence,
     Business,
+    BusinessFact,
     BusinessIssue,
+    BusinessIssueEvidence,
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeEmbedding,
@@ -22,6 +25,7 @@ from app.models import (
 )
 from app.services.ai import (
     generate_goal_aligned_recommendation,
+    generate_grounded_recommendation,
 )
 from app.services.ai_context import assemble_memory_context
 from app.services.domain_memory import (
@@ -36,6 +40,7 @@ from app.services.hybrid_retrieval import (
     vector_search,
 )
 from app.services.knowledge_pipeline import (
+    bump_document_version,
     resolve_active_version,
 )
 
@@ -145,6 +150,123 @@ class BugReproductionTests(TestCase):
 
         self.assertEqual(intent_context, [])
         self.assertEqual(general_context, [])
+
+    def test_policy_intent_matches_human_readable_document_title(self):
+        source = KnowledgeSource.objects.create(
+            business=self.business,
+            name="Current Policies",
+            source_type="POLICY_FILE",
+        )
+        document = KnowledgeDocument.objects.create(
+            business=self.business,
+            knowledge_source=source,
+            title="Refund policy",
+            document_type="POLICY",
+            content="Refund requests are accepted within seven days.",
+            status="READY",
+        )
+
+        context = assemble_memory_context(self.business, intent="refund_inquiry")
+
+        self.assertIn(document.id, [item["id"] for item in context if item["document_type"] == "POLICY"])
+
+    def test_stale_document_cannot_be_bumped_twice(self):
+        source = KnowledgeSource.objects.create(
+            business=self.business,
+            name="Delivery Rules",
+            source_type="POLICY_FILE",
+        )
+        original = KnowledgeDocument.objects.create(
+            business=self.business,
+            knowledge_source=source,
+            title="Delivery policy",
+            document_type="POLICY",
+            content="Delivery within five days.",
+            status="READY",
+            version=1,
+        )
+        bump_document_version(original, "Delivery within three days.")
+
+        with self.assertRaises(StaleVersionError):
+            bump_document_version(original, "Delivery within two days.")
+        self.assertEqual(
+            KnowledgeDocument.objects.filter(knowledge_source=source, version=2, status="READY").count(),
+            1,
+        )
+
+    def test_goal_context_includes_text_target(self):
+        set_business_goal(
+            business=self.business,
+            name="Reduce returns",
+            category="OPERATIONS",
+            priority="HIGH",
+            target_value="Below 5%",
+            timeframe="Q4",
+        )
+
+        context = assemble_memory_context(self.business)
+
+        goal = next(item for item in context if item["document_type"] == "BUSINESS_GOAL")
+        self.assertIn("Below 5%", goal["content"])
+
+    def test_recommendation_does_not_attach_unrelated_open_issue(self):
+        BusinessIssue.objects.create(
+            business=self.business,
+            issue_type="MARKETING_ROAS_DEGRADATION",
+            title="Campaign ROAS fell",
+            status="OPEN",
+            detected_at=timezone.now(),
+        )
+        BusinessFact.objects.create(
+            business=self.business,
+            fact_type="MARKETING_ROAS",
+            statement="Campaign ROAS is 1.1.",
+            detected_at=timezone.now(),
+        )
+        recommendation, _ = generate_goal_aligned_recommendation(
+            business=self.business,
+            issue_type="HIGH_DELIVERY_FAILURE",
+            candidate_action_type="CHANGE_COURIER",
+        )
+
+        self.assertIsNone(recommendation.business_issue_id)
+        self.assertFalse(
+            AiRecommendationEvidence.objects.filter(ai_recommendation=recommendation).exists()
+        )
+
+    def test_grounded_recommendation_does_not_attach_unrelated_fact(self):
+        issue = BusinessIssue.objects.create(
+            business=self.business,
+            issue_type="HIGH_DELIVERY_FAILURE",
+            title="Delivery failure rose",
+            status="OPEN",
+            detected_at=timezone.now(),
+        )
+        BusinessFact.objects.create(
+            business=self.business,
+            fact_type="MARKETING_ROAS",
+            statement="Campaign ROAS is 1.1.",
+            detected_at=timezone.now(),
+        )
+        invalidated_fact = BusinessFact.all_objects.create(
+            business=self.business,
+            fact_type="DELIVERY_FAILURE",
+            statement="Old delivery failure finding was invalidated.",
+            status="INVALIDATED",
+            detected_at=timezone.now(),
+        )
+        BusinessIssueEvidence.objects.create(
+            business_issue=issue,
+            business_fact=invalidated_fact,
+            evidence_type="FACT",
+        )
+
+        recommendation, _ = generate_grounded_recommendation(self.business, issue=issue)
+        evidence = AiRecommendationEvidence.objects.get(ai_recommendation=recommendation)
+
+        self.assertEqual(evidence.business_issue_id, issue.id)
+        self.assertIsNone(evidence.business_fact_id)
+        self.assertEqual(evidence.evidence_type, "ISSUE_GROUNDING")
 
     # ─────────────────────────────────────────────────────────────
     # BUG-003: cosine_similarity unhandled exception on NaN / Inf
