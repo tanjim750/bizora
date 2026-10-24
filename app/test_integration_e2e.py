@@ -27,6 +27,7 @@ from app.models import (
     Business,
     BusinessFact,
     BusinessIssue,
+    BusinessMembership,
     Customer,
     GraphEdge,
     GraphNode,
@@ -80,16 +81,14 @@ class Phase13IntegrationE2ETests(TestCase):
             password="SecurePassword123!",
             email="manager@alpha.com",
         )
-        self.user_a.business_id = self.business_a.id
-        self.user_a.save()
+        BusinessMembership.objects.create(business=self.business_a, user=self.user_a, role="OPERATOR")
 
         self.user_b = User.objects.create_user(
             username="manager_beta",
             password="SecurePassword123!",
             email="manager@beta.com",
         )
-        self.user_b.business_id = self.business_b.id
-        self.user_b.save()
+        BusinessMembership.objects.create(business=self.business_b, user=self.user_b, role="OPERATOR")
 
     # =========================================================================
     # 1. API FLOW

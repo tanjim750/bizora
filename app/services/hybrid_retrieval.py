@@ -9,6 +9,8 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from django.db.models import Q
+
 from app.exceptions import (
     EmbeddingDimensionMismatchError,
     TenantIsolationError,
@@ -113,15 +115,20 @@ def vector_search(
     """
     if business is None or not getattr(business, "id", None):
         raise TenantIsolationError("Tenant isolation violation: valid business required.")
+    if top_k <= 0:
+        return []
 
     # Fetch candidate embeddings for this tenant and model
     embeddings = (
         KnowledgeEmbedding.objects.filter(
             business=business,
             model=model_name,
+            knowledge_chunk__business=business,
+            knowledge_chunk__knowledge_document__business=business,
+            knowledge_chunk__knowledge_document__knowledge_source__business=business,
+            knowledge_chunk__knowledge_document__status__in=["READY", "PUBLISHED"],
+            knowledge_chunk__knowledge_document__knowledge_source__status="ACTIVE",
         )
-        .exclude(knowledge_chunk__knowledge_document__status__in=["SUPERSEDED", "ARCHIVED"])
-        .exclude(knowledge_chunk__knowledge_document__knowledge_source__status="ARCHIVED")
         .select_related("knowledge_chunk", "knowledge_chunk__knowledge_document", "knowledge_chunk__knowledge_document__knowledge_source")
     )
 
@@ -131,9 +138,7 @@ def vector_search(
         doc = chunk.knowledge_document
 
         # Enforce active version only
-        if doc.status in ("SUPERSEDED", "ARCHIVED") or chunk.metadata.get("is_current") is False:
-            continue
-        if doc.knowledge_source and doc.knowledge_source.status == "ARCHIVED":
+        if (chunk.metadata or {}).get("is_current") is False:
             continue
 
         if not _matches_filter(chunk.metadata or {}, filter_metadata):
@@ -185,24 +190,32 @@ def keyword_search(
     """
     if business is None or not getattr(business, "id", None):
         raise TenantIsolationError("Tenant isolation violation: valid business required.")
-
-    chunks = (
-        KnowledgeChunk.objects.filter(business=business)
-        .exclude(knowledge_document__status__in=["SUPERSEDED", "ARCHIVED"])
-        .exclude(knowledge_document__knowledge_source__status="ARCHIVED")
-        .select_related("knowledge_document", "knowledge_document__knowledge_source")
-    )
+    if top_k <= 0 or not query.strip():
+        return []
 
     query_tokens = [t.lower() for t in re.findall(r"\w+", query) if len(t) > 1]
     query_exact = query.strip().lower()
+    content_filter = Q(content__icontains=query_exact)
+    for token in query_tokens:
+        content_filter |= Q(content__icontains=token)
+
+    chunks = (
+        KnowledgeChunk.objects.filter(
+            content_filter,
+            business=business,
+            knowledge_document__business=business,
+            knowledge_document__knowledge_source__business=business,
+            knowledge_document__status__in=["READY", "PUBLISHED"],
+            knowledge_document__knowledge_source__status="ACTIVE",
+        )
+        .select_related("knowledge_document", "knowledge_document__knowledge_source")
+    )
 
     scored_items: list[tuple[float, RetrievalResultItem]] = []
     for chunk in chunks:
         doc = chunk.knowledge_document
         # Enforce active version only
-        if doc.status in ("SUPERSEDED", "ARCHIVED") or chunk.metadata.get("is_current") is False:
-            continue
-        if doc.knowledge_source and doc.knowledge_source.status == "ARCHIVED":
+        if (chunk.metadata or {}).get("is_current") is False:
             continue
 
         if not _matches_filter(chunk.metadata or {}, filter_metadata):

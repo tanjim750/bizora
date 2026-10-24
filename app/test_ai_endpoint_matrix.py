@@ -29,8 +29,7 @@ class AiEndpointMatrixTests(TestCase):
         self.other = Business.objects.create(name="Matrix B", slug="matrix-b")
         user_model = get_user_model()
         self.user = user_model.objects.create_user(username="matrix-user", password="pass1234")
-        self.user.business_id = self.business.id  # legacy compatibility path
-        self.user.save()
+        BusinessMembership.objects.create(business=self.business, user=self.user, role="OPERATOR")
         self.client.force_authenticate(self.user)
         self.customer = Customer.objects.create(business=self.business, display_name="Matrix Customer")
         self.conversation = Conversation.objects.create(

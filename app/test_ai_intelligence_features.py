@@ -41,6 +41,7 @@ from app.models import (
     BusinessFact,
     BusinessIssue,
     BusinessIssueEvidence,
+    BusinessMembership,
     Call,
     CallTranscript,
     Campaign,
@@ -99,7 +100,7 @@ class AiIntelligenceFeaturesTests(TestCase):
         self.user = User.objects.create_user(
             username="analyst_user", password="secret_password"
         )
-        self.user.business_id = self.business.id
+        BusinessMembership.objects.create(business=self.business, user=self.user, role="OPERATOR")
         self.client.force_authenticate(user=self.user)
 
         # Customer setup

@@ -26,6 +26,7 @@ from app.models import (
     BusinessFact,
     BusinessIssue,
     BusinessIssueEvidence,
+    BusinessMembership,
     Call,
     CallTranscript,
     Campaign,
@@ -308,6 +309,7 @@ class TestApproveAction(TestCase):
     def setUp(self):
         self.biz = make_business()
         self.user = make_user()
+        BusinessMembership.objects.create(business=self.biz, user=self.user, role="OPERATOR")
         rec = make_ai_recommendation(self.biz)
         self.action = make_ai_action(self.biz, rec)
 
@@ -356,6 +358,7 @@ class TestExecuteAction(TestCase):
     def setUp(self):
         self.biz = make_business()
         self.user = make_user(username="executor_user")
+        BusinessMembership.objects.create(business=self.biz, user=self.user, role="OPERATOR")
         rec = make_ai_recommendation(self.biz)
         self.action = make_ai_action(self.biz, rec)
 
@@ -1340,8 +1343,7 @@ class TestTenantIsolationViews(TestCase):
         self.biz_a = make_business(name="Biz A", slug="biz-a")
         self.biz_b = make_business(name="Biz B", slug="biz-b")
         self.user_a = make_user(username="user_a_tenant")
-        self.user_a.business_id = self.biz_a.id
-        self.user_a.save()
+        BusinessMembership.objects.create(business=self.biz_a, user=self.user_a, role="MEMBER")
         self.client.force_authenticate(user=self.user_a)
 
     def test_business_issues_cross_tenant_forbidden(self):
@@ -1420,8 +1422,7 @@ class TestAiActionApprovalView(TestCase):
         self.client = APIClient()
         self.biz = make_business()
         self.user = make_user(username="approver_view_user")
-        self.user.business_id = self.biz.id
-        self.user.save()
+        BusinessMembership.objects.create(business=self.biz, user=self.user, role="OPERATOR")
         self.client.force_authenticate(user=self.user)
         rec = make_ai_recommendation(self.biz)
         self.action = make_ai_action(self.biz, rec)
@@ -1518,6 +1519,7 @@ class TestRegressionExecuteActionNotStuckInExecuting(TestCase):
         from app.services.actions import approve_action, execute_action
         biz = make_business()
         user = make_user(username="stuck_test_user")
+        BusinessMembership.objects.create(business=biz, user=user, role="OPERATOR")
         rec = make_ai_recommendation(biz)
         action = make_ai_action(biz, rec)
         approve_action(action, user, "ok")

@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from app.events.dispatcher import dispatch
 from app.models import AiAction
+from app.services.authorization import require_business_access
 
 
 class ActionApprovedEvent:
@@ -47,6 +48,7 @@ def approve_action(action: AiAction, user, approval_note: str) -> AiAction:
 
     with transaction.atomic():
         action = AiAction.objects.select_for_update().get(pk=action.pk)
+        require_business_access(user, action.business, roles={"OWNER", "ADMIN", "OPERATOR"})
         if action.status == "APPROVED" and action.approved_by_id == user.id:
             return action
         if action.status not in ("SUGGESTED", "REJECTED"):
@@ -69,6 +71,7 @@ def reject_action(action: AiAction, user, note: str) -> AiAction:
         raise PermissionDenied("Authentication required to reject actions.")
     with transaction.atomic():
         locked = AiAction.objects.select_for_update().get(pk=action.pk)
+        require_business_access(user, locked.business, roles={"OWNER", "ADMIN", "OPERATOR"})
         if locked.status == "REJECTED" and locked.rejected_by_id == user.id:
             return locked
         if locked.status not in ("SUGGESTED", "APPROVED"):

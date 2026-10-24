@@ -4,12 +4,10 @@ from app.models import BusinessMembership
 
 
 def require_business_access(user, business, *, roles=None):
-    """Fail closed for tenant access; the dynamic attribute is test/legacy-only."""
+    """Require an active persisted membership for the requested business."""
     if not user or not user.is_authenticated:
         raise PermissionDenied("Authentication required.")
     if getattr(user, "is_superuser", False):
-        return
-    if getattr(user, "business_id", None) == business.id:
         return
     membership = BusinessMembership.objects.filter(
         user=user, business=business, is_active=True
