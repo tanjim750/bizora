@@ -309,11 +309,13 @@ def get_brand_tone(business: Business, channel: str | None = None) -> dict[str, 
             "channel_overrides": {},
         }
     data = dict(mem.metadata or {})
-    if channel and "channel_overrides" in data:
-        channel_upper = channel.upper()
-        if channel_upper in data["channel_overrides"]:
-            override = data["channel_overrides"][channel_upper]
-            data.update(override)
+    if channel and "channel_overrides" in data and isinstance(data["channel_overrides"], dict):
+        channel_clean = channel.strip().upper()
+        for k, override in data["channel_overrides"].items():
+            if str(k).strip().upper() == channel_clean:
+                if isinstance(override, dict):
+                    data.update(override)
+                break
     return data
 
 

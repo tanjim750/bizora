@@ -317,8 +317,6 @@ def generate_goal_aligned_recommendation(
             if g.category.lower() in (issue_type or "").lower() or g.name.lower() in (issue_type or "").lower():
                 matched_goal = g
                 break
-        if not matched_goal and goals:
-            matched_goal = goals[0]
 
         if matched_goal:
             metadata["aligned_goal"] = matched_goal.name

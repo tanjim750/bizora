@@ -393,10 +393,17 @@ def resolve_active_version(
     """
     Feature 19: Active vs Historical Version Resolution.
     Resolves the authoritative active version. If an explicitly requested version
-    is SUPERSEDED, raises StaleVersionError to prevent stale grounding.
+    is SUPERSEDED or ARCHIVED, raises StaleVersionError to prevent stale grounding.
     """
     if business is None:
         raise TenantIsolationError("Tenant isolation violation: business cannot be null.")
+
+    # Check if parent knowledge source is ARCHIVED
+    source = KnowledgeSource.objects.filter(business=business, id=knowledge_source_id).first()
+    if source and source.status == "ARCHIVED":
+        raise StaleVersionError(
+            f"Knowledge source {knowledge_source_id} is ARCHIVED and cannot be used as active context."
+        )
 
     if target_version is not None:
         doc = KnowledgeDocument.objects.filter(
@@ -408,9 +415,9 @@ def resolve_active_version(
             raise KnowledgeDocument.DoesNotExist(
                 f"KnowledgeDocument for source {knowledge_source_id} version {target_version} does not exist."
             )
-        if doc.status == "SUPERSEDED":
+        if doc.status in ("SUPERSEDED", "ARCHIVED"):
             raise StaleVersionError(
-                f"Requested document version {target_version} is SUPERSEDED and cannot be used as active context."
+                f"Requested document version {target_version} is {doc.status} and cannot be used as active context."
             )
         return doc
 

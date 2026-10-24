@@ -43,12 +43,21 @@ def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     """Calculates cosine similarity between two float vectors."""
     if not vec_a or not vec_b or len(vec_a) != len(vec_b):
         return 0.0
+    for v in vec_a:
+        if math.isnan(v) or math.isinf(v):
+            return 0.0
+    for v in vec_b:
+        if math.isnan(v) or math.isinf(v):
+            return 0.0
     dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
     norm_a = math.sqrt(sum(a * a for a in vec_a))
     norm_b = math.sqrt(sum(b * b for b in vec_b))
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
-    return dot_product / (norm_a * norm_b)
+    res = dot_product / (norm_a * norm_b)
+    if math.isnan(res) or math.isinf(res):
+        return 0.0
+    return res
 
 
 def generate_or_store_embedding(
@@ -111,6 +120,8 @@ def vector_search(
             business=business,
             model=model_name,
         )
+        .exclude(knowledge_chunk__knowledge_document__status__in=["SUPERSEDED", "ARCHIVED"])
+        .exclude(knowledge_chunk__knowledge_document__knowledge_source__status="ARCHIVED")
         .select_related("knowledge_chunk", "knowledge_chunk__knowledge_document", "knowledge_chunk__knowledge_document__knowledge_source")
     )
 
@@ -120,7 +131,9 @@ def vector_search(
         doc = chunk.knowledge_document
 
         # Enforce active version only
-        if doc.status == "SUPERSEDED" or chunk.metadata.get("is_current") is False:
+        if doc.status in ("SUPERSEDED", "ARCHIVED") or chunk.metadata.get("is_current") is False:
+            continue
+        if doc.knowledge_source and doc.knowledge_source.status == "ARCHIVED":
             continue
 
         if not _matches_filter(chunk.metadata or {}, filter_metadata):
@@ -175,7 +188,8 @@ def keyword_search(
 
     chunks = (
         KnowledgeChunk.objects.filter(business=business)
-        .exclude(knowledge_document__status="SUPERSEDED")
+        .exclude(knowledge_document__status__in=["SUPERSEDED", "ARCHIVED"])
+        .exclude(knowledge_document__knowledge_source__status="ARCHIVED")
         .select_related("knowledge_document", "knowledge_document__knowledge_source")
     )
 
@@ -184,8 +198,11 @@ def keyword_search(
 
     scored_items: list[tuple[float, RetrievalResultItem]] = []
     for chunk in chunks:
+        doc = chunk.knowledge_document
         # Enforce active version only
-        if chunk.metadata.get("is_current") is False:
+        if doc.status in ("SUPERSEDED", "ARCHIVED") or chunk.metadata.get("is_current") is False:
+            continue
+        if doc.knowledge_source and doc.knowledge_source.status == "ARCHIVED":
             continue
 
         if not _matches_filter(chunk.metadata or {}, filter_metadata):
