@@ -23,6 +23,7 @@ from app.models import (
 from app.services.ai import (
     generate_goal_aligned_recommendation,
 )
+from app.services.ai_context import assemble_memory_context
 from app.services.domain_memory import (
     BrandToneData,
     get_brand_tone,
@@ -120,6 +121,30 @@ class BugReproductionTests(TestCase):
         # Requesting an ARCHIVED version must raise StaleVersionError just like SUPERSEDED
         with self.assertRaises(StaleVersionError, msg="BUG-002: resolve_active_version allowed ARCHIVED document!"):
             resolve_active_version(self.business, source.id, target_version=1)
+
+    def test_archived_source_documents_are_excluded_from_ai_memory_context(self):
+        archived_source = KnowledgeSource.objects.create(
+            business=self.business,
+            name="Retired Refund Rules",
+            source_type="POLICY_FILE",
+            status="ARCHIVED",
+            source_reference="retired-policy.pdf",
+        )
+        KnowledgeDocument.objects.create(
+            business=self.business,
+            knowledge_source=archived_source,
+            title="Refund policy",
+            document_type="POLICY",
+            content="Old policy: refunds are never allowed.",
+            status="READY",
+            version=1,
+        )
+
+        intent_context = assemble_memory_context(self.business, intent="refund")
+        general_context = assemble_memory_context(self.business)
+
+        self.assertEqual(intent_context, [])
+        self.assertEqual(general_context, [])
 
     # ─────────────────────────────────────────────────────────────
     # BUG-003: cosine_similarity unhandled exception on NaN / Inf

@@ -1265,7 +1265,7 @@ class KnowledgeDocument(models.Model):
             business=business,
             document_type__iexact='POLICY',
             status__in=['READY', 'PUBLISHED']
-        )
+        ).exclude(knowledge_source__status='ARCHIVED')
         if intent:
             qs = qs.filter(
                 models.Q(title__icontains=intent) |

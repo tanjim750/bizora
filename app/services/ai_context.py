@@ -182,7 +182,7 @@ def assemble_memory_context(
     else:
         docs = KnowledgeDocument.objects.filter(
             business=business, status__in=["READY", "PUBLISHED"]
-        )
+        ).exclude(knowledge_source__status="ARCHIVED")
         if document_type:
             docs = docs.filter(document_type=document_type)
 
@@ -359,8 +359,10 @@ def assemble_product_context(
 
     # Product knowledge docs
     docs = KnowledgeDocument.objects.filter(
-        business=business, title__icontains=product.name
-    )[:2]
+        business=business,
+        title__icontains=product.name,
+        status__in=["READY", "PUBLISHED"],
+    ).exclude(knowledge_source__status="ARCHIVED")[:2]
     product_guides = [{"id": d.id, "title": d.title} for d in docs]
     product_issues = list(BusinessIssue.objects.filter(
         business=business, subject_entity_type="product", subject_entity_id=product.id
