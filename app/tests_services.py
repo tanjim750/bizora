@@ -204,7 +204,7 @@ class TestToBusinessDate(TestCase):
         self.assertIsNone(result)
 
     def test_naive_datetime_treated_as_utc(self):
-        naive = datetime.datetime(2024, 6, 1, 12, 0, 0)  # noqa: DTZ001
+        naive = datetime.datetime(2024, 6, 1, 12, 0, 0)
         result = self.fn(naive, "Asia/Dhaka")
         self.assertEqual(result, datetime.date(2024, 6, 1))
 

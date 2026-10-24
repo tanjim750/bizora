@@ -34,10 +34,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from app.models import (
-    AiAction,
     AiConversation,
     AiMessage,
-    AiRecommendation,
     AiRecommendationEvidence,
     Business,
     BusinessFact,
@@ -68,7 +66,6 @@ from app.services.ai import (
     ask_business_assistant,
     assemble_customer_context,
     assemble_fact_context,
-    assemble_full_ai_context,
     assemble_graph_context,
     assemble_memory_context,
     assemble_order_context,
@@ -557,7 +554,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_13_recommendation_generation_bounded_confidence(self):
         """Feature 13: Grounded recommendation generation with bounded confidence."""
-        rec, action = generate_grounded_recommendation(business=self.business)
+        rec, _action = generate_grounded_recommendation(business=self.business)
         self.assertEqual(rec.status, "SUGGESTED")
         self.assertTrue(Decimal("0.00") <= rec.confidence <= Decimal("1.00"))
         self.assertEqual(rec.business_id, self.business.id)
@@ -567,7 +564,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_14_recommendation_evidence_grounding(self):
         """Feature 14: Explicit evidence attachment connecting recommendation to verified facts."""
-        rec, action = generate_grounded_recommendation(business=self.business)
+        rec, _action = generate_grounded_recommendation(business=self.business)
         evidence = AiRecommendationEvidence.objects.filter(ai_recommendation=rec).first()
         self.assertIsNotNone(evidence)
         self.assertIsNotNone(evidence.business_fact)
@@ -583,7 +580,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_15_suggested_actions_unexecuted_proposals(self):
         """Feature 15: Creates structured action proposals that are not executed automatically."""
-        rec, action = generate_grounded_recommendation(business=self.business)
+        _rec, action = generate_grounded_recommendation(business=self.business)
         self.assertEqual(action.status, "SUGGESTED")
         self.assertTrue(action.is_simulated)
         self.assertIsNone(action.approved_at)
@@ -594,7 +591,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_16_approval_and_execution_lifecycle_and_error_handling(self):
         """Feature 16: Approval state machine, user audit trail, and execution failure handling."""
-        rec, action = generate_grounded_recommendation(business=self.business)
+        _rec, action = generate_grounded_recommendation(business=self.business)
 
         # Unapproved action cannot execute
         with self.assertRaises(ValidationError):
@@ -616,7 +613,7 @@ class AiIntelligenceFeaturesTests(TestCase):
         self.assertIsNotNone(executed.executed_at)
 
         # Failed execution handler
-        rec2, action2 = generate_grounded_recommendation(business=self.business)
+        _rec2, action2 = generate_grounded_recommendation(business=self.business)
         approve_action(action=action2, user=self.user, approval_note="Will fail")
         failed = execute_action(action2, executor_fn=lambda payload: {"error": "Courier API Timeout"})
         self.assertEqual(failed.status, "FAILED")

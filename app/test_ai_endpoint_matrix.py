@@ -8,11 +8,10 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from app.models import (
-    AiAction,
     Business,
-    BusinessMembership,
     BusinessFact,
     BusinessIssue,
+    BusinessMembership,
     Call,
     Campaign,
     Conversation,
@@ -41,7 +40,7 @@ class AiEndpointMatrixTests(TestCase):
             business=self.business, customer=self.customer, order_number="M-1", ordered_at=now
         )
         self.campaign = Campaign.objects.create(
-            business=self.business, name="Matrix Campaign", platform="META", budget=Decimal("100")
+            business=self.business, name="Matrix Campaign", platform="META", budget=Decimal(100)
         )
         self.call = Call.objects.create(
             business=self.business, customer=self.customer, direction="INBOUND", status="MISSED"
@@ -151,7 +150,7 @@ class AiEndpointMatrixTests(TestCase):
         conflict = self.client.post(f"/api/v1/actions/{self.action.id}/reject/", {"approval_note": "late"}, format="json")
         self.assertEqual(conflict.status_code, 409)
 
-        rejected_rec, rejected_action = generate_grounded_recommendation(self.business, self.issue)
+        _rejected_rec, rejected_action = generate_grounded_recommendation(self.business, self.issue)
         rejected = self.client.post(
             f"/api/v1/actions/{rejected_action.id}/reject/", {"approval_note": "not now"}, format="json"
         )

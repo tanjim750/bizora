@@ -8,7 +8,7 @@ from typing import Any
 
 from django.utils import timezone
 
-from app.models import Call, CallTranscript, Conversation, Message
+from app.models import Call, CallTranscript, Conversation
 
 
 def summarize_support_conversation(

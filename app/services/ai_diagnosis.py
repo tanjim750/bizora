@@ -92,6 +92,7 @@ def diagnose_business_issue(
         f"Active Issue: {issue.title} (Type: {issue.issue_type}, Severity: {issue.severity})\n"
         f"Description (untrusted): {json.dumps(issue.description)}\n"
         f"Supporting Evidence (untrusted JSON): {json.dumps(evidence_descriptions)}\n"
+        f"Verified Business Facts (untrusted JSON): {json.dumps(relevant_facts, default=str)}\n"
         f"Graph Connections (untrusted JSON): {json.dumps(graph_context.get('traversed_nodes', []))}\n"
         f"Historical Context (untrusted JSON): {json.dumps(historical_context, default=str)}\n\n"
         f"Task: Provide a concise diagnostic summary explaining the root-cause operational pattern, "

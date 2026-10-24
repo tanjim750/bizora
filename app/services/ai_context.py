@@ -295,8 +295,7 @@ def assemble_customer_context(
     )
 
     # Support history and delivery reliability (AI-015)
-    from app.models import Conversation
-    from app.models import Call, Payment, Shipment
+    from app.models import Call, Conversation, Payment, Shipment
     support_history = [
         {"id": c.id, "subject": c.subject, "status": c.status, "channel": c.channel}
         for c in Conversation.objects.filter(business=business, customer=customer).order_by("-started_at")[:3]
@@ -341,7 +340,7 @@ def assemble_product_context(
         }
         for v in product.productvariant_set.all()[:5]
     ]
-    from app.models import OrderItem, CampaignConversion, BusinessIssue
+    from app.models import BusinessIssue, CampaignConversion, OrderItem
 
     # DB-side aggregation — avoids loading all OrderItems into Python memory
     qty_agg = OrderItem.objects.filter(
@@ -433,7 +432,7 @@ def assemble_order_context(
     ]
 
     # Associated conversations and calls (AI-016)
-    from app.models import Conversation, Call, Refund, OrderStatusHistory
+    from app.models import Call, Conversation, OrderStatusHistory, Refund
     order_convs = list(
         Conversation.objects.filter(
             business=business,

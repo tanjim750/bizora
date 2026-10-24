@@ -12,8 +12,8 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from app.models import Business, Campaign, Order
-from app.services.analytics import calculate_net_revenue, cap_campaign_attributions
 from app.services.ai_context import assemble_memory_context
+from app.services.analytics import calculate_net_revenue, cap_campaign_attributions
 
 
 def explain_campaign_performance(

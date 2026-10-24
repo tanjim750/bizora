@@ -69,7 +69,7 @@ class Business(models.Model):
             with urllib.request.urlopen(request, timeout=max(1, timeout_seconds)) as response:
                 payload = json.loads(response.read().decode())
             if not isinstance(payload, dict) or not isinstance(payload.get("content"), str):
-                raise ValueError("LLM gateway returned an invalid response")
+                raise TypeError("LLM gateway returned an invalid response")
             return payload | {"provider_status": "ok"}
         except Exception as exc:  # noqa: BLE001 - provider failure must not crash a request
             return {**(fallback_response or {"content": "AI provider unavailable; no conclusion is available."}),

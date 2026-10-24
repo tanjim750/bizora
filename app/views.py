@@ -1,5 +1,5 @@
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -33,7 +33,6 @@ from app.serializers.ai import (
     SupportResumeAiRequestSerializer,
 )
 from app.services.actions import approve_action, execute_action, reject_action
-from app.services.authorization import require_business_access
 from app.services.ai import (
     ask_business_assistant,
     diagnose_business_issue,
@@ -45,6 +44,7 @@ from app.services.ai import (
     summarize_call,
     summarize_support_conversation,
 )
+from app.services.authorization import require_business_access
 
 
 class BusinessScopedAPIView(APIView):
