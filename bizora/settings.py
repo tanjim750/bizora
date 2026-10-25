@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,9 +81,23 @@ WSGI_APPLICATION = 'bizora.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.environ.get('BIZORA_DB_PATH', BASE_DIR / 'db.sqlite3'),
     }
 }
+
+database_backend = os.environ.get('BIZORA_DATABASE', 'sqlite')
+if database_backend == 'postgresql':
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'bizora'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'TEST': {'TEMPLATE': os.environ.get('POSTGRES_TEST_TEMPLATE', 'template1')},
+    }
+elif database_backend != 'sqlite':
+    raise ImproperlyConfigured('BIZORA_DATABASE must be sqlite or postgresql.')
 
 
 # Password validation

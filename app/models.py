@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class VectorField(models.Field):
@@ -68,13 +70,24 @@ class IntegrationSyncLog(models.Model):
     records_processed = models.IntegerField(default=0)
     records_failed = models.IntegerField(default=0)
     error_message = models.TextField(null=True)
-    started_at = models.DateTimeField()
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
     created_at = models.DateTimeField()
+    entity_type = models.CharField(max_length=100, blank=True, default='')
+    trigger = models.CharField(max_length=20, default='MANUAL')
+    discovered = models.PositiveIntegerField(null=True, blank=True)
+    records_succeeded = models.PositiveIntegerField(default=0)
+    records_skipped = models.PositiveIntegerField(default=0)
+    counter_schema = models.CharField(max_length=10, default='V1')
+    cursor = models.JSONField(default=dict)
+    parent = models.ForeignKey('self', models.PROTECT, null=True, blank=True, related_name='retries')
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, blank=True)
+    last_observed_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         db_table = 'integration_sync_logs'
+        indexes = [models.Index(fields=['integration_connection', 'status', '-started_at'])]
 
 
 class Product(models.Model):
@@ -1311,3 +1324,12 @@ class MockExpectedResult(models.Model):
         indexes = [
             models.Index(fields=['mock_scenario', 'result_key'], name='idx_mer_mr_89ccd74d'),
         ]
+
+
+# Keep model discovery and existing app.models imports stable.
+from app.integrations.models import IntegrationPayload  # noqa: E402,F401
+from app.observability.models import (  # noqa: E402,F401
+    BusinessAccess, ConnectionCheck, FailedRecord, IntegrationError, MonitoringPolicy,
+    ObservationReceipt, ObservabilityAudit, OperationAttempt, ProviderRequest,
+    SourceFreshness, WebhookDelivery, WebhookObservation,
+)

@@ -5,7 +5,8 @@ _subscribers = defaultdict(list)
 
 
 def subscribe(event_name, handler):
-    _subscribers[event_name].append(handler)
+    if handler not in _subscribers[event_name]:
+        _subscribers[event_name].append(handler)
 
 
 def dispatch(event):
