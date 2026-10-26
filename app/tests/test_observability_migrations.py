@@ -59,4 +59,5 @@ class ObservabilityMigrationTests(TransactionTestCase):
             self.assertEqual(upgraded.last_observed_at, NOW)
             self.assertEqual(current.get_model('app', 'IntegrationConnection').objects.get(pk=conn.pk).business_id, business.pk)
         finally:
-            MigrationExecutor(connection).migrate(new_target)
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())

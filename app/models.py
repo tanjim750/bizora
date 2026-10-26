@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from app.overview.models import MonitoringConfiguration, MonitoringConfigurationRevision  # noqa: F401
+
 
 class VectorField(models.Field):
     description = "PostgreSQL pgvector field"
