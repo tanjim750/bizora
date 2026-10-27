@@ -22,6 +22,7 @@ from app.models import (
     Business,
     BusinessFact,
     BusinessIssue,
+    BusinessMemory,
     Customer,
     KnowledgeDocument,
     Order,
@@ -186,7 +187,30 @@ def assemble_memory_context(
         if document_type:
             docs = docs.filter(document_type=document_type)
 
-    memory_items = []
+    memory_types = ["BUSINESS_POLICY", "SUPPORT_KNOWLEDGE"]
+    intent_lower = (intent or "").lower()
+    if not intent or any(term in intent_lower for term in ("refund", "return", "cancel", "exchange")):
+        memory_types.append("RETURN_REFUND_POLICY")
+    if not intent or any(term in intent_lower for term in ("delivery", "shipping", "courier", "shipment")):
+        memory_types.append("DELIVERY_POLICY")
+    structured = BusinessMemory.objects.filter(business=business, is_active=True, memory_type__in=memory_types)
+    if document_type and document_type != "POLICY":
+        structured = structured.filter(memory_type=document_type)
+
+    memory_items = [
+        {
+            "id": memory.id,
+            "title": (memory.metadata or {}).get("title") or memory.memory_type.replace("_", " ").title(),
+            "document_type": memory.memory_type,
+            "content": memory.content,
+            "metadata": memory.metadata or {},
+            "version": memory.version,
+            "source_reference": memory.source_reference,
+        }
+        # Separate budgets keep a large FAQ collection from displacing policy rules.
+        for memory_type in memory_types
+        for memory in structured.filter(memory_type=memory_type).order_by("-updated_at", "-id")[:5]
+    ]
     for doc in docs.select_related("knowledge_source")[:5]:
         memory_items.append(
             {

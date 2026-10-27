@@ -102,7 +102,7 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
             raise ValidationError("AiAction cannot execute without approval (approved_at must be set).")
         if not action.is_simulated and executor_fn is None:
             raise ValidationError("A provider executor is required for non-simulated actions.")
-        if not action.is_simulated and enclosing_transaction:
+        if executor_fn is not None and enclosing_transaction:
             raise ValidationError("External actions must execute outside an enclosing database transaction.")
         action.status = "EXECUTING"
         action.save(update_fields=["status", "updated_at"])

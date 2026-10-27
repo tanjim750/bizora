@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from app.models import Business, Campaign, Order
 from app.services.ai_context import assemble_memory_context
-from app.services.analytics import calculate_net_revenue, cap_campaign_attributions
+from app.services.analytics import calculate_net_revenue, cap_campaign_attributions, completed_refund_total
 
 
 def explain_campaign_performance(
@@ -56,14 +56,7 @@ def explain_campaign_performance(
     total_revenue = sum(
         (Decimal(str(o.total_amount)) for o in orders), Decimal("0.00")
     )
-    refunds = sum(
-        (
-            Decimal(str(o.total_amount))
-            for o in orders
-            if o.status in ["REFUNDED", "CANCELLED"]
-        ),
-        Decimal("0.00"),
-    )
+    refunds = completed_refund_total(business, orders)
     net_rev = calculate_net_revenue(total_revenue, refunds)
 
     # Attribution capping (COR-005)

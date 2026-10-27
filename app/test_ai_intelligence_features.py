@@ -29,7 +29,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -84,7 +84,7 @@ from app.services.ai import (
 )
 
 
-class AiIntelligenceFeaturesTests(TestCase):
+class AiIntelligenceFeaturesTests(TransactionTestCase):
     def generate_recommendation(self):
         with patch.object(Business, "execute_llm_with_timeout", return_value={
             "content": "Review verified evidence", "confidence": "0.85", "provider_status": "ok",
@@ -542,10 +542,11 @@ class AiIntelligenceFeaturesTests(TestCase):
     # FEATURE 12: Call Summarization
     # --------------------------------------------------------------------------
     def test_feature_12_call_summarization_transcript_and_outcome(self):
-        """Feature 12: Call transcript summarization and CallTranscript record creation."""
+        """Feature 12: Summarize existing transcription without inventing an order outcome."""
+        CallTranscript.objects.create(call=self.call, transcript="Customer asks for a delivery update.", provider="TEST_ASR")
         call_res = summarize_call(call=self.call)
         self.assertEqual(call_res["call_id"], self.call.id)
-        self.assertEqual(call_res["outcome"], "CONFIRMED")
+        self.assertEqual(call_res["outcome"], "FOLLOW_UP_REQUIRED")
         self.assertTrue(CallTranscript.objects.filter(call=self.call).exists())
 
         # Verify DRF API Endpoint

@@ -103,22 +103,35 @@ def summarize_call(
     """
     from app.services.authorization import ensure_same_business
     ensure_same_business(call.business, call)
-    existing_transcript = CallTranscript.objects.filter(call=call).first()
-    transcript_text = existing_transcript.transcript if (existing_transcript and existing_transcript.transcript) else f"Call transcript for {call.direction} call {call.id}"
+    existing_transcript = CallTranscript.objects.filter(call=call).order_by("-created_at", "-id").first()
+    transcript_text = (existing_transcript.transcript or "").strip() if existing_transcript else ""
+    legacy_placeholder = (
+        existing_transcript
+        and existing_transcript.provider == "BIZORA_AUDIO_AI"
+        and transcript_text == f"Call transcript for {call.direction} call {call.id}"
+    )
+    if not transcript_text or legacy_placeholder:
+        return {
+            "call_id": call.id,
+            "call_purpose": "UNKNOWN",
+            "outcome": "UNKNOWN",
+            "duration_seconds": call.duration_seconds or 0,
+            "customer_concerns": "Customer concerns are unknown because no transcript is available.",
+            "transcript_summary": "No transcript is available; the call purpose and outcome are unknown.",
+            "transcript_id": existing_transcript.id if existing_transcript else None,
+        }
 
     text_lower = transcript_text.lower()
+    # Topic keywords and a completed connection do not establish an order's disposition.
+    outcome = "FOLLOW_UP_REQUIRED"
     if any(w in text_lower for w in ["cancel", "refund", "return"]):
         purpose = "ORDER_CANCELLATION"
-        outcome = "CANCELLED" if "cancel" in text_lower else "FOLLOW_UP_REQUIRED"
     elif "confirm" in text_lower:
         purpose = "ORDER_CONFIRMATION"
-        outcome = "CONFIRMED"
     elif any(w in text_lower for w in ["delay", "late", "support", "refund", "broken"]):
         purpose = "CUSTOMER_SUPPORT_INQUIRY"
-        outcome = "FOLLOW_UP_REQUIRED"
     else:
         purpose = "ORDER_CONFIRMATION" if call.direction == "OUTBOUND" else "CUSTOMER_SUPPORT_INQUIRY"
-        outcome = "CONFIRMED" if call.status == "COMPLETED" else "FOLLOW_UP_REQUIRED"
 
     duration = call.duration_seconds or 0
     concerns = (
@@ -133,20 +146,8 @@ def summarize_call(
         f"Purpose: {purpose}. Duration: {duration}s. Outcome: {outcome}."
     )
 
-    # Persist or update CallTranscript without overwriting real transcript text (AI-017)
-    if existing_transcript:
-        existing_transcript.summary = summary_text
-        existing_transcript.save(update_fields=["summary"])
-        transcript = existing_transcript
-    else:
-        transcript = CallTranscript.objects.create(
-            call=call,
-            transcript=transcript_text,
-            summary=summary_text,
-            language="en",
-            provider="BIZORA_AUDIO_AI",
-            generated_at=timezone.now(),
-        )
+    existing_transcript.summary = summary_text
+    existing_transcript.save(update_fields=["summary"])
 
     return {
         "call_id": call.id,
@@ -155,5 +156,5 @@ def summarize_call(
         "duration_seconds": duration,
         "customer_concerns": concerns,
         "transcript_summary": summary_text,
-        "transcript_id": transcript.id,
+        "transcript_id": existing_transcript.id,
     }

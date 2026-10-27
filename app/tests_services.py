@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -41,7 +41,9 @@ from app.models import (
     MetricSnapshot,
     Order,
     OrderItem,
+    Payment,
     Product,
+    Refund,
 )
 
 User = get_user_model()
@@ -205,7 +207,7 @@ class TestToBusinessDate(TestCase):
         self.assertIsNone(result)
 
     def test_naive_datetime_treated_as_utc(self):
-        naive = datetime.datetime(2024, 6, 1, 12, 0, 0)
+        naive = datetime.datetime(2024, 6, 1, 12, 0, 0)  # noqa: DTZ001 - exercise naive datetime handling
         result = self.fn(naive, "Asia/Dhaka")
         self.assertEqual(result, datetime.date(2024, 6, 1))
 
@@ -240,7 +242,9 @@ class TestComputeDailyBusinessMetrics(TestCase):
     def test_refunded_orders_reduce_net(self):
         from app.services.bi import compute_daily_business_metrics
         make_order(self.biz, total_amount="800.00", ordered_at=timezone.now())
-        make_order(self.biz, status="REFUNDED", total_amount="200.00", ordered_at=timezone.now())
+        refunded_order = make_order(self.biz, status="REFUNDED", total_amount="200.00", ordered_at=timezone.now())
+        payment = Payment.objects.create(business=self.biz, order=refunded_order, amount=200)
+        Refund.objects.create(payment=payment, order=refunded_order, amount=200, status="COMPLETED")
         result = compute_daily_business_metrics(self.biz, self.today)
         self.assertEqual(result["gross_revenue"], Decimal("1000.00"))
         self.assertEqual(result["refunds"], Decimal("200.00"))
@@ -354,7 +358,7 @@ class TestApproveAction(TestCase):
         self.assertEqual(events[0].payload["action_id"], self.action.id)
 
 
-class TestExecuteAction(TestCase):
+class TestExecuteAction(TransactionTestCase):
     def setUp(self):
         self.biz = make_business()
         self.user = make_user(username="executor_user")
@@ -892,48 +896,51 @@ class TestSummarizeCall(TestCase):
         self.biz = make_business()
         self.customer = make_customer(self.biz)
 
-    def _make_call(self, direction="INBOUND", status="COMPLETED", duration=120):
-        return Call.objects.create(
+    def _make_call(self, direction="INBOUND", status="COMPLETED", duration=120, transcript=None):
+        call = Call.objects.create(
             business=self.biz,
             customer=self.customer,
             direction=direction,
             status=status,
             duration_seconds=duration,
         )
+        if transcript is not None:
+            CallTranscript.objects.create(call=call, transcript=transcript, provider="TEST_ASR")
+        return call
 
     def test_inbound_call_purpose(self):
-        call = self._make_call(direction="INBOUND")
+        call = self._make_call(direction="INBOUND", transcript="I need support with delivery.")
         result = self.fn(call)
         self.assertEqual(result["call_purpose"], "CUSTOMER_SUPPORT_INQUIRY")
 
     def test_outbound_call_purpose(self):
-        call = self._make_call(direction="OUTBOUND")
+        call = self._make_call(direction="OUTBOUND", transcript="Calling to confirm the order details.")
         result = self.fn(call)
         self.assertEqual(result["call_purpose"], "ORDER_CONFIRMATION")
 
-    def test_completed_outcome(self):
+    def test_completed_call_without_transcript_has_unknown_outcome(self):
         call = self._make_call(status="COMPLETED")
         result = self.fn(call)
-        self.assertEqual(result["outcome"], "CONFIRMED")
+        self.assertEqual(result["outcome"], "UNKNOWN")
 
     def test_non_completed_followup_required(self):
-        call = self._make_call(status="MISSED")
+        call = self._make_call(status="MISSED", transcript="Voicemail asks for a follow-up.")
         result = self.fn(call)
         self.assertEqual(result["outcome"], "FOLLOW_UP_REQUIRED")
 
     def test_short_duration_concern(self):
-        call = self._make_call(duration=15)
+        call = self._make_call(duration=15, transcript="Hello, can you hear me?")
         result = self.fn(call)
         self.assertIn("unreached", result["customer_concerns"].lower())
 
-    def test_transcript_created(self):
+    def test_missing_transcript_is_not_fabricated(self):
         call = self._make_call()
         result = self.fn(call)
-        self.assertIsNotNone(result["transcript_id"])
-        self.assertTrue(CallTranscript.objects.filter(pk=result["transcript_id"]).exists())
+        self.assertIsNone(result["transcript_id"])
+        self.assertFalse(CallTranscript.objects.filter(call=call).exists())
 
     def test_transcript_updated_on_second_call(self):
-        call = self._make_call()
+        call = self._make_call(transcript="Customer asks about a delivery delay.")
         self.fn(call)
         self.fn(call)
         self.assertEqual(CallTranscript.objects.filter(call=call).count(), 1)
@@ -1517,7 +1524,7 @@ class TestRegressionAiActionSaveOrder(TestCase):
         self.assertEqual(action.status, "FAILED")
 
 
-class TestRegressionExecuteActionNotStuckInExecuting(TestCase):
+class TestRegressionExecuteActionNotStuckInExecuting(TransactionTestCase):
     """Regression: execute_action must not leave action in EXECUTING on failure."""
 
     def test_action_not_stuck_in_executing_after_exception(self):

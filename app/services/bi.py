@@ -7,6 +7,7 @@ AI advisory never independently calculates or alters these authoritative metrics
 import datetime
 from decimal import Decimal
 
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
@@ -18,12 +19,13 @@ from app.models import (
     MetricSnapshot,
     Order,
 )
-from app.services.analytics import calculate_net_revenue, to_business_date
+from app.services.analytics import calculate_net_revenue, completed_refund_total, to_business_date
 
 
 def compute_daily_business_metrics(business: Business, target_date=None) -> dict:
     """
-    Computes deterministic daily metrics for a business tenant using operational timezone.
+    Computes order-date cohort metrics in the business timezone. Completed refunds
+    reduce the original order cohort's value, including refunds recorded on later days.
     """
     now = timezone.now()
     if target_date is None:
@@ -50,10 +52,7 @@ def compute_daily_business_metrics(business: Business, target_date=None) -> dict
     agg = day_orders.aggregate(gross=Sum("total_amount"))
     gross_revenue = Decimal(str(agg["gross"] or "0.00"))
 
-    refund_agg = day_orders.filter(
-        status__in=["CANCELLED", "REFUNDED"]
-    ).aggregate(ref=Sum("total_amount"))
-    refunds = Decimal(str(refund_agg["ref"] or "0.00"))
+    refunds = completed_refund_total(business, day_orders)
 
     failed_deliveries = day_orders.filter(status="FAILED_DELIVERY").count()
 
@@ -88,6 +87,7 @@ def compute_daily_business_metrics(business: Business, target_date=None) -> dict
         metadata={
             "gross_revenue": str(gross_revenue),
             "refunds": str(refunds),
+            "refund_basis": "completed_refunds_for_order_cohort",
             "total_orders": total_orders,
             "failed_deliveries": failed_deliveries,
             "failure_rate": str(round(failure_rate, 4)),
@@ -108,22 +108,34 @@ def compute_daily_business_metrics(business: Business, target_date=None) -> dict
     }
 
 
+@transaction.atomic
 def detect_business_issues_from_metrics(business: Business, target_date=None) -> list:
     """
     Evaluates verified facts from metric thresholds and establishes authoritative BusinessIssues.
     """
+    # Serialize this tenant's detection runs so each reporting period has one current fact.
+    Business.objects.select_for_update().get(pk=business.pk)
     metrics = compute_daily_business_metrics(business, target_date)
     now = timezone.now()
     detected_issues = []
+    fact_scope = {
+        "business": business,
+        "fact_type": "HIGH_DELIVERY_FAILURE_RATE",
+        "subject_entity_type": "business",
+        "subject_entity_id": business.id,
+    }
+    period_rule = f"HIGH_DELIVERY_FAILURE_RATE:{metrics['metric_date'].isoformat()}"
+    # Retire legacy facts that combined multiple reporting periods without a period key.
+    BusinessFact.all_objects.filter(**fact_scope, status="VERIFIED").filter(
+        Q(rule_key__isnull=True) | Q(rule_key="")
+    ).update(status="INVALIDATED", valid_to=now)
 
-    # Deterministic threshold rule: Failure rate > 20%
+    # Deterministic threshold rule: Failure rate >= 20%
     if metrics["failure_rate"] >= Decimal("0.20") and metrics["total_orders"] >= 1:
         # Establish deterministic BusinessFact
-        fact, _ = BusinessFact.objects.get_or_create(
-            business=business,
-            fact_type="HIGH_DELIVERY_FAILURE_RATE",
-            subject_entity_type="business",
-            subject_entity_id=business.id,
+        fact, _ = BusinessFact.all_objects.update_or_create(
+            **fact_scope,
+            rule_key=period_rule,
             defaults={
                 "statement": f"Delivery failure rate reached {metrics['failure_rate']:.1%} on {metrics['metric_date']}",
                 "value": metrics["failure_rate"],
@@ -133,6 +145,7 @@ def detect_business_issues_from_metrics(business: Business, target_date=None) ->
                 "valid_from": now,
                 "valid_to": now + datetime.timedelta(days=7),
                 "detected_at": now,
+                "metadata": {"metric_date": metrics["metric_date"].isoformat()},
             },
         )
 
@@ -160,5 +173,9 @@ def detect_business_issues_from_metrics(business: Business, target_date=None) ->
             weight=Decimal("1.0000"),
         )
         detected_issues.append(issue)
+    else:
+        BusinessFact.all_objects.filter(**fact_scope, rule_key=period_rule, status="VERIFIED").update(
+            status="INVALIDATED", valid_to=now,
+        )
 
     return detected_issues

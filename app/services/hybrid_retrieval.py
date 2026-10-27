@@ -174,7 +174,10 @@ def vector_search(
     )
 
     if connection.vendor == "postgresql":
-        embeddings = embeddings.exclude(knowledge_chunk__metadata__is_current=False)
+        embeddings = embeddings.filter(
+            Q(knowledge_chunk__metadata__is_current__isnull=True)
+            | ~Q(knowledge_chunk__metadata__is_current=False)
+        )
         if filter_metadata:
             embeddings = embeddings.filter(knowledge_chunk__metadata__contains=filter_metadata)
         vector_literal = "[" + ",".join(str(float(value)) for value in query_vector) + "]"

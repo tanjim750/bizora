@@ -8,6 +8,18 @@ import datetime
 from decimal import Decimal
 
 import pytz
+from django.db.models import Q, Sum
+
+
+def completed_refund_total(business, orders) -> Decimal:
+    """Sum canonical COMPLETED refunds for this tenant's order cohort, including partial refunds."""
+    from app.models import Refund
+
+    orders = orders.filter(business=business)
+    total = Refund.objects.filter(payment__business=business, status="COMPLETED").filter(
+        Q(order__in=orders) | Q(order__isnull=True, payment__order__in=orders)
+    ).aggregate(total=Sum("amount"))["total"]
+    return total or Decimal("0.00")
 
 
 def calculate_net_revenue(

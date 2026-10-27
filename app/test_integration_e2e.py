@@ -15,7 +15,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -55,7 +55,7 @@ class EventMock:
         self.payload = payload or {}
 
 
-class Phase13IntegrationE2ETests(TestCase):
+class Phase13IntegrationE2ETests(TransactionTestCase):
     def setUp(self):
         self.client = APIClient()
         self.now = timezone.now()
@@ -608,7 +608,7 @@ class Phase13IntegrationE2ETests(TestCase):
         subscribe("order.created.test", failing_subscriber)
         subscribe("order.created.test", successful_subscriber)
 
-        with self.captureOnCommitCallbacks(execute=True), transaction.atomic():
+        with transaction.atomic():
             order = Order.objects.create(
                 business=self.business_a,
                 order_number="ORD-TX-001",
@@ -616,6 +616,7 @@ class Phase13IntegrationE2ETests(TestCase):
                 total_amount=Decimal("500.00"),
             )
             dispatch(EventMock("order.created.test", {"order_id": order.id}))
+            self.assertEqual(invocations, [])
 
         self.assertIn(order.id, invocations)
 

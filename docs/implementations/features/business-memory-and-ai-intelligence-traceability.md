@@ -1,11 +1,12 @@
 # Business Memory & Knowledge and AI Intelligence: Feature Traceability Matrix
 
 ## 1. Executive Summary & Verification Metrics
-- **Runtime Environment:** Python 3.14.4 / Django 4.2.27 LTS / Django REST Framework 3.15.2
+- **Runtime Environment:** Python 3.12.13 / Django 4.2.27 LTS / Django REST Framework 3.15.2
 - **Authoritative Database Standard:** PostgreSQL 16 (`pgvector` compatible, SQLite local dev fallback)
-- **Total Suite Tests:** 283 passing tests (0 failures, 0 errors, 0 regressions)
-- **New Test Coverage Added:** 65 dedicated tests across 5 comprehensive suites (including E2E validation)
-- **Linting & Code Quality:** 100% compliant with `ruff check` (0 violations)
+- **Verification:** PostgreSQL 16.15 with pgvector 0.8.7; SQLite remains a development fallback.
+- **Suite Result (2026-10-28):** 342 tests passed on PostgreSQL/Python 3.12 with no skips. The SQLite fallback run passed with two PostgreSQL-only tests skipped out of 342 discovered tests.
+- **Review Regression Coverage:** `app.test_rereview_regressions` covers transaction claims, policy prompts, refunds, call evidence, JSON filtering, and daily fact refresh.
+- **Linting:** Changed Python files pass `ruff check`.
 
 ---
 
@@ -65,7 +66,13 @@
 
 ---
 
-## 5. Production Readiness Certification
-- **Postgres 16 Compatibility:** Models utilize native PostgreSQL JSONField and pgvector VectorField with SQLite fallback parsing.
-- **Database Migrations:** Schema fully synchronized across migrations `0004`, `0005`, `0006`, and `0007`.
-- **Zero Regressions:** 269 total tests passing seamlessly.
+## 5. Runtime Contracts After Rereview
+
+- **External executors:** Any supplied executor must run outside an enclosing database transaction, including actions whose default `is_simulated` flag is still true. The execution claim commits before the provider is called.
+- **Policy context:** Support and assistant context includes active structured business, refund, delivery, and support memory with its rule metadata. Separate category budgets keep FAQs from crowding out policy rules.
+- **Refund accounting:** `Refund.status='COMPLETED'` is the canonical completed state. Full and partial refund amounts reduce the original order-date cohort and attributed campaign totals. A refund linked only through its payment's order is included. Pending refunds do not reduce these totals.
+- **Call evidence:** Missing, empty, and known legacy placeholder transcripts yield `UNKNOWN` purpose and outcome. Real transcript text and provider attribution are preserved; topic keywords produce a summary requiring follow-up rather than an order confirmation or cancellation.
+- **Current knowledge:** PostgreSQL vector retrieval retains null metadata and missing `is_current` keys while excluding explicit false flags.
+- **Daily facts:** Each reporting day has its own rule key. Recalculation refreshes that day's fact, and a corrected measurement below the threshold invalidates it. Legacy facts without a period key are retired when the deterministic calculation runs.
+
+These checks cover local database and service behavior. Live AI/provider execution and deployment remain separate verification steps.
