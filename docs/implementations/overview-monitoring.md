@@ -26,7 +26,7 @@ No revenue is recomputed from orders, and no percentages or ROAS values are summ
 Migration `0003_overview_monitoring` adds only `MonitoringConfiguration` and
 append-only `MonitoringConfigurationRevision` tables. These provide the narrow
 Monitoring Configuration contract described by Business Configuration, whose
-larger module is not yet implemented. Configuration records are business scoped,
+larger module is now implemented in [Business Configuration](business-configuration.md). Configuration records are business scoped,
 versioned, and attributed to the actor; reads never create default rows.
 
 ## API
@@ -76,9 +76,9 @@ expiry time has passed; `effective_status` distinguishes that from the stored st
 
 ## Periods, comparisons, and freshness
 
-`period` is DAY, WEEK, or MONTH, matching the BI snapshot's period_type. Defaults
+`period` is DAY, WEEK, MONTH, ROLLING_7D, or ROLLING_30D, matching the BI snapshot's period_type. Defaults
 select the last complete business-calendar period in `Business.timezone`. Weeks
-start Monday. The comparison is the preceding calendar period, preserving DST
+start Monday unless General Settings specifies another business week boundary. The default comparison is the preceding calendar period, preserving DST
 boundaries and different month lengths. Responses expose UTC bounds and the
 business timezone. Invalid business timezones require configuration correction.
 

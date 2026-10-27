@@ -86,7 +86,7 @@ class BusinessView(APIView):
             raise ValidationError('Dimension fields are invalid.')
         if 'entity_id' in data and 'entity_type' not in data:
             raise ValidationError('entity_id requires entity_type.')
-        choices = {'period': ['DAY', 'WEEK', 'MONTH'], 'priority': SEVERITIES, 'severity': SEVERITIES,
+        choices = {'period': ['DAY', 'WEEK', 'MONTH', 'ROLLING_7D', 'ROLLING_30D'], 'priority': SEVERITIES, 'severity': SEVERITIES,
                    'domain': list(DOMAINS)+(['calling', 'issues', 'ai'] if resource == 'activity' else []),
                    'entity_type': list(ENTITIES)+['issue', 'recommendation']}
         if resource in {'issues', 'recommendations'}:

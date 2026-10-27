@@ -31,13 +31,17 @@ def window(business, config, params, now):
     else:
         end = datetime.combine(now.astimezone(zone).date(), datetime.min.time(), zone)
         if period == 'WEEK':
-            end -= timedelta(days=end.weekday())
+            end -= timedelta(days=(end.weekday()-config.get('week_start', 0)) % 7)
             start = end-timedelta(days=7)
             previous_start = start-timedelta(days=7)
         elif period == 'MONTH':
             end = end.replace(day=1)
             start = previous_month(end)
             previous_start = previous_month(start)
+        elif period in {'ROLLING_7D', 'ROLLING_30D'}:
+            days = 7 if period == 'ROLLING_7D' else 30
+            start = end-timedelta(days=days)
+            previous_start = start-timedelta(days=days)
         else:
             start = end-timedelta(days=1)
             previous_start = start-timedelta(days=1)

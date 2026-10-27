@@ -6,4 +6,5 @@ urlpatterns = [
     path('', MessageView.as_view(), name='message'),
     path('businesses/<int:business_id>/observability/', include('app.observability.urls')),
     path('businesses/<int:business_id>/overview/', include('app.overview.urls')),
+    path('businesses/<int:business_id>/configuration/', include('app.configuration.urls')),
 ]

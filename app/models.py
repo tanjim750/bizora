@@ -1329,6 +1329,9 @@ class MockExpectedResult(models.Model):
 
 
 # Keep model discovery and existing app.models imports stable.
+from app.configuration.models import (  # noqa: E402,F401
+    ConfigurationEvent, ConfigurationRecord, ConfigurationRevision, KnowledgeReprocessingRequest,
+)
 from app.integrations.models import IntegrationPayload  # noqa: E402,F401
 from app.observability.models import (  # noqa: E402,F401
     BusinessAccess, ConnectionCheck, FailedRecord, IntegrationError, MonitoringPolicy,

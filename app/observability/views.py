@@ -41,6 +41,9 @@ class Pagination(PageNumberPagination):
 class BusinessView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def evaluation_time(self):
+        return timezone.now()
+
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         require_access(request.user, kwargs['business_id'], manage=request.method not in {'GET', 'HEAD', 'OPTIONS'})
@@ -218,7 +221,8 @@ class OperationView(BusinessView):
         serializer = OperationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         from .operations import execute_operation
-        row = execute_operation(business_id, resource, pk, action, serializer.validated_data['idempotency_key'], request.user)
+        row = execute_operation(business_id, resource, pk, action, serializer.validated_data['idempotency_key'], request.user,
+                                now=self.evaluation_time())
         return Response(AttemptSerializer(row).data, status=409 if row.status == 'UNSUPPORTED' else 200)
 
 
@@ -249,6 +253,8 @@ class PolicyView(BusinessView):
 
     @transaction.atomic
     def put(self, request, business_id):
+        if request.query_params:
+            raise ValidationError('Policy writes do not accept query parameters.')
         if not isinstance(request.data, dict) or set(request.data) - set(self.fields):
             raise ValidationError('Unknown policy fields.')
         numeric = set(self.fields) - {'connection_id', 'entity_type', 'enabled', 'error_ratio'}
@@ -257,7 +263,7 @@ class PolicyView(BusinessView):
             raise ValidationError('Policy intervals and counts must be integers.')
         if 'enabled' in request.data and not isinstance(request.data['enabled'], bool):
             raise ValidationError('enabled must be boolean.')
-        Business.objects.select_for_update().get(pk=business_id)
+        Business.objects.select_for_update(no_key=True).get(pk=business_id)
         connection_id = request.data.get('connection_id')
         if connection_id is not None and (isinstance(connection_id, bool) or not isinstance(connection_id, int) or
                 not IntegrationConnection.objects.filter(pk=connection_id, business_id=business_id).exists()):
@@ -270,9 +276,12 @@ class PolicyView(BusinessView):
         row = row or MonitoringPolicy(business_id=business_id, connection_id=connection_id, entity_type=entity_type)
         for name, value in request.data.items():
             setattr(row, name, value)
-        row.updated_at = timezone.now()
+        row.updated_at = self.evaluation_time()
         row.full_clean()
         row.save()
+        from app.configuration.services import record_native_change
+        record_native_change(business_id, 'FRESHNESS', str(row.pk),
+            MonitoringPolicy.objects.filter(pk=row.pk).values(*self.fields).get(), request.user, row.updated_at)
         return Response(dict(MonitoringPolicy.objects.filter(pk=row.pk).values('id', *self.fields).get()))
 
 

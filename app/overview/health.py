@@ -18,7 +18,12 @@ def evaluate(value, rule, assessment='UNKNOWN'):
     if ('target_min' in rule and value < Decimal(rule['target_min'])) or (
             'target_max' in rule and value > Decimal(rule['target_max'])):
         return 'WARNING', 'OUTSIDE_GOAL_RANGE'
-    if {'warning', 'critical', 'target_min', 'target_max'} & set(rule):
+    if 'target_value' in rule:
+        target = Decimal(rule['target_value'])
+        if (direction == 'HIGHER' and value < target) or (direction == 'LOWER' and value > target) or (
+                direction == 'NEUTRAL' and value != target):
+            return 'WARNING', 'OUTSIDE_GOAL_RANGE'
+    if {'warning', 'critical', 'target_min', 'target_max', 'target_value'} & set(rule):
         return 'HEALTHY', 'WITHIN_CONFIGURED_RANGE'
     if direction != 'NEUTRAL' and assessment not in {'UNKNOWN', 'NEUTRAL'}:
         return ('WARNING', 'ADVERSE_PERIOD_MOVEMENT') if assessment == 'DECLINING' else ('HEALTHY', 'EXPECTED_PERIOD_MOVEMENT')
@@ -63,11 +68,13 @@ def health(business, config, cards, evidence, now):
         status, reason = evaluate(card['value'] if card['status'] == 'AVAILABLE' else None,
                                   card['rule'], card['comparison']['assessment'])
         item = {'metric': card['key'], 'snapshot_id': card['snapshot_id'], 'status': status, 'reason': reason,
-                'rule': card['rule'], 'goal': card['goal'], 'drilldown': card['drilldown']}
+                'rule': card['rule'], 'goal': card['goal'], 'drilldown': card['drilldown'],
+                'severity': card['rule'].get('critical_severity', 'CRITICAL') if status == 'CRITICAL' else
+                    card['rule'].get('warning_severity', 'MEDIUM') if status == 'WARNING' else None}
         domains[domain]['signals'].append(status)
         if len(domains[domain]['evidence']) < 20:
             domains[domain]['evidence'].append(item)
-        if card['status'] == 'AVAILABLE':
+        if card['status'] == 'AVAILABLE' and card['comparison'].get('mode', 'PREVIOUS_PERIOD') == 'PREVIOUS_PERIOD':
             movement = card['comparison']['assessment']
             movements.append(movement)
             domains[domain]['trend'] = combine_trend([domains[domain]['trend'], movement])

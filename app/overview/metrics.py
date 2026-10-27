@@ -109,18 +109,30 @@ class MetricProjection:
         status = 'UNAVAILABLE' if not current else 'STALE' if age > self.config['snapshot_ttl_seconds'] else 'AVAILABLE'
         if current and any(s['status'] != 'FRESH' for s in sources):
             status = 'STALE' if any(s['status'] in {'STALE', 'DELAYED'} for s in sources) else 'UNAVAILABLE'
+        comparison = self.comparison(current.value if current else None, previous.value if previous else None, unit, rule)
         return {'key': key, 'name': definition.name if definition else key.replace('_', ' ').title(),
                 'domain': domain_for(definition) if definition else CATALOG.get(key), 'unit': unit,
                 'value_type': definition.value_type if definition else None, 'status': status,
                 'reason': 'NO_EXACT_BI_SNAPSHOT' if current is None else 'CURRENT_BI_SNAPSHOT' if status == 'AVAILABLE' else 'DATA_OVERDUE_OR_UNCONFIRMED',
                 'value': number(current.value) if current else None, 'snapshot_id': current.pk if current else None,
                 'snapshot': snapshot_data(current) if current else None,
-                'comparison': compare(current.value if current else None, previous.value if previous else None,
-                                      unit, rule.get('direction', 'NEUTRAL')),
-                'previous_snapshot_id': previous.pk if previous else None, 'sources': sources,
+                'comparison': comparison,
+                'previous_snapshot_id': previous.pk if previous and comparison['mode'] == 'PREVIOUS_PERIOD' else None, 'sources': sources,
                 'freshness': {'age_seconds': age, 'ttl_seconds': self.config['snapshot_ttl_seconds']},
                 'goal': rule.get('goal'), 'rule': rule,
                 'drilldown': f'/api/businesses/{self.business.pk}/overview/evidence/snapshots/{current.pk}/' if current else None}
+
+    def comparison(self, current, previous, unit, rule):
+        mode = self.config.get('comparison_mode', 'PREVIOUS_PERIOD')
+        reference = previous if mode == 'PREVIOUS_PERIOD' else (
+            Decimal(rule['target_value']) if mode == 'TARGET' and 'target_value' in rule else
+            Decimal(rule['baseline_value']) if mode == 'BASELINE' and 'baseline_value' in rule else None)
+        result = compare(current, reference, unit, rule.get('direction', 'NEUTRAL'))
+        result.update(mode=mode, reference_value=number(reference))
+        if mode != 'PREVIOUS_PERIOD':
+            result['previous_value'] = None
+            result['reason'] = 'COMPARISON_DISABLED' if mode == 'NONE' else f'{mode}_REFERENCE' if reference is not None else f'MISSING_{mode}_REFERENCE'
+        return result
 
     def trends(self):
         end = self.window['end']
@@ -153,5 +165,5 @@ class MetricProjection:
         if self.window['period'] == 'MONTH':
             return all(s.day == e.day == 1 and s.time() == e.time() and
                        (e.year*12+e.month)-(s.year*12+s.month) == 1 for s, e in zip(starts, ends))
-        days = 7 if self.window['period'] == 'WEEK' else 1
+        days = {'WEEK': 7, 'DAY': 1, 'ROLLING_7D': 7, 'ROLLING_30D': 30}[self.window['period']]
         return all((e.date()-s.date()).days == days and s.time() == e.time() for s, e in zip(starts, ends))

@@ -156,6 +156,10 @@ def execute_operation(business_id, resource, target_id, action, key, actor, *, n
     if connection.status in {'DISABLED', 'DISCONNECTED'}:
         raise ValidationError('Disabled/disconnected connections cannot execute operations.')
     _validate_eligibility(action, row)
+    if action != 'connection_test':
+        from app.configuration.integrations import require_processing_scope
+        webhook = row if resource == 'webhooks' else getattr(row, 'webhook', None)
+        require_processing_scope(connection, row.entity_type, webhook)
     now = timestamp(now or timezone.now(), 'operation_time')
     policy = Policies(business_id).get(connection_id, getattr(row, 'entity_type', ''))
     previous = OperationAttempt.objects.filter(connection=connection, action=action, target_id=target_id).exclude(status='UNSUPPORTED')
