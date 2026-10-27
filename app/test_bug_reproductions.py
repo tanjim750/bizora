@@ -8,6 +8,8 @@ Reproduces:
 5. BUG-005: Recommendation false goal alignment on completely unrelated domains.
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.utils import timezone
 
@@ -261,7 +263,10 @@ class BugReproductionTests(TestCase):
             evidence_type="FACT",
         )
 
-        recommendation, _ = generate_grounded_recommendation(self.business, issue=issue)
+        with patch.object(Business, "execute_llm_with_timeout", return_value={
+            "content": "Review the issue", "confidence": "0.85", "provider_status": "ok",
+        }):
+            recommendation, _ = generate_grounded_recommendation(self.business, issue=issue)
         evidence = AiRecommendationEvidence.objects.get(ai_recommendation=recommendation)
 
         self.assertEqual(evidence.business_issue_id, issue.id)

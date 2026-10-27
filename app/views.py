@@ -188,11 +188,12 @@ class SupportReplyView(BusinessScopedAPIView):
             business=business,
         )
         order = None
-        if serializer.validated_data.get("order_id"):
-            order = Order.objects.filter(
+        if serializer.validated_data.get("order_id") is not None:
+            order = get_object_or_404(
+                Order,
                 pk=serializer.validated_data["order_id"], business=business,
                 customer_id=conversation.customer_id,
-            ).first()
+            )
 
         result = generate_suggested_reply(
             business=business,

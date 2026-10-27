@@ -25,6 +25,7 @@ Validates:
 
 import datetime
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -84,6 +85,12 @@ from app.services.ai import (
 
 
 class AiIntelligenceFeaturesTests(TestCase):
+    def generate_recommendation(self):
+        with patch.object(Business, "execute_llm_with_timeout", return_value={
+            "content": "Review verified evidence", "confidence": "0.85", "provider_status": "ok",
+        }):
+            return generate_grounded_recommendation(business=self.business)
+
     def setUp(self):
         self.client = APIClient()
         self.now = timezone.now()
@@ -555,7 +562,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_13_recommendation_generation_bounded_confidence(self):
         """Feature 13: Grounded recommendation generation with bounded confidence."""
-        rec, _action = generate_grounded_recommendation(business=self.business)
+        rec, _action = self.generate_recommendation()
         self.assertEqual(rec.status, "SUGGESTED")
         self.assertTrue(Decimal("0.00") <= rec.confidence <= Decimal("1.00"))
         self.assertEqual(rec.business_id, self.business.id)
@@ -565,7 +572,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_14_recommendation_evidence_grounding(self):
         """Feature 14: Explicit evidence attachment connecting recommendation to verified facts."""
-        rec, _action = generate_grounded_recommendation(business=self.business)
+        rec, _action = self.generate_recommendation()
         evidence = AiRecommendationEvidence.objects.filter(ai_recommendation=rec).first()
         self.assertIsNotNone(evidence)
         self.assertIsNotNone(evidence.business_fact)
@@ -581,7 +588,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_15_suggested_actions_unexecuted_proposals(self):
         """Feature 15: Creates structured action proposals that are not executed automatically."""
-        _rec, action = generate_grounded_recommendation(business=self.business)
+        _rec, action = self.generate_recommendation()
         self.assertEqual(action.status, "SUGGESTED")
         self.assertTrue(action.is_simulated)
         self.assertIsNone(action.approved_at)
@@ -592,7 +599,7 @@ class AiIntelligenceFeaturesTests(TestCase):
     # --------------------------------------------------------------------------
     def test_feature_16_approval_and_execution_lifecycle_and_error_handling(self):
         """Feature 16: Approval state machine, user audit trail, and execution failure handling."""
-        _rec, action = generate_grounded_recommendation(business=self.business)
+        _rec, action = self.generate_recommendation()
 
         # Unapproved action cannot execute
         with self.assertRaises(ValidationError):
@@ -614,7 +621,7 @@ class AiIntelligenceFeaturesTests(TestCase):
         self.assertIsNotNone(executed.executed_at)
 
         # Failed execution handler
-        _rec2, action2 = generate_grounded_recommendation(business=self.business)
+        _rec2, action2 = self.generate_recommendation()
         approve_action(action=action2, user=self.user, approval_note="Will fail")
         failed = execute_action(action2, executor_fn=lambda payload: {"error": "Courier API Timeout"})
         self.assertEqual(failed.status, "FAILED")

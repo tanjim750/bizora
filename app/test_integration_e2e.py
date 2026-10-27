@@ -10,6 +10,7 @@ Tests all 6 core business flows and 10 scenario edge cases:
 """
 
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -431,11 +432,14 @@ class Phase13IntegrationE2ETests(TestCase):
             detected_at=self.now,
         )
 
-        rec, action = generate_grounded_recommendation(
-            business=self.business_a,
-            issue=issue,
-            intent="refund",
-        )
+        with patch.object(Business, "execute_llm_with_timeout", return_value={
+            "content": "Review courier delay", "confidence": "0.85", "provider_status": "ok",
+        }):
+            rec, action = generate_grounded_recommendation(
+                business=self.business_a,
+                issue=issue,
+                intent="refund",
+            )
 
         self.assertIsNotNone(rec.id)
         self.assertIsNotNone(action.id)

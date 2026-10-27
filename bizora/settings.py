@@ -36,17 +36,20 @@ if _env_file.exists():
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "bizora-production-hardened-cryptographic-secret-key-vault-2026"
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "t")
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "t")
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
-if not DEBUG and (not SECRET_KEY or SECRET_KEY.startswith("django-insecure")):
+if not DEBUG and (
+    not SECRET_KEY
+    or SECRET_KEY.startswith("django-insecure")
+    or SECRET_KEY == "bizora-production-hardened-cryptographic-secret-key-vault-2026"
+):
     raise ImproperlyConfigured(
-        "SECRET_KEY environment variable must be configured in production (DEBUG=False)."
+        "A private SECRET_KEY environment variable is required when DEBUG=False."
     )
+if not SECRET_KEY:
+    SECRET_KEY = "bizora-local-development-only"
 
 ALLOWED_HOSTS = [
     h.strip()

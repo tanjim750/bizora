@@ -90,8 +90,10 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
     Executes an approved action.
     Fails fast if unapproved (SEC-005).
     Captures integration errors and transitions status to FAILED (COR-011).
-    Wrapped in transaction.atomic to prevent stuck EXECUTING state on partial failure.
+    Claims execution before calling a provider, so a later database failure cannot
+    make an external action eligible for automatic retry.
     """
+    enclosing_transaction = transaction.get_connection().in_atomic_block
     with transaction.atomic():
         action = AiAction.objects.select_for_update().get(pk=action.pk)
         if not action.approved_at or action.status != "APPROVED":
@@ -100,30 +102,39 @@ def execute_action(action: AiAction, executor_fn=None) -> AiAction:
             raise ValidationError("AiAction cannot execute without approval (approved_at must be set).")
         if not action.is_simulated and executor_fn is None:
             raise ValidationError("A provider executor is required for non-simulated actions.")
+        if not action.is_simulated and enclosing_transaction:
+            raise ValidationError("External actions must execute outside an enclosing database transaction.")
         action.status = "EXECUTING"
         action.save(update_fields=["status", "updated_at"])
 
-        now = timezone.now()
-        action.executed_at = now
+    try:
+        # shortcut: interrupted calls remain EXECUTING for manual reconciliation; automatic retries need provider idempotency.
+        if executor_fn:
+            result = executor_fn(action.action_payload)
+        else:
+            result = {
+                "status": "success",
+                "message": "Simulated execution completed successfully",
+            }
+        failed = (
+            not isinstance(result, dict)
+            or result.get("status") in {"failed", "error"}
+            or result.get("success") is False
+            or "error" in result
+            or "errors" in result
+        )
+    except Exception as exc:  # noqa: BLE001 - provider errors are recorded as failed actions
+        result = {"error": f"Execution failed: {exc!s}"}
+        failed = True
 
-        try:
-            if executor_fn:
-                result = executor_fn(action.action_payload)
-                action.execution_result = result
-            else:
-                action.execution_result = {
-                    "status": "success",
-                    "message": "Simulated execution completed successfully",
-                }
-
-            if not isinstance(action.execution_result, dict) or action.execution_result.get("status") in {"failed", "error"} or action.execution_result.get("success") is False or "error" in action.execution_result or "errors" in action.execution_result:
-                action.status = "FAILED"
-            else:
-                action.status = "EXECUTED"
-        except Exception as exc:  # noqa: BLE001 - intentional safety guardrail for arbitrary action execution
-            action.execution_result = {"error": f"Execution failed: {exc!s}"}
-            action.status = "FAILED"
-
+    with transaction.atomic():
+        action = AiAction.objects.select_for_update().get(pk=action.pk)
+        if action.status != "EXECUTING":
+            raise ValidationError("Action execution state changed during the provider call.")
+        action.executed_at = timezone.now()
+        action.execution_result = result
+        action.status = "FAILED" if failed else "EXECUTED"
         action.save()
-        _record_action_audit(action, f"ACTION_{action.status}", result=action.execution_result)
+
+    _record_action_audit(action, f"ACTION_{action.status}", result=action.execution_result)
     return action

@@ -8,7 +8,7 @@ Run with:
 """
 import datetime
 from decimal import Decimal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -1001,6 +1001,11 @@ class TestGenerateGroundedRecommendation(TestCase):
         self.fn = generate_grounded_recommendation
         self.biz = make_business()
         make_business_fact(self.biz)
+        provider = patch.object(Business, "execute_llm_with_timeout", return_value={
+            "content": "Review verified evidence", "confidence": "0.85", "provider_status": "ok",
+        })
+        provider.start()
+        self.addCleanup(provider.stop)
 
     def test_creates_recommendation_and_action(self):
         rec, action = self.fn(self.biz)

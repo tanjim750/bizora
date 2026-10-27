@@ -10,7 +10,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db import connection
+from django.db.models import FloatField, Q
+from django.db.models.expressions import RawSQL
 
 from app.exceptions import (
     EmbeddingDimensionMismatchError,
@@ -165,9 +167,24 @@ def vector_search(
             knowledge_chunk__knowledge_document__knowledge_source__business=business,
             knowledge_chunk__knowledge_document__status__in=["READY", "PUBLISHED"],
             knowledge_chunk__knowledge_document__knowledge_source__status="ACTIVE",
+            dimensions=len(query_vector),
+            embedding__isnull=False,
         )
         .select_related("knowledge_chunk", "knowledge_chunk__knowledge_document", "knowledge_chunk__knowledge_document__knowledge_source")
     )
+
+    if connection.vendor == "postgresql":
+        embeddings = embeddings.exclude(knowledge_chunk__metadata__is_current=False)
+        if filter_metadata:
+            embeddings = embeddings.filter(knowledge_chunk__metadata__contains=filter_metadata)
+        vector_literal = "[" + ",".join(str(float(value)) for value in query_vector) + "]"
+        embeddings = embeddings.annotate(
+            distance=RawSQL(
+                "knowledge_embeddings.embedding <=> %s::vector",
+                (vector_literal,),
+                output_field=FloatField(),
+            )
+        ).order_by("distance")[:top_k]
 
     scored_items: list[tuple[float, RetrievalResultItem]] = []
     for emb in embeddings:

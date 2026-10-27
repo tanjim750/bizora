@@ -181,6 +181,8 @@ def generate_grounded_recommendation(
             "confidence": "0.8500",
         },
     )
+    if llm_output.get("provider_status") != "ok":
+        raise ValidationError("AI provider is unavailable; no recommendation was created.")
 
     try:
         confidence = Decimal(str(llm_output.get("confidence", "0.8000")))

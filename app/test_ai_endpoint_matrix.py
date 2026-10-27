@@ -1,6 +1,7 @@
 """Endpoint matrix for the complete AI Intelligence API surface."""
 
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -50,7 +51,13 @@ class AiEndpointMatrixTests(TestCase):
         BusinessFact.objects.create(
             business=self.business, fact_type="MATRIX", statement="Verified matrix fact", detected_at=now
         )
-        self.recommendation, self.action = generate_grounded_recommendation(self.business, self.issue)
+        self.recommendation, self.action = self.generate_recommendation()
+
+    def generate_recommendation(self):
+        with patch.object(Business, "execute_llm_with_timeout", return_value={
+            "content": "Review the issue", "confidence": "0.85", "provider_status": "ok",
+        }):
+            return generate_grounded_recommendation(self.business, self.issue)
 
     def test_public_health_route(self):
         response = APIClient().get("/api/v1/")
@@ -135,6 +142,18 @@ class AiEndpointMatrixTests(TestCase):
             response = getattr(self.client, method)(route, payload, format="json")
             self.assertIn(response.status_code, {200, 404}, route)
 
+    def test_support_reply_rejects_an_order_from_another_customer(self):
+        other_customer = Customer.objects.create(business=self.business, display_name="Other customer")
+        other_order = Order.objects.create(
+            business=self.business, customer=other_customer, order_number="OTHER-1", ordered_at=timezone.now(),
+        )
+        response = self.client.post(
+            f"/api/v1/businesses/{self.business.id}/ai/support/suggest-reply/",
+            {"conversation_id": self.conversation.id, "order_id": other_order.id},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_action_routes_cover_approval_rejection_execution_and_conflicts(self):
         approve = self.client.post(
             f"/api/v1/actions/{self.action.id}/approve/", {"approval_note": "approved"}, format="json"
@@ -149,7 +168,7 @@ class AiEndpointMatrixTests(TestCase):
         conflict = self.client.post(f"/api/v1/actions/{self.action.id}/reject/", {"approval_note": "late"}, format="json")
         self.assertEqual(conflict.status_code, 409)
 
-        _rejected_rec, rejected_action = generate_grounded_recommendation(self.business, self.issue)
+        _rejected_rec, rejected_action = self.generate_recommendation()
         rejected = self.client.post(
             f"/api/v1/actions/{rejected_action.id}/reject/", {"approval_note": "not now"}, format="json"
         )

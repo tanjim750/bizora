@@ -1,8 +1,16 @@
 """Regression tests for knowledge and AI production boundaries."""
 
+import os
+import subprocess
+import sys
+from unittest import skipUnless
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.test import TestCase
+from django.db import connection, transaction
+from django.db.models.query import QuerySet
+from django.test import SimpleTestCase, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from app.exceptions import (
@@ -17,14 +25,15 @@ from app.models import (
     AiRecommendationEvidence,
     Business,
     BusinessFact,
+    BusinessIssue,
     BusinessMembership,
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeEmbedding,
     KnowledgeSource,
 )
-from app.services.actions import approve_action, reject_action
-from app.services.ai import promote_recommendation_to_memory
+from app.services.actions import approve_action, execute_action, reject_action
+from app.services.ai import generate_grounded_recommendation, promote_recommendation_to_memory
 from app.services.authorization import require_business_access
 from app.services.hybrid_retrieval import generate_or_store_embedding, keyword_search, vector_search
 from app.services.knowledge_pipeline import (
@@ -33,8 +42,31 @@ from app.services.knowledge_pipeline import (
     chunk_document,
     ingest_document,
     process_document,
+    resolve_active_version,
     validate_domain_boundaries,
 )
+
+
+class ProductionSettingsGuardrailTests(SimpleTestCase):
+    def test_production_requires_a_private_secret_key(self):
+        script = """
+from pathlib import Path
+exists = Path.exists
+Path.exists = lambda path: False if path.name == '.env' else exists(path)
+import bizora.settings
+"""
+        for secret in (None, "bizora-production-hardened-cryptographic-secret-key-vault-2026"):
+            with self.subTest(secret_present=secret is not None):
+                env = os.environ.copy()
+                env.pop("SECRET_KEY", None)
+                env["DEBUG"] = "False"
+                if secret is not None:
+                    env["SECRET_KEY"] = secret
+                result = subprocess.run(
+                    [sys.executable, "-c", script], env=env, capture_output=True, text=True, check=False,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("ImproperlyConfigured", result.stderr)
 
 
 class KnowledgeRetrievalGuardrailTests(TestCase):
@@ -149,6 +181,39 @@ class KnowledgeRetrievalGuardrailTests(TestCase):
                     [],
                 )
 
+    def test_postgres_vector_query_ranks_and_limits_in_sql(self):
+        queries = []
+
+        def capture_query(queryset):
+            queries.append(str(queryset.query))
+            return iter([])
+
+        with patch.object(connection, "vendor", "postgresql"), patch.object(QuerySet, "__iter__", capture_query):
+            vector_search(self.business, [1.0, 0.0, 0.0, 0.0], top_k=2, model_name="test-model-4d")
+
+        self.assertEqual(len(queries), 1)
+        self.assertIn("<=>", queries[0])
+        self.assertIn("LIMIT 2", queries[0])
+
+    @skipUnless(connection.vendor == "postgresql", "requires PostgreSQL pgvector")
+    def test_postgres_metadata_filter_precedes_vector_limit(self):
+        ignored = self.make_chunk(
+            document_business=self.business, chunk_business=self.business,
+            metadata={"is_current": True, "category": "OTHER"},
+        )
+        target = self.make_chunk(
+            document_business=self.business, chunk_business=self.business,
+            metadata={"is_current": True, "category": "DELIVERY"},
+        )
+        generate_or_store_embedding(ignored, [1.0, 0.0, 0.0, 0.0], model_name="test-model-4d")
+        generate_or_store_embedding(target, [0.8, 0.6, 0.0, 0.0], model_name="test-model-4d")
+
+        results = vector_search(
+            self.business, [1.0, 0.0, 0.0, 0.0], top_k=1,
+            model_name="test-model-4d", filter_metadata={"category": "DELIVERY"},
+        )
+        self.assertEqual([item.chunk_id for item in results], [target.id])
+
 
 class EvidenceTenantGuardrailTests(TestCase):
     def test_recommendation_evidence_cannot_reference_other_business_fact(self):
@@ -228,6 +293,69 @@ class AiActionAuthorizationGuardrailTests(TestCase):
         suggestion = promote_recommendation_to_memory(self.business, self.recommendation, self.user)
         self.assertEqual(suggestion.approved_by_id, self.user.id)
 
+    def test_unavailable_ai_provider_cannot_create_a_recommendation(self):
+        issue = BusinessIssue.objects.create(
+            business=self.business, issue_type="INVENTORY", title="Stock low", detected_at=timezone.now(),
+        )
+        with patch.dict(os.environ, {"BIZORA_LLM_URL": ""}), self.assertRaises(ValidationError):
+            generate_grounded_recommendation(self.business, issue)
+        self.assertFalse(AiRecommendation.objects.filter(business=self.business).exclude(pk=self.recommendation.pk).exists())
+
+
+class AiActionExecutionTransactionTests(TransactionTestCase):
+    def setUp(self):
+        business = Business.objects.create(name="External action", slug="external-action")
+        recommendation = AiRecommendation.objects.create(
+            business=business, recommendation_type="REVIEW", title="Review",
+            description="Review evidence", generated_at=timezone.now(),
+        )
+        self.action = AiAction.objects.create(
+            business=business, ai_recommendation=recommendation, action_type="REVIEW",
+            status="APPROVED", approved_at=timezone.now(), is_simulated=False,
+        )
+
+    def test_provider_call_is_not_retried_after_audit_write_fails(self):
+        calls = []
+
+        def provider(payload):
+            calls.append(payload)
+            return {"status": "success"}
+
+        with patch("app.services.actions._record_action_audit", side_effect=RuntimeError("audit failed")), self.assertRaises(RuntimeError):
+            execute_action(self.action, executor_fn=provider)
+
+        self.action.refresh_from_db()
+        self.assertEqual(self.action.status, "EXECUTED")
+        execute_action(self.action, executor_fn=provider)
+        self.assertEqual(len(calls), 1)
+
+    def test_external_call_rejects_an_enclosing_transaction(self):
+        calls = []
+        with transaction.atomic(), self.assertRaises(ValidationError):
+            execute_action(self.action, executor_fn=lambda payload: calls.append(payload))
+        self.assertEqual(calls, [])
+
+    def test_provider_is_not_retried_if_result_write_fails(self):
+        calls = []
+        save = AiAction.save
+        writes = 0
+
+        def fail_result_write(action, *args, **kwargs):
+            nonlocal writes
+            writes += 1
+            if writes == 2:
+                raise RuntimeError("result write failed")
+            return save(action, *args, **kwargs)
+
+        with patch.object(AiAction, "save", fail_result_write), self.assertRaises(RuntimeError):
+            execute_action(self.action, executor_fn=lambda payload: calls.append(payload) or {"status": "success"})
+
+        self.action.refresh_from_db()
+        self.assertEqual(self.action.status, "EXECUTING")
+        with self.assertRaises(ValidationError):
+            execute_action(self.action, executor_fn=lambda payload: calls.append(payload))
+        self.assertEqual(len(calls), 1)
+
 
 class KnowledgePipelineGuardrailTests(TestCase):
     def setUp(self):
@@ -255,6 +383,11 @@ class KnowledgePipelineGuardrailTests(TestCase):
             process_document(document)
         document.refresh_from_db()
         self.assertEqual(document.status, "SUPERSEDED")
+
+    def test_explicit_pending_version_is_not_active(self):
+        document = self.make_document(status="PENDING")
+        with self.assertRaises(StaleVersionError):
+            resolve_active_version(self.business, self.source.id, target_version=document.version)
 
     def test_chunking_retry_is_idempotent_and_metadata_is_authoritative(self):
         document = self.make_document(metadata={"is_current": False, "version": 99, "section": "Forged"})

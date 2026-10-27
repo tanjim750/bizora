@@ -485,7 +485,7 @@ def resolve_active_version(
             raise KnowledgeDocument.DoesNotExist(
                 f"KnowledgeDocument for source {knowledge_source_id} version {target_version} does not exist."
             )
-        if doc.status in ("SUPERSEDED", "ARCHIVED"):
+        if doc.status not in ("READY", "PUBLISHED"):
             raise StaleVersionError(
                 f"Requested document version {target_version} is {doc.status} and cannot be used as active context."
             )
