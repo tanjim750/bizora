@@ -54,6 +54,10 @@ class GraphFilter:
     time_to: datetime.datetime | None = None
     node_properties: dict[str, Any] | None = None
     edge_properties: dict[str, Any] | None = None
+    status: str | None = None
+    channel: str | None = None
+    provider: str | None = None
+    dimensions: dict[str, Any] | None = None
 
 
 @dataclass
@@ -110,6 +114,27 @@ def _matches_node_filter(node: models.GraphNode, filters: GraphFilter | None) ->
 
     if filters.time_to and node.created_at and node.created_at > filters.time_to:
         return False
+
+    if filters.status:
+        props = node.properties or {}
+        if props.get("status") != filters.status:
+            return False
+
+    if filters.channel:
+        props = node.properties or {}
+        if props.get("channel") != filters.channel:
+            return False
+
+    if filters.provider:
+        props = node.properties or {}
+        if props.get("provider") != filters.provider:
+            return False
+
+    if filters.dimensions:
+        props = node.properties or {}
+        for k, v in filters.dimensions.items():
+            if props.get(k) != v:
+                return False
 
     if filters.node_properties:
         props = node.properties or {}

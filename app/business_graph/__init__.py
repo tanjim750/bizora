@@ -2,12 +2,16 @@
 
 from . import journeys, projection, sync, traversal
 from .journeys import (
+    CampaignJourney,
     CustomerJourney,
     JourneyTimelineEvent,
     OrderJourney,
+    ProductJourney,
     STAGE_MAPPING,
+    build_campaign_journey,
     build_customer_journey,
     build_order_journey,
+    build_product_journey,
 )
 from .projection import (
     GraphCrossBusinessError,
@@ -42,6 +46,7 @@ from .traversal import (
 )
 
 __all__ = [
+    "CampaignJourney",
     "CustomerJourney",
     "GraphCrossBusinessError",
     "GraphFilter",
@@ -51,6 +56,7 @@ __all__ = [
     "JourneyTimelineEvent",
     "OrderJourney",
     "PathStep",
+    "ProductJourney",
     "ProjectionSummary",
     "PruneSummary",
     "RebuildSummary",
@@ -60,8 +66,10 @@ __all__ = [
     "TraversalResult",
     "VALID_DIRECTIONS",
     "VALID_RELATIONSHIP_SOURCES",
+    "build_campaign_journey",
     "build_customer_journey",
     "build_order_journey",
+    "build_product_journey",
     "find_paths",
     "get_neighbors",
     "journeys",

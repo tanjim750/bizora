@@ -97,6 +97,43 @@ class OrderJourney:
     total_amount: str | None
 
 
+@dataclass
+class ProductJourney:
+    business_id: int
+    product_id: int
+    product_node: models.GraphNode
+    order_nodes: list[models.GraphNode]
+    customer_nodes: list[models.GraphNode]
+    campaign_nodes: list[models.GraphNode]
+    website_nodes: list[models.GraphNode]
+    shipment_nodes: list[models.GraphNode]
+    payment_nodes: list[models.GraphNode]
+    communication_nodes: list[models.GraphNode]
+    nodes: list[models.GraphNode]
+    edges: list[models.GraphEdge]
+    timeline: list[JourneyTimelineEvent]
+    summary: dict[str, Any]
+
+
+@dataclass
+class CampaignJourney:
+    business_id: int
+    campaign_id: int
+    campaign_node: models.GraphNode
+    session_nodes: list[models.GraphNode]
+    conversion_nodes: list[models.GraphNode]
+    customer_nodes: list[models.GraphNode]
+    order_nodes: list[models.GraphNode]
+    product_nodes: list[models.GraphNode]
+    payment_nodes: list[models.GraphNode]
+    shipment_nodes: list[models.GraphNode]
+    communication_nodes: list[models.GraphNode]
+    nodes: list[models.GraphNode]
+    edges: list[models.GraphEdge]
+    timeline: list[JourneyTimelineEvent]
+    summary: dict[str, Any]
+
+
 def _extract_node_timestamp(node: models.GraphNode) -> datetime.datetime | None:
     """Determine the authoritative activity timestamp for chronological timeline ordering."""
     return node.first_seen_at or node.created_at
@@ -314,11 +351,227 @@ def build_order_journey(
     )
 
 
+def build_product_journey(
+    *,
+    business_id: int,
+    product_id: int,
+    filters: GraphFilter | None = None,
+) -> ProductJourney:
+    """Build the connected multi-domain product journey from verified graph data.
+
+    Connects:
+    Product -> Orders
+    Product -> Customers (via orders)
+    Product -> Campaigns (via attributed orders and sessions)
+    Product -> Website events & sessions
+    Product -> Shipments (via orders)
+    Product -> Payments (via orders)
+    Product -> Support / Calls (via orders)
+    """
+    if not isinstance(business_id, int) or business_id <= 0:
+        raise GraphValidationError("business_id must be a positive integer")
+
+    product = models.Product.objects.filter(pk=product_id).first()
+    if product is None:
+        raise GraphValidationError(f"Product #{product_id} does not exist.")
+    if product.business_id != business_id:
+        raise GraphScopeError(f"Product #{product_id} belongs to business {product.business_id}, not {business_id}.")
+
+    product_node = models.GraphNode.objects.filter(
+        business_id=business_id,
+        entity_type="PRODUCT",
+        entity_id=product_id,
+    ).first()
+
+    if product_node is None:
+        raise GraphValidationError(
+            f"Product #{product_id} has not been projected into business {business_id} graph."
+        )
+
+    traversal = traverse_graph(
+        business_id=business_id,
+        root_entity_type="PRODUCT",
+        root_entity_id=product_id,
+        direction="BIDIRECTIONAL",
+        max_depth=3,
+        max_nodes=500,
+        filters=filters,
+    )
+
+    nodes = traversal.nodes
+    edges = traversal.edges
+
+    order_nodes: list[models.GraphNode] = []
+    customer_nodes: list[models.GraphNode] = []
+    campaign_nodes: list[models.GraphNode] = []
+    website_nodes: list[models.GraphNode] = []
+    shipment_nodes: list[models.GraphNode] = []
+    payment_nodes: list[models.GraphNode] = []
+    comm_nodes: list[models.GraphNode] = []
+
+    for n in nodes:
+        if n.entity_type == "ORDER":
+            order_nodes.append(n)
+        elif n.entity_type == "CUSTOMER":
+            customer_nodes.append(n)
+        elif n.entity_type == "CAMPAIGN":
+            campaign_nodes.append(n)
+        elif n.entity_type in ("WEBSITE_VISITOR", "WEBSITE_SESSION", "WEBSITE_EVENT"):
+            website_nodes.append(n)
+        elif n.entity_type == "SHIPMENT":
+            shipment_nodes.append(n)
+        elif n.entity_type == "PAYMENT":
+            payment_nodes.append(n)
+        elif n.entity_type in ("CONVERSATION", "MESSAGE", "CALL"):
+            comm_nodes.append(n)
+
+    timeline = _build_timeline_events(nodes, edges)
+
+    summary = {
+        "order_count": len(order_nodes),
+        "customer_count": len(customer_nodes),
+        "campaign_count": len(campaign_nodes),
+        "website_count": len(website_nodes),
+        "shipment_count": len(shipment_nodes),
+        "payment_count": len(payment_nodes),
+        "communication_count": len(comm_nodes),
+    }
+
+    return ProductJourney(
+        business_id=business_id,
+        product_id=product_id,
+        product_node=product_node,
+        order_nodes=order_nodes,
+        customer_nodes=customer_nodes,
+        campaign_nodes=campaign_nodes,
+        website_nodes=website_nodes,
+        shipment_nodes=shipment_nodes,
+        payment_nodes=payment_nodes,
+        communication_nodes=comm_nodes,
+        nodes=nodes,
+        edges=edges,
+        timeline=timeline,
+        summary=summary,
+    )
+
+
+def build_campaign_journey(
+    *,
+    business_id: int,
+    campaign_id: int,
+    filters: GraphFilter | None = None,
+) -> CampaignJourney:
+    """Build the connected marketing-to-outcome campaign journey from verified graph data.
+
+    Connects:
+    Campaign -> Sessions & Conversions
+    Campaign -> Customers
+    Campaign -> Orders & Attributed Revenue
+    Campaign -> Products
+    Campaign -> Payments & Shipments (downstream outcomes)
+    Campaign -> Support / Calls
+    """
+    if not isinstance(business_id, int) or business_id <= 0:
+        raise GraphValidationError("business_id must be a positive integer")
+
+    camp = models.Campaign.objects.filter(pk=campaign_id).first()
+    if camp is None:
+        raise GraphValidationError(f"Campaign #{campaign_id} does not exist.")
+    if camp.business_id != business_id:
+        raise GraphScopeError(f"Campaign #{campaign_id} belongs to business {camp.business_id}, not {business_id}.")
+
+    camp_node = models.GraphNode.objects.filter(
+        business_id=business_id,
+        entity_type="CAMPAIGN",
+        entity_id=campaign_id,
+    ).first()
+
+    if camp_node is None:
+        raise GraphValidationError(
+            f"Campaign #{campaign_id} has not been projected into business {business_id} graph."
+        )
+
+    traversal = traverse_graph(
+        business_id=business_id,
+        root_entity_type="CAMPAIGN",
+        root_entity_id=campaign_id,
+        direction="BIDIRECTIONAL",
+        max_depth=4,
+        max_nodes=500,
+        filters=filters,
+    )
+
+    nodes = traversal.nodes
+    edges = traversal.edges
+
+    session_nodes: list[models.GraphNode] = []
+    conversion_nodes: list[models.GraphNode] = []
+    customer_nodes: list[models.GraphNode] = []
+    order_nodes: list[models.GraphNode] = []
+    product_nodes: list[models.GraphNode] = []
+    payment_nodes: list[models.GraphNode] = []
+    shipment_nodes: list[models.GraphNode] = []
+    comm_nodes: list[models.GraphNode] = []
+
+    for n in nodes:
+        if n.entity_type == "WEBSITE_SESSION":
+            session_nodes.append(n)
+        elif n.entity_type == "CAMPAIGN_CONVERSION":
+            conversion_nodes.append(n)
+        elif n.entity_type == "CUSTOMER":
+            customer_nodes.append(n)
+        elif n.entity_type == "ORDER":
+            order_nodes.append(n)
+        elif n.entity_type in ("PRODUCT", "PRODUCT_VARIANT"):
+            product_nodes.append(n)
+        elif n.entity_type == "PAYMENT":
+            payment_nodes.append(n)
+        elif n.entity_type == "SHIPMENT":
+            shipment_nodes.append(n)
+        elif n.entity_type in ("CONVERSATION", "MESSAGE", "CALL"):
+            comm_nodes.append(n)
+
+    timeline = _build_timeline_events(nodes, edges)
+
+    summary = {
+        "session_count": len(session_nodes),
+        "conversion_count": len(conversion_nodes),
+        "customer_count": len(customer_nodes),
+        "order_count": len(order_nodes),
+        "product_count": len(product_nodes),
+        "payment_count": len(payment_nodes),
+        "shipment_count": len(shipment_nodes),
+        "communication_count": len(comm_nodes),
+    }
+
+    return CampaignJourney(
+        business_id=business_id,
+        campaign_id=campaign_id,
+        campaign_node=camp_node,
+        session_nodes=session_nodes,
+        conversion_nodes=conversion_nodes,
+        customer_nodes=customer_nodes,
+        order_nodes=order_nodes,
+        product_nodes=product_nodes,
+        payment_nodes=payment_nodes,
+        shipment_nodes=shipment_nodes,
+        communication_nodes=comm_nodes,
+        nodes=nodes,
+        edges=edges,
+        timeline=timeline,
+        summary=summary,
+    )
+
+
 __all__ = [
+    "CampaignJourney",
     "CustomerJourney",
     "JourneyTimelineEvent",
     "OrderJourney",
+    "ProductJourney",
     "STAGE_MAPPING",
+    "build_campaign_journey",
     "build_customer_journey",
     "build_order_journey",
+    "build_product_journey",
 ]
