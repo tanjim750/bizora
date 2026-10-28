@@ -7,6 +7,7 @@ from app.business_graph import api
 urlpatterns = [
     path("traversal/", api.GraphTraversalAPIView.as_view(), name="graph-traversal"),
     path("paths/", api.GraphPathSearchAPIView.as_view(), name="graph-paths"),
+    path("query/", api.GraphQueryAPIView.as_view(), name="graph-query"),
     path("journeys/customer/<int:customer_id>/", api.CustomerJourneyAPIView.as_view(), name="graph-customer-journey"),
     path("journeys/order/<int:order_id>/", api.OrderJourneyAPIView.as_view(), name="graph-order-journey"),
     path("journeys/product/<int:product_id>/", api.ProductJourneyAPIView.as_view(), name="graph-product-journey"),

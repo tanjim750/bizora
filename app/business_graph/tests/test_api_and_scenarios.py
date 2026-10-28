@@ -12,9 +12,10 @@ Verifies:
 from decimal import Decimal
 import datetime
 
-from django.test import RequestFactory, TestCase
+from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.test import APIRequestFactory
 
 from app import models
 from app.business_graph import api, urls
@@ -26,7 +27,7 @@ from app.business_graph.traversal import find_paths
 class GraphAPITests(TestCase):
     def setUp(self):
         super().setUp()
-        self.factory = RequestFactory()
+        self.factory = APIRequestFactory()
         self.now = timezone.now()
         self.biz_a = models.Business.objects.create(
             name="Apex Retail",
@@ -185,6 +186,103 @@ class GraphAPITests(TestCase):
         self.assertEqual(resp_reb.data["business_id"], self.biz_a.pk)
         self.assertGreaterEqual(resp_reb.data["total_nodes"], 3)
         self.assertEqual(resp_reb.data["total_edges"], 2)
+
+    def test_traversal_api_with_filters(self):
+        view = api.GraphTraversalAPIView.as_view()
+        # Query with status filter matching order status
+        req = self.factory.get(
+            f"/traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}&status=PAID"
+        )
+        req.business = self.biz_a
+        resp = view(req)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        node_types = [n["entity_type"] for n in resp.data["nodes"]]
+        self.assertIn("ORDER", node_types)
+
+        # Query with non-matching status
+        req_nonmatch = self.factory.get(
+            f"/traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}&status=CANCELLED"
+        )
+        req_nonmatch.business = self.biz_a
+        resp_nonmatch = view(req_nonmatch)
+        self.assertEqual(resp_nonmatch.status_code, status.HTTP_200_OK)
+        node_types_nonmatch = [n["entity_type"] for n in resp_nonmatch.data["nodes"]]
+        self.assertNotIn("ORDER", node_types_nonmatch)
+
+    def test_path_search_api_with_explain(self):
+        # Create fact and issue for order
+        models.BusinessFact.objects.create(
+            business=self.biz_a,
+            fact_type="ORDER_PROFITABILITY",
+            subject_entity_type="ORDER",
+            subject_entity_id=self.order.pk,
+            statement="Order margin 35%",
+            confidence=Decimal("1.0000"),
+            status="VERIFIED",
+            detected_at=self.now,
+            created_at=self.now,
+            updated_at=self.now,
+        )
+
+        view = api.GraphPathSearchAPIView.as_view()
+        req = self.factory.get(
+            f"/paths/?start_entity_type=CUSTOMER&start_entity_id={self.customer.pk}&end_entity_type=PRODUCT&end_entity_id={self.product.pk}&explain=true"
+        )
+        req.business = self.biz_a
+        resp = view(req)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["paths_found"], 1)
+        path = resp.data["paths"][0]
+        self.assertIn("explanation", path)
+        self.assertEqual(len(path["explanation"]), 3)
+        order_step = path["explanation"][1]
+        self.assertEqual(order_step["node"]["entity_type"], "ORDER")
+        self.assertEqual(len(order_step["node"]["facts"]), 1)
+        self.assertEqual(order_step["node"]["facts"][0]["fact_type"], "ORDER_PROFITABILITY")
+
+    def test_subgraph_query_api(self):
+        view = api.GraphQueryAPIView.as_view()
+        # Query by relationship_type
+        req = self.factory.get("/query/?relationship_type=PLACED_ORDER")
+        req.business = self.biz_a
+        resp = view(req)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["edge_count"], 1)
+        self.assertEqual(resp.data["edges"][0]["relationship_type"], "PLACED_ORDER")
+
+        # Query by non-existent relationship_type
+        req_empty = self.factory.get("/query/?relationship_type=NONEXISTENT_TYPE")
+        req_empty.business = self.biz_a
+        resp_empty = view(req_empty)
+        self.assertEqual(resp_empty.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_empty.data["edge_count"], 0)
+
+    def test_journey_api_with_filters(self):
+        view = api.CustomerJourneyAPIView.as_view()
+        req = self.factory.get(f"/journeys/customer/{self.customer.pk}/?status=PAID")
+        req.business = self.biz_a
+        resp = view(req, customer_id=self.customer.pk)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["customer_id"], self.customer.pk)
+
+    def test_snapshot_create_with_filters(self):
+        view = api.GraphSnapshotListCreateAPIView.as_view()
+        payload = {
+            "snapshot_type": "CUSTOMER",
+            "root_entity_id": self.customer.pk,
+            "name": "Filtered Customer Snapshot",
+            "filters": {
+                "status": "PAID",
+                "min_confidence": "0.95",
+            },
+        }
+        req = self.factory.post("/snapshots/", payload, format="json")
+        req.business = self.biz_a
+        resp = view(req)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        snap = models.GraphSnapshot.objects.get(pk=resp.data["id"])
+        self.assertEqual(snap.filters.get("status"), "PAID")
+        self.assertEqual(snap.filters.get("min_confidence"), "0.95")
 
 
 class IntegratedBusinessScenarioTests(TestCase):
