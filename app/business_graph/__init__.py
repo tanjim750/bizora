@@ -1,6 +1,20 @@
-"""Business Graph domain: canonical graph nodes, relationship edges, traversal, journeys, and snapshots."""
+"""Business Graph domain: canonical graph nodes, relationship edges, traversal, journeys, snapshots, and API."""
 
-from . import journeys, projection, snapshots, sync, traversal
+from . import api, journeys, projection, snapshots, sync, traversal, urls
+from .api import (
+    BaseGraphAPIView,
+    CampaignJourneyAPIView,
+    CustomerJourneyAPIView,
+    GraphPathSearchAPIView,
+    GraphRebuildAPIView,
+    GraphSnapshotDetailAPIView,
+    GraphSnapshotListCreateAPIView,
+    GraphTraversalAPIView,
+    HasAuthorizedBusiness,
+    OrderJourneyAPIView,
+    ProductJourneyAPIView,
+    resolve_authorized_business,
+)
 from .journeys import (
     CampaignJourney,
     CustomerJourney,
@@ -54,18 +68,29 @@ from .traversal import (
 )
 
 __all__ = [
+    "BaseGraphAPIView",
     "CampaignJourney",
+    "CampaignJourneyAPIView",
     "CustomerJourney",
+    "CustomerJourneyAPIView",
     "EvidenceContext",
     "GraphCrossBusinessError",
     "GraphFilter",
     "GraphPath",
+    "GraphPathSearchAPIView",
+    "GraphRebuildAPIView",
     "GraphScopeError",
+    "GraphSnapshotDetailAPIView",
+    "GraphSnapshotListCreateAPIView",
+    "GraphTraversalAPIView",
     "GraphValidationError",
+    "HasAuthorizedBusiness",
     "JourneyTimelineEvent",
     "OrderJourney",
+    "OrderJourneyAPIView",
     "PathStep",
     "ProductJourney",
+    "ProductJourneyAPIView",
     "ProjectionSummary",
     "PruneSummary",
     "RebuildSummary",
@@ -76,6 +101,7 @@ __all__ = [
     "TraversalResult",
     "VALID_DIRECTIONS",
     "VALID_RELATIONSHIP_SOURCES",
+    "api",
     "build_campaign_journey",
     "build_customer_journey",
     "build_evidence_context",
@@ -94,10 +120,12 @@ __all__ = [
     "prune_stale_projections",
     "query_subgraph",
     "rebuild_business_graph",
+    "resolve_authorized_business",
     "snapshots",
     "sync",
     "sync_entity_node",
     "sync_relationship_edge",
     "traversal",
     "traverse_graph",
+    "urls",
 ]
