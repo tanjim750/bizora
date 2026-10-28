@@ -1,6 +1,14 @@
-"""Business Graph domain: canonical graph nodes, relationship edges, traversal, and journeys."""
+"""Business Graph domain: canonical graph nodes, relationship edges, traversal, journeys, and snapshots."""
 
-from . import projection, sync, traversal
+from . import journeys, projection, sync, traversal
+from .journeys import (
+    CustomerJourney,
+    JourneyTimelineEvent,
+    OrderJourney,
+    STAGE_MAPPING,
+    build_customer_journey,
+    build_order_journey,
+)
 from .projection import (
     GraphCrossBusinessError,
     GraphScopeError,
@@ -34,22 +42,29 @@ from .traversal import (
 )
 
 __all__ = [
+    "CustomerJourney",
     "GraphCrossBusinessError",
     "GraphFilter",
     "GraphPath",
     "GraphScopeError",
     "GraphValidationError",
+    "JourneyTimelineEvent",
+    "OrderJourney",
     "PathStep",
     "ProjectionSummary",
     "PruneSummary",
     "RebuildSummary",
+    "STAGE_MAPPING",
     "SUPPORTED_ENTITY_MODELS",
     "SUPPORTED_RELATIONSHIP_RULES",
     "TraversalResult",
     "VALID_DIRECTIONS",
     "VALID_RELATIONSHIP_SOURCES",
+    "build_customer_journey",
+    "build_order_journey",
     "find_paths",
     "get_neighbors",
+    "journeys",
     "project_business_graph",
     "project_entity_node",
     "project_relationship_edge",
