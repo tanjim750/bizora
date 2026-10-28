@@ -1,5 +1,16 @@
 """Deterministic Business Intelligence services over canonical business data."""
 
+from . import campaign
+from .campaign import (
+    CampaignAnalysis,
+    CampaignMetricRecording,
+    CampaignPerformance,
+    CampaignScopeError,
+    CampaignValidationError,
+    UnavailableCampaignEvidence,
+    analyze_campaigns,
+    record_campaign_metrics,
+)
 from . import attribution
 from .attribution import (
     AttributionPeriodSummary,
@@ -286,4 +297,13 @@ __all__ = [
     "revenue",
     "summarize_revenue_breakdown",
     "sync_metric_registry",
+    "CampaignAnalysis",
+    "CampaignMetricRecording",
+    "CampaignPerformance",
+    "CampaignScopeError",
+    "CampaignValidationError",
+    "UnavailableCampaignEvidence",
+    "analyze_campaigns",
+    "campaign",
+    "record_campaign_metrics",
 ]
