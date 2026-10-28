@@ -1,6 +1,6 @@
 """Business Graph domain: canonical graph nodes, relationship edges, traversal, journeys, and snapshots."""
 
-from . import journeys, projection, sync, traversal
+from . import journeys, projection, snapshots, sync, traversal
 from .journeys import (
     CampaignJourney,
     CustomerJourney,
@@ -25,6 +25,14 @@ from .projection import (
     project_entity_node,
     project_relationship_edge,
 )
+from .snapshots import (
+    EvidenceContext,
+    SUPPORTED_SNAPSHOT_TYPES,
+    build_evidence_context,
+    create_graph_snapshot,
+    explain_path,
+    get_graph_snapshot,
+)
 from .sync import (
     PruneSummary,
     RebuildSummary,
@@ -48,6 +56,7 @@ from .traversal import (
 __all__ = [
     "CampaignJourney",
     "CustomerJourney",
+    "EvidenceContext",
     "GraphCrossBusinessError",
     "GraphFilter",
     "GraphPath",
@@ -63,14 +72,19 @@ __all__ = [
     "STAGE_MAPPING",
     "SUPPORTED_ENTITY_MODELS",
     "SUPPORTED_RELATIONSHIP_RULES",
+    "SUPPORTED_SNAPSHOT_TYPES",
     "TraversalResult",
     "VALID_DIRECTIONS",
     "VALID_RELATIONSHIP_SOURCES",
     "build_campaign_journey",
     "build_customer_journey",
+    "build_evidence_context",
     "build_order_journey",
     "build_product_journey",
+    "create_graph_snapshot",
+    "explain_path",
     "find_paths",
+    "get_graph_snapshot",
     "get_neighbors",
     "journeys",
     "project_business_graph",
@@ -80,6 +94,7 @@ __all__ = [
     "prune_stale_projections",
     "query_subgraph",
     "rebuild_business_graph",
+    "snapshots",
     "sync",
     "sync_entity_node",
     "sync_relationship_edge",
