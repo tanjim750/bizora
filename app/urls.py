@@ -1,9 +1,85 @@
 from django.urls import path
 
-from app.views import MessageView
+from app.views import (
+    AiActionApprovalView,
+    AiActionExecuteView,
+    AiActionListView,
+    AiActionRejectView,
+    AiRecommendationListView,
+    BusinessAssistantChatView,
+    BusinessDiagnosisView,
+    BusinessIssueListView,
+    CallSummaryView,
+    ConversationSummaryView,
+    MarketingAssistantView,
+    MessageView,
+    SupportEscalationView,
+    SupportHandoverView,
+    SupportReplyView,
+    SupportResumeAiView,
+)
 
 urlpatterns = [
-    path('', MessageView.as_view(), name='message'),
+    path("", MessageView.as_view(), name="message"),
+    path(
+        "actions/<int:pk>/approve/",
+        AiActionApprovalView.as_view(),
+        name="action-approve",
+    ),
+    path("actions/<int:pk>/reject/", AiActionRejectView.as_view(), name="action-reject"),
+    path("actions/<int:pk>/execute/", AiActionExecuteView.as_view(), name="action-execute"),
+    path("businesses/<int:business_id>/ai/recommendations/", AiRecommendationListView.as_view(), name="ai-recommendations"),
+    path("businesses/<int:business_id>/ai/actions/", AiActionListView.as_view(), name="ai-actions"),
+    path(
+        "businesses/<int:business_id>/issues/",
+        BusinessIssueListView.as_view(),
+        name="business-issues",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/assistant/query/",
+        BusinessAssistantChatView.as_view(),
+        name="ai-assistant-query",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/support/suggest-reply/",
+        SupportReplyView.as_view(),
+        name="ai-support-reply",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/support/escalate/",
+        SupportEscalationView.as_view(),
+        name="ai-support-escalate",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/support/handover/",
+        SupportHandoverView.as_view(),
+        name="ai-support-handover",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/support/resume/",
+        SupportResumeAiView.as_view(),
+        name="ai-support-resume",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/marketing/explain-campaign/",
+        MarketingAssistantView.as_view(),
+        name="ai-marketing-explain",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/diagnosis/diagnose-issue/",
+        BusinessDiagnosisView.as_view(),
+        name="ai-business-diagnosis",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/summarization/conversation/",
+        ConversationSummaryView.as_view(),
+        name="ai-summarize-conversation",
+    ),
+    path(
+        "businesses/<int:business_id>/ai/summarization/call/",
+        CallSummaryView.as_view(),
+        name="ai-summarize-call",
+    ),
 ]
 
 from app import domain_views as domain
