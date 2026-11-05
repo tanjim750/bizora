@@ -207,6 +207,7 @@ class ProductVariant(models.Model):
 
     class Meta:
         db_table = 'product_variants'
+        constraints = [models.UniqueConstraint(fields=['product', 'sku'], condition=models.Q(sku__isnull=False) & ~models.Q(sku=''), name='variant_parent_sku_unique')]
         indexes = [
             models.Index(fields=['product', 'sku'], name='idx_pv_ps_6d6676a7'),
         ]
@@ -227,7 +228,8 @@ class ProductExternalReference(models.Model):
     class Meta:
         db_table = 'product_external_references'
         constraints = [
-            models.UniqueConstraint(fields=['integration_connection', 'external_product_id'], name='uniq_per_ie_59b162fe'),
+            models.UniqueConstraint(fields=['integration_connection', 'external_product_id', 'external_variant_id'], condition=models.Q(external_variant_id__isnull=False), name='product_source_variant_unique'),
+            models.UniqueConstraint(fields=['integration_connection', 'external_product_id'], condition=models.Q(external_variant_id__isnull=True), name='product_source_parent_unique'),
         ]
 
 
@@ -266,6 +268,10 @@ class CustomerContact(models.Model):
         db_table = 'customer_contacts'
         indexes = [
             models.Index(fields=['contact_type', 'normalized_value'], name='idx_cc_cn_c0f401e1'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['customer', 'contact_type', 'normalized_value'], condition=models.Q(normalized_value__isnull=False), name='customer_contact_normalized_unique'),
+            models.UniqueConstraint(fields=['customer', 'contact_type'], condition=models.Q(is_primary=True), name='customer_contact_one_primary'),
         ]
 
 
@@ -344,6 +350,9 @@ class Order(models.Model):
             models.Index(fields=['business', 'order_number'], name='idx_o_bo_aa20390b'),
             models.Index(fields=['integration_connection', 'external_order_id'], name='idx_o_ie_7dba8af9'),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_order_id'], condition=models.Q(integration_connection__isnull=False, external_order_id__isnull=False), name='order_source_external_unique'),
+        ]
 
 
 class OrderItem(models.Model):
@@ -363,6 +372,10 @@ class OrderItem(models.Model):
 
     class Meta:
         db_table = 'order_items'
+        constraints = [
+            models.CheckConstraint(check=models.Q(quantity__gt=0), name='order_item_positive_quantity'),
+            models.CheckConstraint(check=models.Q(unit_price__gte=0, total_amount__gte=0, discount_amount__gte=0), name='order_item_nonnegative_money'),
+        ]
 
 
 class OrderStatusHistory(models.Model):
@@ -405,6 +418,10 @@ class Payment(models.Model):
         indexes = [
             models.Index(fields=['integration_connection', 'external_payment_id'], name='idx_p_ie_5e48c9ea'),
         ]
+        constraints = [
+            models.CheckConstraint(check=models.Q(amount__gte=0), name='payment_nonnegative_amount'),
+            models.UniqueConstraint(fields=['integration_connection', 'external_payment_id'], condition=models.Q(integration_connection__isnull=False, external_payment_id__isnull=False), name='payment_source_external_unique'),
+        ]
 
 
 class Refund(models.Model):
@@ -423,6 +440,10 @@ class Refund(models.Model):
 
     class Meta:
         db_table = 'refunds'
+        constraints = [
+            models.CheckConstraint(check=models.Q(amount__gt=0), name='refund_positive_amount'),
+            models.UniqueConstraint(fields=['payment', 'external_refund_id'], condition=models.Q(external_refund_id__isnull=False), name='refund_payment_external_unique'),
+        ]
 
 
 class Conversation(models.Model):
@@ -448,6 +469,9 @@ class Conversation(models.Model):
         indexes = [
             models.Index(fields=['business', 'status'], name='idx_c_bs_110fd367'),
             models.Index(fields=['integration_connection', 'external_conversation_id'], name='idx_c_ie_d2ff00d8'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_conversation_id'], condition=models.Q(integration_connection__isnull=False, external_conversation_id__isnull=False), name='conversation_source_external_unique'),
         ]
 
 
@@ -480,6 +504,7 @@ class Message(models.Model):
     sender_type = models.CharField(max_length=30)
     message_type = models.CharField(max_length=30, default='TEXT')
     content = models.TextField(null=True)
+    location = models.JSONField(null=True)
     delivery_status = models.CharField(max_length=30, null=True)
     read_status = models.CharField(max_length=30, null=True)
     sent_at = models.DateTimeField(null=True)
@@ -503,6 +528,9 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=['conversation', 'created_at'], name='idx_m_cc_c7ae5854'),
             models.Index(fields=['integration_connection', 'external_message_id'], name='idx_m_ie_e794f968'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_message_id'], condition=models.Q(integration_connection__isnull=False, external_message_id__isnull=False), name='message_source_external_unique'),
         ]
 
 
@@ -540,6 +568,9 @@ class ConversationAssignment(models.Model):
         indexes = [
             models.Index(fields=['conversation', 'status'], name='idx_ca_cs_2fd44831'),
             models.Index(fields=['assignee_type', 'assignee_id'], name='idx_ca_aa_4a9f40d0'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['conversation'], condition=models.Q(status='ACTIVE'), name='conversation_one_active_owner'),
         ]
 
 
@@ -587,6 +618,9 @@ class Call(models.Model):
         indexes = [
             models.Index(fields=['integration_connection', 'external_call_id'], name='idx_c_ie_3a15bbbf'),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_call_id'], condition=models.Q(integration_connection__isnull=False, external_call_id__isnull=False), name='call_source_external_unique'),
+        ]
 
 
 class CallEvent(models.Model):
@@ -625,6 +659,7 @@ class Campaign(models.Model):
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
     integration_connection = models.ForeignKey('IntegrationConnection', models.DO_NOTHING, null=True, db_index=True)
+    ad_account = models.ForeignKey('AdAccount', models.PROTECT, null=True)
     external_campaign_id = models.CharField(max_length=255, null=True)
     name = models.CharField(max_length=255)
     platform = models.CharField(max_length=50)
@@ -642,6 +677,9 @@ class Campaign(models.Model):
         db_table = 'campaigns'
         indexes = [
             models.Index(fields=['integration_connection', 'external_campaign_id'], name='idx_c_ie_4f9caf69'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_campaign_id'], condition=models.Q(integration_connection__isnull=False, external_campaign_id__isnull=False), name='campaign_source_external_unique'),
         ]
 
 
@@ -689,6 +727,9 @@ class CampaignConversion(models.Model):
         db_table = 'campaign_conversions'
         indexes = [
             models.Index(fields=['campaign', 'converted_at'], name='idx_cc_cc_426fe84d'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['campaign', 'external_conversion_id'], condition=models.Q(external_conversion_id__isnull=False), name='conversion_campaign_external'),
         ]
 
 
@@ -746,6 +787,9 @@ class WebsiteSession(models.Model):
             models.Index(fields=['integration_connection', 'external_session_id'], name='idx_ws_ie_0ea2c372'),
             models.Index(fields=['business', 'started_at'], name='idx_ws_bs_f81abfb0'),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_session_id'], condition=models.Q(integration_connection__isnull=False, external_session_id__isnull=False), name='websitesession_source_external_unique'),
+        ]
 
 
 class WebsiteEvent(models.Model):
@@ -800,6 +844,9 @@ class Shipment(models.Model):
         db_table = 'shipments'
         indexes = [
             models.Index(fields=['integration_connection', 'external_shipment_id'], name='idx_s_ie_00245bb6'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_shipment_id'], condition=models.Q(integration_connection__isnull=False, external_shipment_id__isnull=False), name='shipment_source_external_unique'),
         ]
 
 
@@ -861,6 +908,9 @@ class ExternalIdentity(models.Model):
             models.Index(fields=['business', 'provider', 'entity_type', 'external_id'], name='idx_ei_bpee_f2296c64'),
             models.Index(fields=['business', 'identity_type', 'normalized_value'], name='idx_ei_bin_20e621c2'),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'entity_type', 'identity_type', 'external_id'], condition=models.Q(integration_connection__isnull=False, external_id__isnull=False), name='external_identity_source_unique'),
+        ]
 
 
 class IdentityLink(models.Model):
@@ -868,7 +918,7 @@ class IdentityLink(models.Model):
     canonical_identity = models.ForeignKey('CanonicalIdentity', models.DO_NOTHING, db_index=True)
     external_identity = models.ForeignKey('ExternalIdentity', models.DO_NOTHING, db_index=True)
     match_type = models.CharField(max_length=50)
-    confidence = models.DecimalField(max_digits=5, decimal_places=4, default=1)
+    confidence = models.DecimalField(max_digits=5, decimal_places=4, default=1, null=True)
     status = models.CharField(max_length=30, default='ACTIVE')
     resolved_by = models.CharField(max_length=30, default='SYSTEM')
     rule_key = models.CharField(max_length=100, null=True)
@@ -881,6 +931,8 @@ class IdentityLink(models.Model):
         db_table = 'identity_links'
         constraints = [
             models.UniqueConstraint(fields=['canonical_identity', 'external_identity'], name='uniq_il_ce_06c86f9a'),
+            models.UniqueConstraint(fields=['external_identity'], condition=models.Q(status='ACTIVE'), name='identity_one_active_link'),
+            models.CheckConstraint(check=models.Q(confidence__gte=0, confidence__lte=1), name='identity_confidence_range'),
         ]
 
 
@@ -902,6 +954,7 @@ class IdentityMergeCandidate(models.Model):
         db_table = 'identity_merge_candidates'
         constraints = [
             models.UniqueConstraint(fields=['primary_identity', 'candidate_identity'], name='uniq_imc_pc_7b0b2f92'),
+            models.CheckConstraint(check=~models.Q(primary_identity=models.F('candidate_identity')), name='identity_merge_not_self'),
         ]
 
 
@@ -1578,6 +1631,140 @@ class MockExpectedResult(models.Model):
         ]
 
 
+# Domain extensions are additive. Existing migrations and business records remain intact.
+class BusinessMembership(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    user = models.ForeignKey('auth.User', models.PROTECT)
+    role = models.CharField(max_length=20, choices=[(v, v) for v in
+                            ('VIEWER', 'OPERATOR', 'MANAGER', 'OWNER')])
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['business', 'user'], name='membership_business_user')]
+
+
+class SupportTeam(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    name = models.CharField(max_length=150)
+    members = models.ManyToManyField('auth.User', blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['business', 'name'], name='team_business_name')]
+
+
+class ProcessingReceipt(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    connection = models.ForeignKey(IntegrationConnection, models.PROTECT, null=True)
+    key = models.CharField(max_length=255)
+    resource = models.CharField(max_length=50)
+    payload_hash = models.CharField(max_length=64)
+    entity_id = models.BigIntegerField()
+    occurred_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['business', 'key'], name='receipt_business_key')]
+        indexes = [models.Index(fields=['business', 'resource', 'entity_id', 'occurred_at'], name='receipt_entity_time')]
+
+
+class DomainAudit(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    actor = models.ForeignKey('auth.User', models.PROTECT, null=True)
+    action = models.CharField(max_length=100)
+    entity_type = models.CharField(max_length=50)
+    entity_id = models.BigIntegerField()
+    # References and transition evidence only. Never duplicate entire customer payloads.
+    evidence = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['business', 'entity_type', 'entity_id', 'created_at'], name='audit_entity_time')]
+
+
+class ConversationEvent(models.Model):
+    conversation = models.ForeignKey(Conversation, models.PROTECT)
+    actor = models.ForeignKey('auth.User', models.PROTECT, null=True)
+    event_type = models.CharField(max_length=50)
+    from_state = models.CharField(max_length=50, null=True)
+    to_state = models.CharField(max_length=50, null=True)
+    reason = models.TextField(blank=True)
+    context = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class IdentityHistory(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    canonical_identity = models.ForeignKey(CanonicalIdentity, models.PROTECT, null=True)
+    external_identity = models.ForeignKey(ExternalIdentity, models.PROTECT, null=True)
+    actor = models.ForeignKey('auth.User', models.PROTECT, null=True)
+    action = models.CharField(max_length=50)
+    rule_key = models.CharField(max_length=100, blank=True)
+    evidence = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class CallbackRequest(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    customer = models.ForeignKey(Customer, models.PROTECT)
+    conversation = models.ForeignKey(Conversation, models.PROTECT, null=True)
+    order = models.ForeignKey(Order, models.PROTECT, null=True)
+    scheduled_at = models.DateTimeField(null=True)
+    status = models.CharField(max_length=30, default='PENDING')
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AdAccount(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    integration_connection = models.ForeignKey(IntegrationConnection, models.PROTECT)
+    external_account_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    audience = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['integration_connection', 'external_account_id'], name='ad_account_source_id')]
+
+
+class CampaignAdSet(models.Model):
+    campaign = models.ForeignKey(Campaign, models.PROTECT)
+    external_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    audience = models.JSONField(default=dict)
+    budget = models.DecimalField(max_digits=18, decimal_places=2, null=True)
+    status = models.CharField(max_length=30, default='ACTIVE')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['campaign', 'external_id'], name='adset_campaign_external')]
+
+
+class CampaignCreative(models.Model):
+    business = models.ForeignKey(Business, models.PROTECT)
+    external_id = models.CharField(max_length=255)
+    content = models.JSONField(default=dict)
+
+
+class CampaignAd(models.Model):
+    ad_set = models.ForeignKey(CampaignAdSet, models.PROTECT)
+    creative = models.ForeignKey(CampaignCreative, models.PROTECT, null=True)
+    external_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    status = models.CharField(max_length=30, default='ACTIVE')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['ad_set', 'external_id'], name='ad_adset_external')]
+
+
+class ProductImage(models.Model):
+    """Additional canonical images; Product.image_url remains the primary URL."""
+    product = models.ForeignKey(Product, models.PROTECT)
+    url = models.URLField(max_length=2000)
+    alt_text = models.CharField(max_length=255, blank=True)
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['product', 'url'], name='product_image_url_unique')]
 class BusinessMemory(models.Model):
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.CASCADE, db_index=True)

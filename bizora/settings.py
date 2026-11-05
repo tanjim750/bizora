@@ -103,50 +103,25 @@ WSGI_APPLICATION = "bizora.wsgi.application"
 
 
 # Database
-# Authoritative production database: PostgreSQL 16 (Supabase / RDS / Docker). Local dev fallback: SQLite.
-if os.environ.get("DATABASE_URL"):
-    _db_url = urlparse(os.environ["DATABASE_URL"])
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": _db_url.path.lstrip("/") or "postgres",
-            "USER": unquote(_db_url.username or "postgres"),
-            "PASSWORD": unquote(_db_url.password or ""),
-            "HOST": _db_url.hostname or "localhost",
-            "PORT": str(_db_url.port or 5432),
-            "OPTIONS": {
-                "sslmode": os.environ.get(
-                    "POSTGRES_SSLMODE",
-                    "require" if "supabase" in (_db_url.hostname or "") else "prefer",
-                ),
-            },
-        }
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('BIZORA_SQLITE_PATH', '/tmp/bizora-development.sqlite3'),
     }
-elif os.environ.get("POSTGRES_DB") or os.environ.get("POSTGRES_HOST"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB", "postgres"),
-            "USER": os.environ.get("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
-            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-            "OPTIONS": {
-                "sslmode": os.environ.get(
-                    "POSTGRES_SSLMODE",
-                    "require"
-                    if "supabase" in os.environ.get("POSTGRES_HOST", "")
-                    else "prefer",
-                ),
-            },
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+
+
+if Path(str(DATABASES['default']['NAME'])).resolve() == (BASE_DIR / 'db.sqlite3').resolve():
+    raise RuntimeError('Refusing to use the incompatible checked-in database; select an isolated database.')
+if os.environ.get('POSTGRES_HOST'):
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.environ['POSTGRES_HOST'],
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'NAME': os.environ['POSTGRES_DB'],
+        'USER': os.environ['POSTGRES_USER'],
+        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
     }
 
 

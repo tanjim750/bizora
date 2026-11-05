@@ -1,0 +1,262 @@
+{
+  "note": "Illustrative IDs only. Replace with owned canonical records. Empty fixture results are not generated AI/BI outcomes. Integrations preparation validates a real pending message before exchange.",
+  "owners": [
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Integrations",
+        "capability": "prepare_operation",
+        "request_id": "example-1",
+        "payload": {
+          "operation": "MESSAGE_SEND",
+          "entity_type": "MESSAGE",
+          "entity_id": 501
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Integrations",
+        "capability": "prepare_operation",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "request": {},
+          "execution": "NOT_EXECUTED"
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Integrations",
+        "capability": "prepare_operation",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    },
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Intelligence",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "payload": {
+          "entity_type": "CUSTOMER",
+          "entity_id": 501
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Intelligence",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "facts": [],
+          "metrics": [],
+          "issues": [],
+          "evidence": []
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Intelligence",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    },
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Graph",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "payload": {
+          "entity_type": "CUSTOMER",
+          "entity_id": 501
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Graph",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "nodes": [],
+          "edges": []
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Graph",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    },
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "AI Intelligence",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "payload": {
+          "entity_type": "CUSTOMER",
+          "entity_id": 501
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "AI Intelligence",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "recommendations": [],
+          "answers": [],
+          "evidence": []
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "AI Intelligence",
+        "capability": "entity_context",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    },
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Memory",
+        "capability": "policy_context",
+        "request_id": "example-1",
+        "payload": {
+          "query": "Refund policies"
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Memory",
+        "capability": "policy_context",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "policies": []
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Business Memory",
+        "capability": "policy_context",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    },
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Configuration",
+        "capability": "policy",
+        "request_id": "example-1",
+        "payload": {
+          "policy_key": "support-response"
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Configuration",
+        "capability": "policy",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "policy": {}
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Configuration",
+        "capability": "policy",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    },
+    {
+      "request": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Monitoring",
+        "capability": "freshness",
+        "request_id": "example-1",
+        "payload": {
+          "resource": "orders"
+        }
+      },
+      "fixture_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Monitoring",
+        "capability": "freshness",
+        "request_id": "example-1",
+        "status": "AVAILABLE",
+        "simulated": true,
+        "result": {
+          "freshness": {}
+        }
+      },
+      "unavailable_response": {
+        "version": "bizora.domain.v1",
+        "business_id": 42,
+        "owner": "Monitoring",
+        "capability": "freshness",
+        "request_id": "example-1",
+        "status": "UNAVAILABLE",
+        "simulated": false,
+        "result": null,
+        "reason": "No owner adapter is configured."
+      }
+    }
+  ]
+}
