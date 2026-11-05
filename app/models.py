@@ -9,7 +9,31 @@ class VectorField(models.Field):
     description = "PostgreSQL pgvector field"
 
     def db_type(self, connection):
-        return 'vector'
+        if connection.vendor == 'postgresql':
+            return 'vector'
+        return 'text'
+
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [float(x) for x in value]
+        if isinstance(value, str):
+            clean_str = value.strip('[]() ')
+            if not clean_str:
+                return []
+            return [float(x.strip()) for x in clean_str.split(',') if x.strip()]
+        return value
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple)):
+            return '[' + ', '.join(str(float(x)) for x in value) + ']'
+        return str(value)
 
 
 class Business(models.Model):
@@ -19,11 +43,76 @@ class Business(models.Model):
     currency = models.CharField(max_length=10, default='BDT')
     timezone = models.CharField(max_length=100, default='Asia/Dhaka')
     status = models.CharField(max_length=30, default='ACTIVE')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def execute_llm_with_timeout(self, prompt, timeout_seconds=15, fallback_response=None):
+        """
+        Executes an LLM inference call with bounded socket/HTTP timeout and graceful fallback
+        to protect background workers from hanging indefinitely.
+        """
+        # Keep the provider boundary in one place. Deployments can point this at
+        # an internal model gateway without adding a provider SDK to the domain.
+        import json
+        import os
+        import urllib.request
+
+        endpoint = os.environ.get("BIZORA_LLM_URL")
+        if not endpoint:
+            return {**(fallback_response or {"content": "No AI provider is configured."}),
+                    "provider_status": "unavailable", "model": "fallback"}
+        try:
+            request = urllib.request.Request(
+                endpoint,
+                data=json.dumps({"prompt": prompt, "business_id": self.id}).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(request, timeout=max(1, timeout_seconds)) as response:
+                payload = json.loads(response.read().decode())
+            if not isinstance(payload, dict) or not isinstance(payload.get("content"), str):
+                raise TypeError("LLM gateway returned an invalid response")
+            return payload | {"provider_status": "ok"}
+        except Exception as exc:  # noqa: BLE001 - provider failure must not crash a request
+            return {**(fallback_response or {"content": "AI provider unavailable; no conclusion is available."}),
+                    "provider_status": "error", "provider_error": str(exc), "model": "fallback"}
 
     class Meta:
         db_table = 'businesses'
+
+
+class BusinessMembership(models.Model):
+    business = models.ForeignKey("Business", models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name="business_memberships")
+    role = models.CharField(max_length=30, default="MEMBER")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["business", "user"], name="uniq_business_membership")]
+        db_table = "business_memberships"
+
+
+class BusinessGoal(models.Model):
+    business = models.ForeignKey("Business", models.CASCADE, related_name="goals")
+    name = models.CharField(max_length=255)
+    category = models.CharField(max_length=100, default="GENERAL", db_index=True)
+    priority = models.CharField(max_length=30, default="MEDIUM", db_index=True)
+    metric_key = models.CharField(max_length=100, null=True, blank=True)
+    target_value = models.DecimalField(max_digits=24, decimal_places=6, null=True, blank=True)
+    target_text = models.CharField(max_length=255, null=True, blank=True)
+    timeframe = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=30, default="ACTIVE", db_index=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "business_goals"
+        indexes = [
+            models.Index(fields=["business", "status"], name="idx_bg_bs_status"),
+            models.Index(fields=["business", "priority"], name="idx_bg_bp_priority"),
+        ]
 
 
 class IntegrationSource(models.Model):
@@ -34,8 +123,8 @@ class IntegrationSource(models.Model):
     connection_type = models.CharField(max_length=50, null=True)
     description = models.TextField(null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'integration_sources'
@@ -53,8 +142,8 @@ class IntegrationConnection(models.Model):
     is_mock = models.BooleanField(default=True)
     last_synced_at = models.DateTimeField(null=True)
     last_successful_sync_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'integration_connections'
@@ -105,8 +194,8 @@ class Product(models.Model):
     inventory_quantity = models.IntegerField(null=True)
     image_url = models.TextField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'products'
@@ -124,11 +213,12 @@ class ProductVariant(models.Model):
     price = models.DecimalField(max_digits=18, decimal_places=2, null=True)
     inventory_quantity = models.IntegerField(null=True)
     status = models.CharField(max_length=30, default='ACTIVE')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'product_variants'
+        constraints = [models.UniqueConstraint(fields=['product', 'sku'], condition=models.Q(sku__isnull=False) & ~models.Q(sku=''), name='variant_parent_sku_unique')]
         indexes = [
             models.Index(fields=['product', 'sku'], name='idx_pv_ps_6d6676a7'),
         ]
@@ -143,19 +233,20 @@ class ProductExternalReference(models.Model):
     external_variant_id = models.CharField(max_length=255, null=True)
     external_sku = models.CharField(max_length=150, null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'product_external_references'
         constraints = [
-            models.UniqueConstraint(fields=['integration_connection', 'external_product_id'], name='uniq_per_ie_59b162fe'),
+            models.UniqueConstraint(fields=['integration_connection', 'external_product_id', 'external_variant_id'], condition=models.Q(external_variant_id__isnull=False), name='product_source_variant_unique'),
+            models.UniqueConstraint(fields=['integration_connection', 'external_product_id'], condition=models.Q(external_variant_id__isnull=True), name='product_source_parent_unique'),
         ]
 
 
 class Customer(models.Model):
     id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
+    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
     first_name = models.CharField(max_length=150, null=True)
     last_name = models.CharField(max_length=150, null=True)
     display_name = models.CharField(max_length=255, null=True)
@@ -163,8 +254,8 @@ class Customer(models.Model):
     customer_type = models.CharField(max_length=30, null=True, default='KNOWN')
     notes = models.TextField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'customers'
@@ -181,13 +272,17 @@ class CustomerContact(models.Model):
     normalized_value = models.CharField(max_length=255, null=True)
     is_primary = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'customer_contacts'
         indexes = [
             models.Index(fields=['contact_type', 'normalized_value'], name='idx_cc_cn_c0f401e1'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['customer', 'contact_type', 'normalized_value'], condition=models.Q(normalized_value__isnull=False), name='customer_contact_normalized_unique'),
+            models.UniqueConstraint(fields=['customer', 'contact_type'], condition=models.Q(is_primary=True), name='customer_contact_one_primary'),
         ]
 
 
@@ -196,7 +291,7 @@ class CustomerTag(models.Model):
     customer = models.ForeignKey('Customer', models.DO_NOTHING, db_index=True)
     tag = models.CharField(max_length=100)
     source = models.CharField(max_length=50, null=True, default='MANUAL')
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'customer_tags'
@@ -212,8 +307,8 @@ class CustomerExternalReference(models.Model):
     external_customer_id = models.CharField(max_length=255)
     external_username = models.CharField(max_length=255, null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'customer_external_references'
@@ -232,7 +327,7 @@ class CustomerTimelineEvent(models.Model):
     description = models.TextField(null=True)
     event_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'customer_timeline_events'
@@ -257,14 +352,17 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     source_metadata = models.JSONField(null=True)
     ordered_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'orders'
         indexes = [
             models.Index(fields=['business', 'order_number'], name='idx_o_bo_aa20390b'),
             models.Index(fields=['integration_connection', 'external_order_id'], name='idx_o_ie_7dba8af9'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_order_id'], condition=models.Q(integration_connection__isnull=False, external_order_id__isnull=False), name='order_source_external_unique'),
         ]
 
 
@@ -281,10 +379,14 @@ class OrderItem(models.Model):
     discount_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=18, decimal_places=2)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'order_items'
+        constraints = [
+            models.CheckConstraint(check=models.Q(quantity__gt=0), name='order_item_positive_quantity'),
+            models.CheckConstraint(check=models.Q(unit_price__gte=0, total_amount__gte=0, discount_amount__gte=0), name='order_item_nonnegative_money'),
+        ]
 
 
 class OrderStatusHistory(models.Model):
@@ -296,7 +398,7 @@ class OrderStatusHistory(models.Model):
     note = models.TextField(null=True)
     changed_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'order_status_history'
@@ -319,13 +421,17 @@ class Payment(models.Model):
     currency = models.CharField(max_length=10, default='BDT')
     paid_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'payments'
         indexes = [
             models.Index(fields=['integration_connection', 'external_payment_id'], name='idx_p_ie_5e48c9ea'),
+        ]
+        constraints = [
+            models.CheckConstraint(check=models.Q(amount__gte=0), name='payment_nonnegative_amount'),
+            models.UniqueConstraint(fields=['integration_connection', 'external_payment_id'], condition=models.Q(integration_connection__isnull=False, external_payment_id__isnull=False), name='payment_source_external_unique'),
         ]
 
 
@@ -340,11 +446,15 @@ class Refund(models.Model):
     reason = models.TextField(null=True)
     refunded_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'refunds'
+        constraints = [
+            models.CheckConstraint(check=models.Q(amount__gt=0), name='refund_positive_amount'),
+            models.UniqueConstraint(fields=['payment', 'external_refund_id'], condition=models.Q(external_refund_id__isnull=False), name='refund_payment_external_unique'),
+        ]
 
 
 class Conversation(models.Model):
@@ -362,14 +472,17 @@ class Conversation(models.Model):
     last_message_at = models.DateTimeField(null=True)
     resolved_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'conversations'
         indexes = [
             models.Index(fields=['business', 'status'], name='idx_c_bs_110fd367'),
             models.Index(fields=['integration_connection', 'external_conversation_id'], name='idx_c_ie_d2ff00d8'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_conversation_id'], condition=models.Q(integration_connection__isnull=False, external_conversation_id__isnull=False), name='conversation_source_external_unique'),
         ]
 
 
@@ -383,7 +496,7 @@ class ConversationParticipant(models.Model):
     joined_at = models.DateTimeField(null=True)
     left_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'conversation_participants'
@@ -402,20 +515,33 @@ class Message(models.Model):
     sender_type = models.CharField(max_length=30)
     message_type = models.CharField(max_length=30, default='TEXT')
     content = models.TextField(null=True)
+    location = models.JSONField(null=True)
     delivery_status = models.CharField(max_length=30, null=True)
     read_status = models.CharField(max_length=30, null=True)
     sent_at = models.DateTimeField(null=True)
     delivered_at = models.DateTimeField(null=True)
     read_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        if self.sender_type == 'CUSTOMER' and self.content and '<untrusted_customer_data>' not in self.content:
+            self.content = f"<untrusted_customer_data>\n{self.content}\n</untrusted_customer_data>"
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'messages'
         indexes = [
             models.Index(fields=['conversation', 'created_at'], name='idx_m_cc_c7ae5854'),
             models.Index(fields=['integration_connection', 'external_message_id'], name='idx_m_ie_e794f968'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_message_id'], condition=models.Q(integration_connection__isnull=False, external_message_id__isnull=False), name='message_source_external_unique'),
         ]
 
 
@@ -429,7 +555,7 @@ class MessageAttachment(models.Model):
     size_bytes = models.BigIntegerField(null=True)
     external_attachment_id = models.CharField(max_length=255, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'message_attachments'
@@ -446,13 +572,16 @@ class ConversationAssignment(models.Model):
     assigned_at = models.DateTimeField()
     unassigned_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'conversation_assignments'
         indexes = [
             models.Index(fields=['conversation', 'status'], name='idx_ca_cs_2fd44831'),
             models.Index(fields=['assignee_type', 'assignee_id'], name='idx_ca_aa_4a9f40d0'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['conversation'], condition=models.Q(status='ACTIVE'), name='conversation_one_active_owner'),
         ]
 
 
@@ -464,8 +593,8 @@ class ConversationNote(models.Model):
     content = models.TextField()
     is_ai_generated = models.BooleanField(default=False)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'conversation_notes'
@@ -492,13 +621,16 @@ class Call(models.Model):
     duration_seconds = models.IntegerField(null=True)
     recording_url = models.TextField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'calls'
         indexes = [
             models.Index(fields=['integration_connection', 'external_call_id'], name='idx_c_ie_3a15bbbf'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_call_id'], condition=models.Q(integration_connection__isnull=False, external_call_id__isnull=False), name='call_source_external_unique'),
         ]
 
 
@@ -508,7 +640,7 @@ class CallEvent(models.Model):
     event_type = models.CharField(max_length=50)
     event_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'call_events'
@@ -527,8 +659,8 @@ class CallTranscript(models.Model):
     confidence = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     generated_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'call_transcripts'
@@ -538,6 +670,7 @@ class Campaign(models.Model):
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
     integration_connection = models.ForeignKey('IntegrationConnection', models.DO_NOTHING, null=True, db_index=True)
+    ad_account = models.ForeignKey('AdAccount', models.PROTECT, null=True)
     external_campaign_id = models.CharField(max_length=255, null=True)
     name = models.CharField(max_length=255)
     platform = models.CharField(max_length=50)
@@ -548,13 +681,16 @@ class Campaign(models.Model):
     started_at = models.DateTimeField(null=True)
     ended_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'campaigns'
         indexes = [
             models.Index(fields=['integration_connection', 'external_campaign_id'], name='idx_c_ie_4f9caf69'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_campaign_id'], condition=models.Q(integration_connection__isnull=False, external_campaign_id__isnull=False), name='campaign_source_external_unique'),
         ]
 
 
@@ -573,8 +709,8 @@ class CampaignMetric(models.Model):
     cpm = models.DecimalField(max_digits=18, decimal_places=4, null=True)
     roas = models.DecimalField(max_digits=18, decimal_places=4, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'campaign_metrics'
@@ -596,12 +732,15 @@ class CampaignConversion(models.Model):
     converted_at = models.DateTimeField()
     external_conversion_id = models.CharField(max_length=255, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'campaign_conversions'
         indexes = [
             models.Index(fields=['campaign', 'converted_at'], name='idx_cc_cc_426fe84d'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['campaign', 'external_conversion_id'], condition=models.Q(external_conversion_id__isnull=False), name='conversion_campaign_external'),
         ]
 
 
@@ -614,8 +753,8 @@ class WebsiteVisitor(models.Model):
     last_seen_at = models.DateTimeField(null=True)
     is_anonymous = models.BooleanField(default=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'website_visitors'
@@ -650,14 +789,17 @@ class WebsiteSession(models.Model):
     duration_seconds = models.IntegerField(null=True)
     is_converted = models.BooleanField(default=False)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'website_sessions'
         indexes = [
             models.Index(fields=['integration_connection', 'external_session_id'], name='idx_ws_ie_0ea2c372'),
             models.Index(fields=['business', 'started_at'], name='idx_ws_bs_f81abfb0'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_session_id'], condition=models.Q(integration_connection__isnull=False, external_session_id__isnull=False), name='websitesession_source_external_unique'),
         ]
 
 
@@ -675,7 +817,7 @@ class WebsiteEvent(models.Model):
     currency = models.CharField(max_length=10, null=True)
     occurred_at = models.DateTimeField()
     properties = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'website_events'
@@ -706,13 +848,16 @@ class Shipment(models.Model):
     delivered_at = models.DateTimeField(null=True)
     returned_at = models.DateTimeField(null=True)
     source_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'shipments'
         indexes = [
             models.Index(fields=['integration_connection', 'external_shipment_id'], name='idx_s_ie_00245bb6'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'external_shipment_id'], condition=models.Q(integration_connection__isnull=False, external_shipment_id__isnull=False), name='shipment_source_external_unique'),
         ]
 
 
@@ -725,7 +870,7 @@ class ShipmentEvent(models.Model):
     location = models.CharField(max_length=255, null=True)
     occurred_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'shipment_events'
@@ -741,8 +886,8 @@ class CanonicalIdentity(models.Model):
     entity_id = models.BigIntegerField()
     canonical_key = models.CharField(max_length=255)
     status = models.CharField(max_length=30, default='ACTIVE')
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'canonical_identities'
@@ -765,14 +910,17 @@ class ExternalIdentity(models.Model):
     metadata = models.JSONField(null=True)
     first_seen_at = models.DateTimeField(null=True)
     last_seen_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'external_identities'
         indexes = [
             models.Index(fields=['business', 'provider', 'entity_type', 'external_id'], name='idx_ei_bpee_f2296c64'),
             models.Index(fields=['business', 'identity_type', 'normalized_value'], name='idx_ei_bin_20e621c2'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['integration_connection', 'entity_type', 'identity_type', 'external_id'], condition=models.Q(integration_connection__isnull=False, external_id__isnull=False), name='external_identity_source_unique'),
         ]
 
 
@@ -781,19 +929,21 @@ class IdentityLink(models.Model):
     canonical_identity = models.ForeignKey('CanonicalIdentity', models.DO_NOTHING, db_index=True)
     external_identity = models.ForeignKey('ExternalIdentity', models.DO_NOTHING, db_index=True)
     match_type = models.CharField(max_length=50)
-    confidence = models.DecimalField(max_digits=5, decimal_places=4, default=1)
+    confidence = models.DecimalField(max_digits=5, decimal_places=4, default=1, null=True)
     status = models.CharField(max_length=30, default='ACTIVE')
     resolved_by = models.CharField(max_length=30, default='SYSTEM')
     rule_key = models.CharField(max_length=100, null=True)
     linked_at = models.DateTimeField()
     unlinked_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'identity_links'
         constraints = [
             models.UniqueConstraint(fields=['canonical_identity', 'external_identity'], name='uniq_il_ce_06c86f9a'),
+            models.UniqueConstraint(fields=['external_identity'], condition=models.Q(status='ACTIVE'), name='identity_one_active_link'),
+            models.CheckConstraint(check=models.Q(confidence__gte=0, confidence__lte=1), name='identity_confidence_range'),
         ]
 
 
@@ -808,13 +958,14 @@ class IdentityMergeCandidate(models.Model):
     evidence = models.JSONField(null=True)
     detected_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'identity_merge_candidates'
         constraints = [
             models.UniqueConstraint(fields=['primary_identity', 'candidate_identity'], name='uniq_imc_pc_7b0b2f92'),
+            models.CheckConstraint(check=~models.Q(primary_identity=models.F('candidate_identity')), name='identity_merge_not_self'),
         ]
 
 
@@ -831,8 +982,8 @@ class IdentityConflict(models.Model):
     detected_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True)
     resolution_note = models.TextField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'identity_conflicts'
@@ -855,8 +1006,8 @@ class BusinessRelationship(models.Model):
     valid_from = models.DateTimeField(null=True)
     valid_to = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_relationships'
@@ -879,8 +1030,8 @@ class BusinessMetric(models.Model):
     unit = models.CharField(max_length=30, null=True)
     description = models.TextField(null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_metrics'
@@ -902,7 +1053,7 @@ class MetricSnapshot(models.Model):
     calculation_rule = models.CharField(max_length=100, null=True)
     metadata = models.JSONField(null=True)
     calculated_at = models.DateTimeField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'metric_snapshots'
@@ -913,7 +1064,29 @@ class MetricSnapshot(models.Model):
         ]
 
 
+class BusinessFactQuerySet(models.QuerySet):
+    def active_for_context(self, business=None):
+        from django.utils import timezone
+        now = timezone.now()
+        qs = self.filter(
+            models.Q(status='VERIFIED'),
+            models.Q(valid_from__isnull=True) | models.Q(valid_from__lte=now),
+            models.Q(valid_to__isnull=True) | models.Q(valid_to__gte=now)
+        )
+        if business:
+            qs = qs.filter(business=business)
+        return qs
+
+
+class BusinessFactManager(models.Manager.from_queryset(BusinessFactQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset().active_for_context()
+
+
 class BusinessFact(models.Model):
+    objects = BusinessFactManager()
+    all_objects = models.Manager()
+
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
     fact_type = models.CharField(max_length=100, db_index=True)
@@ -929,8 +1102,8 @@ class BusinessFact(models.Model):
     valid_to = models.DateTimeField(null=True)
     detected_at = models.DateTimeField()
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'business_facts'
@@ -951,7 +1124,7 @@ class BusinessFactEvidence(models.Model):
     description = models.TextField(null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     evidence_data = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'business_fact_evidence'
@@ -975,8 +1148,29 @@ class BusinessIssue(models.Model):
     detected_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.status == 'OPEN':
+            qs = BusinessIssue.objects.filter(
+                business=self.business,
+                issue_type=self.issue_type,
+                subject_entity_type=self.subject_entity_type,
+                subject_entity_id=self.subject_entity_id,
+                status='OPEN'
+            )
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            existing = qs.first()
+            if existing and not self.pk:
+                # Upsert: adopt existing PK so Django issues UPDATE instead of INSERT
+                self.pk = existing.pk
+                self.id = existing.id
+                self.created_at = existing.created_at
+                kwargs['force_insert'] = False
+                kwargs['force_update'] = True
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'business_issues'
@@ -998,7 +1192,7 @@ class BusinessIssueEvidence(models.Model):
     description = models.TextField(null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     evidence_data = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'business_issue_evidence'
@@ -1018,8 +1212,8 @@ class GraphNode(models.Model):
     properties = models.JSONField(null=True)
     first_seen_at = models.DateTimeField(null=True)
     last_seen_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'graph_nodes'
@@ -1042,8 +1236,24 @@ class GraphEdge(models.Model):
     properties = models.JSONField(null=True)
     valid_from = models.DateTimeField(null=True)
     valid_to = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        if (
+            self.source_node_id
+            and self.target_node_id
+            and (
+                self.source_node.business_id != self.business_id
+                or self.target_node.business_id != self.business_id
+            )
+        ):
+            raise ValidationError("Cross-tenant graph edge prohibited: source and target nodes must belong to the edge business.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'graph_edges'
@@ -1064,7 +1274,7 @@ class GraphSnapshot(models.Model):
     filters = models.JSONField(null=True)
     snapshot_data = models.JSONField(null=True)
     generated_at = models.DateTimeField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'graph_snapshots'
@@ -1083,8 +1293,8 @@ class KnowledgeSource(models.Model):
     status = models.CharField(max_length=30, default='ACTIVE')
     source_reference = models.TextField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'knowledge_sources'
@@ -1109,8 +1319,29 @@ class KnowledgeDocument(models.Model):
     metadata = models.JSONField(null=True)
     ingested_at = models.DateTimeField(null=True)
     processed_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get_active_policies_for_intent(cls, business, intent):
+        """
+        Retrieves authoritative, active policy documents for a specific support intent (e.g. refund, return).
+        """
+        qs = cls.objects.filter(
+            business=business,
+            document_type__iexact='POLICY',
+            status__in=['READY', 'PUBLISHED']
+        ).exclude(knowledge_source__status='ARCHIVED')
+        if intent:
+            relevant_terms = [
+                term for term in re.split(r'[_\W]+', intent.lower())
+                if term and term not in {'and', 'or', 'business', 'inquiry', 'performance', 'question'}
+            ]
+            intent_filter = models.Q(metadata__intent__iexact=intent)
+            for term in relevant_terms:
+                intent_filter |= models.Q(title__icontains=term) | models.Q(content__icontains=term)
+            qs = qs.filter(intent_filter)
+        return qs
 
     class Meta:
         db_table = 'knowledge_documents'
@@ -1128,8 +1359,8 @@ class KnowledgeChunk(models.Model):
     content = models.TextField()
     token_count = models.IntegerField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'knowledge_chunks'
@@ -1140,11 +1371,12 @@ class KnowledgeChunk(models.Model):
 
 class KnowledgeEmbedding(models.Model):
     id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, null=True, db_index=True)
     knowledge_chunk = models.ForeignKey('KnowledgeChunk', models.DO_NOTHING, db_index=True)
     model = models.CharField(max_length=150)
     dimensions = models.IntegerField()
     embedding = VectorField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'knowledge_embeddings'
@@ -1165,8 +1397,8 @@ class AiConversation(models.Model):
     metadata = models.JSONField(null=True)
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'ai_conversations'
@@ -1186,7 +1418,19 @@ class AiMessage(models.Model):
     completion_tokens = models.IntegerField(null=True)
     context_reference = models.JSONField(null=True)
     response_metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def model_name(self):
+        return self.model
+
+    @property
+    def tokens_used(self):
+        return (self.prompt_tokens or 0) + (self.completion_tokens or 0)
+
+    @property
+    def context_snapshot(self):
+        return self.context_reference
 
     class Meta:
         db_table = 'ai_messages'
@@ -1198,24 +1442,35 @@ class AiMessage(models.Model):
 class AiRecommendation(models.Model):
     id = models.BigAutoField(primary_key=True)
     business = models.ForeignKey('Business', models.DO_NOTHING, db_index=True)
-    ai_conversation = models.ForeignKey('AiConversation', models.DO_NOTHING, null=True, db_index=True)
-    business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, db_index=True)
+    ai_conversation = models.ForeignKey('AiConversation', models.DO_NOTHING, null=True, blank=True, db_index=True)
+    business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, blank=True, db_index=True)
     recommendation_type = models.CharField(max_length=100)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    rationale = models.TextField(null=True)
-    confidence = models.DecimalField(max_digits=5, decimal_places=4, null=True)
+    rationale = models.TextField(null=True, blank=True)
+    confidence = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
     priority = models.CharField(max_length=30, default='MEDIUM')
     status = models.CharField(max_length=30, default='SUGGESTED')
-    suggested_action_type = models.CharField(max_length=100, null=True)
+    suggested_action_type = models.CharField(max_length=100, null=True, blank=True)
     generated_at = models.DateTimeField()
-    expires_at = models.DateTimeField(null=True)
-    metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    expires_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
+            raise ValidationError({'confidence': 'Confidence score must be between 0.0 and 1.0.'})
 
     class Meta:
         db_table = 'ai_recommendations'
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(confidence__gte=0.0, confidence__lte=1.0) | models.Q(confidence__isnull=True),
+                name='chk_ai_rec_confidence_range'
+            ),
+        ]
         indexes = [
             models.Index(fields=['business', 'status'], name='idx_ar_bs_2e2d551c'),
             models.Index(fields=['business', 'priority'], name='idx_ar_bp_0669d69c'),
@@ -1225,6 +1480,7 @@ class AiRecommendation(models.Model):
 
 class AiRecommendationEvidence(models.Model):
     id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE, null=True, db_index=True)
     ai_recommendation = models.ForeignKey('AiRecommendation', models.DO_NOTHING, db_index=True)
     business_fact = models.ForeignKey('BusinessFact', models.DO_NOTHING, null=True, db_index=True)
     business_issue = models.ForeignKey('BusinessIssue', models.DO_NOTHING, null=True, db_index=True)
@@ -1237,7 +1493,42 @@ class AiRecommendationEvidence(models.Model):
     description = models.TextField(null=True)
     weight = models.DecimalField(max_digits=5, decimal_places=4, null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+        has_fk = any([
+            self.business_fact_id,
+            self.business_issue_id,
+            self.metric_snapshot_id,
+            self.business_relationship_id,
+            self.graph_node_id,
+            self.graph_edge_id,
+            self.knowledge_chunk_id,
+        ])
+        if not has_fk:
+            raise ValidationError("AiRecommendationEvidence must be grounded by at least one evidence reference.")
+        if self.ai_recommendation_id and self.business_id and self.ai_recommendation.business_id != self.business_id:
+            raise ValidationError("Evidence and recommendation must belong to the same business.")
+        for field_name in (
+            'business_fact',
+            'business_issue',
+            'metric_snapshot',
+            'business_relationship',
+            'graph_node',
+            'graph_edge',
+            'knowledge_chunk',
+        ):
+            if getattr(self, f'{field_name}_id'):
+                referenced = getattr(self, field_name)
+                if referenced.business_id != self.business_id:
+                    raise ValidationError(f'{field_name} evidence must belong to the recommendation business.')
+
+    def save(self, *args, **kwargs):
+        if not self.business_id and self.ai_recommendation and self.ai_recommendation.business_id:
+            self.business = self.ai_recommendation.business
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'ai_recommendation_evidence'
@@ -1253,12 +1544,35 @@ class AiAction(models.Model):
     target_entity_id = models.BigIntegerField(null=True)
     action_payload = models.JSONField(null=True)
     approval_note = models.TextField(null=True)
+    rejected_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, related_name="rejected_ai_actions")
+    rejected_at = models.DateTimeField(null=True)
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, db_index=True)
     approved_at = models.DateTimeField(null=True)
     executed_at = models.DateTimeField(null=True)
     execution_result = models.JSONField(null=True)
     is_simulated = models.BooleanField(default=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        if self.status in ('EXECUTING', 'EXECUTED') and not self.approved_at:
+            raise ValidationError("AiAction cannot transition to EXECUTING or EXECUTED without approval (approved_at must be set).")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        # Transition to FAILED only AFTER clean() succeeds (clean rejects EXECUTING/EXECUTED without approval)
+        if (
+            self.execution_result
+            and isinstance(self.execution_result, dict)
+            and (
+                'error' in self.execution_result
+                or 'errors' in self.execution_result
+                or self.execution_result.get('success') is False
+            )
+        ):
+            self.status = 'FAILED'
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'ai_actions'
@@ -1279,8 +1593,8 @@ class MockScenario(models.Model):
     start_at = models.DateTimeField(null=True)
     end_at = models.DateTimeField(null=True)
     configuration = models.JSONField(null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'mock_scenarios'
@@ -1296,7 +1610,7 @@ class MockScenarioEvent(models.Model):
     external_entity_id = models.CharField(max_length=255, null=True)
     event_at = models.DateTimeField()
     payload = models.JSONField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'mock_scenario_events'
@@ -1319,7 +1633,7 @@ class MockExpectedResult(models.Model):
     expected_value = models.JSONField()
     comparison_type = models.CharField(max_length=30, default='EXACT')
     description = models.TextField(null=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'mock_expected_results'

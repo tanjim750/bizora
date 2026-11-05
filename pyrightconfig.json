@@ -1,0 +1,16 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    "."
+  ],
+  "reportMissingTypeStubs": false,
+  "reportAttributeAccessIssue": "none",
+  "reportOptionalSubscript": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportArgumentType": "none",
+  "reportIndexIssue": "none",
+  "reportInvalidTypeArguments": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportOperatorIssue": "none"
+}
