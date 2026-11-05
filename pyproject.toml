@@ -1,0 +1,23 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = [
+    "RUF012",  # Mutable class attributes in Django Model.Meta (indexes, constraints)
+    "E501",    # Line length
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = ["."]
+reportMissingTypeStubs = false
+reportAttributeAccessIssue = "none"
+reportOptionalSubscript = "none"
+reportOptionalMemberAccess = "none"
+reportArgumentType = "none"
+reportIndexIssue = "none"
+reportInvalidTypeArguments = "none"
+reportGeneralTypeIssues = "none"
+reportOperatorIssue = "none"

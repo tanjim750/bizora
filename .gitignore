@@ -1,1 +1,12 @@
 .env
+.agents
+.agent
+.skills
+skills-lock.json
+.skills-lock.json
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+.venv/
+
