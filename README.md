@@ -3,8 +3,12 @@
 Django/DRF backend for canonical business data, deterministic identity resolution and
 business operations. See the [implementation report](docs/implementations/my-domains-implementation-report.md)
 for the complete 31-group / 298-subfeature checklist, limitations, APIs and test evidence.
+The as-built [Software Requirements Specification](docs/requirements/SRS.md) and
+[Use Case Specification](docs/requirements/USE_CASES.md) describe the current product scope,
+reachable interfaces, actor permissions, workflows, and known integration gaps.
 This increment includes a replaceable Django operational UI at `/ops/` for all thirteen
-operations groups. Live provider transport and AI/BI/Graph engines remain externally owned.
+operations groups. Provider transport requires owner adapters; the BI, Graph, Configuration,
+Observability, and expanded Overview URL modules are present but are not mounted in the root URL map.
 See the [team-lead handoff](docs/implementations/TEAM_LEAD_HANDOFF.md) and
 [versioned contracts](docs/implementations/contracts/README.md) before integration.
 
