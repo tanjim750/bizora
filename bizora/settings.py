@@ -10,11 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import copy
 import os
-import sys
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -108,21 +105,23 @@ WSGI_APPLICATION = "bizora.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('BIZORA_SQLITE_PATH', '/tmp/bizora-development.sqlite3'),
+        'NAME': os.environ.get('BIZORA_DB_PATH', BASE_DIR / 'db.sqlite3'),
     }
+}
 
-
-if Path(str(DATABASES['default']['NAME'])).resolve() == (BASE_DIR / 'db.sqlite3').resolve():
-    raise RuntimeError('Refusing to use the incompatible checked-in database; select an isolated database.')
-if os.environ.get('POSTGRES_HOST'):
+database_backend = os.environ.get('BIZORA_DATABASE', 'sqlite')
+if database_backend == 'postgresql':
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': os.environ['POSTGRES_HOST'],
+        'NAME': os.environ.get('POSTGRES_DB', 'bizora'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-        'NAME': os.environ['POSTGRES_DB'],
-        'USER': os.environ['POSTGRES_USER'],
-        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
+        'TEST': {'TEMPLATE': os.environ.get('POSTGRES_TEST_TEMPLATE', 'template1')},
     }
+elif database_backend != 'sqlite':
+    raise ImproperlyConfigured('BIZORA_DATABASE must be sqlite or postgresql.')
 
 
 # Password validation

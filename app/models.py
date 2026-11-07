@@ -1,8 +1,8 @@
-import re
-
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
+
+from app.overview.models import MonitoringConfiguration, MonitoringConfigurationRevision  # noqa: F401
 
 
 class VectorField(models.Field):
@@ -161,13 +161,24 @@ class IntegrationSyncLog(models.Model):
     records_processed = models.IntegerField(default=0)
     records_failed = models.IntegerField(default=0)
     error_message = models.TextField(null=True)
-    started_at = models.DateTimeField()
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField()
+    entity_type = models.CharField(max_length=100, blank=True, default='')
+    trigger = models.CharField(max_length=20, default='MANUAL')
+    discovered = models.PositiveIntegerField(null=True, blank=True)
+    records_succeeded = models.PositiveIntegerField(default=0)
+    records_skipped = models.PositiveIntegerField(default=0)
+    counter_schema = models.CharField(max_length=10, default='V1')
+    cursor = models.JSONField(default=dict)
+    parent = models.ForeignKey('self', models.PROTECT, null=True, blank=True, related_name='retries')
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, blank=True)
+    last_observed_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         db_table = 'integration_sync_logs'
+        indexes = [models.Index(fields=['integration_connection', 'status', '-started_at'])]
 
 
 class Product(models.Model):
@@ -1631,199 +1642,13 @@ class MockExpectedResult(models.Model):
         ]
 
 
-# Domain extensions are additive. Existing migrations and business records remain intact.
-class BusinessMembership(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    user = models.ForeignKey('auth.User', models.PROTECT)
-    role = models.CharField(max_length=20, choices=[(v, v) for v in
-                            ('VIEWER', 'OPERATOR', 'MANAGER', 'OWNER')])
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['business', 'user'], name='membership_business_user')]
-
-
-class SupportTeam(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    name = models.CharField(max_length=150)
-    members = models.ManyToManyField('auth.User', blank=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['business', 'name'], name='team_business_name')]
-
-
-class ProcessingReceipt(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    connection = models.ForeignKey(IntegrationConnection, models.PROTECT, null=True)
-    key = models.CharField(max_length=255)
-    resource = models.CharField(max_length=50)
-    payload_hash = models.CharField(max_length=64)
-    entity_id = models.BigIntegerField()
-    occurred_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['business', 'key'], name='receipt_business_key')]
-        indexes = [models.Index(fields=['business', 'resource', 'entity_id', 'occurred_at'], name='receipt_entity_time')]
-
-
-class DomainAudit(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    actor = models.ForeignKey('auth.User', models.PROTECT, null=True)
-    action = models.CharField(max_length=100)
-    entity_type = models.CharField(max_length=50)
-    entity_id = models.BigIntegerField()
-    # References and transition evidence only. Never duplicate entire customer payloads.
-    evidence = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        indexes = [models.Index(fields=['business', 'entity_type', 'entity_id', 'created_at'], name='audit_entity_time')]
-
-
-class ConversationEvent(models.Model):
-    conversation = models.ForeignKey(Conversation, models.PROTECT)
-    actor = models.ForeignKey('auth.User', models.PROTECT, null=True)
-    event_type = models.CharField(max_length=50)
-    from_state = models.CharField(max_length=50, null=True)
-    to_state = models.CharField(max_length=50, null=True)
-    reason = models.TextField(blank=True)
-    context = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class IdentityHistory(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    canonical_identity = models.ForeignKey(CanonicalIdentity, models.PROTECT, null=True)
-    external_identity = models.ForeignKey(ExternalIdentity, models.PROTECT, null=True)
-    actor = models.ForeignKey('auth.User', models.PROTECT, null=True)
-    action = models.CharField(max_length=50)
-    rule_key = models.CharField(max_length=100, blank=True)
-    evidence = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class CallbackRequest(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    customer = models.ForeignKey(Customer, models.PROTECT)
-    conversation = models.ForeignKey(Conversation, models.PROTECT, null=True)
-    order = models.ForeignKey(Order, models.PROTECT, null=True)
-    scheduled_at = models.DateTimeField(null=True)
-    status = models.CharField(max_length=30, default='PENDING')
-    reason = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class AdAccount(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    integration_connection = models.ForeignKey(IntegrationConnection, models.PROTECT)
-    external_account_id = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    audience = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['integration_connection', 'external_account_id'], name='ad_account_source_id')]
-
-
-class CampaignAdSet(models.Model):
-    campaign = models.ForeignKey(Campaign, models.PROTECT)
-    external_id = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    audience = models.JSONField(default=dict)
-    budget = models.DecimalField(max_digits=18, decimal_places=2, null=True)
-    status = models.CharField(max_length=30, default='ACTIVE')
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['campaign', 'external_id'], name='adset_campaign_external')]
-
-
-class CampaignCreative(models.Model):
-    business = models.ForeignKey(Business, models.PROTECT)
-    external_id = models.CharField(max_length=255)
-    content = models.JSONField(default=dict)
-
-
-class CampaignAd(models.Model):
-    ad_set = models.ForeignKey(CampaignAdSet, models.PROTECT)
-    creative = models.ForeignKey(CampaignCreative, models.PROTECT, null=True)
-    external_id = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    status = models.CharField(max_length=30, default='ACTIVE')
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['ad_set', 'external_id'], name='ad_adset_external')]
-
-
-class ProductImage(models.Model):
-    """Additional canonical images; Product.image_url remains the primary URL."""
-    product = models.ForeignKey(Product, models.PROTECT)
-    url = models.URLField(max_length=2000)
-    alt_text = models.CharField(max_length=255, blank=True)
-    position = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['product', 'url'], name='product_image_url_unique')]
-class BusinessMemory(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
-    memory_type = models.CharField(max_length=100, db_index=True)
-    subject_entity_type = models.CharField(max_length=50, null=True, blank=True, db_index=True)
-    subject_entity_id = models.BigIntegerField(null=True, blank=True, db_index=True)
-    content = models.TextField()
-    metadata = models.JSONField(null=True, blank=True)
-    source_reference = models.CharField(max_length=1000, null=True, blank=True)
-    version = models.IntegerField(default=1)
-    is_active = models.BooleanField(default=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'business_memory'
-        indexes = [
-            models.Index(fields=['business', 'memory_type', 'is_active'], name='idx_bm_bmi_8f921a'),
-        ]
-
-
-class HistoricalDecision(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
-    decision_type = models.CharField(max_length=100, db_index=True)
-    title = models.CharField(max_length=500)
-    rationale = models.TextField(null=True, blank=True)
-    context = models.JSONField(null=True, blank=True)
-    outcome = models.CharField(max_length=50, default='APPROVED', db_index=True)
-    target_entity_type = models.CharField(max_length=50, null=True, blank=True, db_index=True)
-    target_entity_id = models.BigIntegerField(null=True, blank=True, db_index=True)
-    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, blank=True)
-    decided_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'historical_decisions'
-        indexes = [
-            models.Index(fields=['business', 'decision_type'], name='idx_hd_bdt_4c991b'),
-            models.Index(fields=['business', 'outcome'], name='idx_hd_out_91ab23'),
-        ]
-
-
-class ApprovedSuggestion(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    business = models.ForeignKey('Business', models.CASCADE, db_index=True)
-    ai_recommendation = models.ForeignKey('AiRecommendation', models.SET_NULL, null=True, blank=True, db_index=True)
-    suggestion_type = models.CharField(max_length=100, db_index=True)
-    title = models.CharField(max_length=500)
-    suggestion = models.TextField()
-    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, db_index=True)
-    approved_at = models.DateTimeField()
-    status = models.CharField(max_length=30, default='APPROVED', db_index=True)
-    context = models.JSONField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'approved_suggestions'
-        indexes = [
-            models.Index(fields=['business', 'suggestion_type'], name='idx_as_bst_3a10cf'),
-        ]
-
+# Keep model discovery and existing app.models imports stable.
+from app.configuration.models import (  # noqa: E402,F401
+    ConfigurationEvent, ConfigurationRecord, ConfigurationRevision, KnowledgeReprocessingRequest,
+)
+from app.integrations.models import IntegrationPayload  # noqa: E402,F401
+from app.observability.models import (  # noqa: E402,F401
+    BusinessAccess, ConnectionCheck, FailedRecord, IntegrationError, MonitoringPolicy,
+    ObservationReceipt, ObservabilityAudit, OperationAttempt, ProviderRequest,
+    SourceFreshness, WebhookDelivery, WebhookObservation,
+)
