@@ -16,8 +16,16 @@ const CONTRACTS = {
   monitoring: { capability: 'freshness', fields: ['resource'] },
 }
 
+const OPERATION_ENTITY = {
+  MESSAGE_SEND: 'MESSAGE',
+  CALL_INITIATE: 'CALL',
+  SHIPMENT_SUBMIT: 'SHIPMENT',
+  SHIPMENT_CANCEL: 'SHIPMENT',
+}
+
 export default function ContractTools({ business }) {
   const [owner, setOwner] = useState('monitoring')
+  const [operation, setOperation] = useState('MESSAGE_SEND')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
@@ -28,6 +36,7 @@ export default function ContractTools({ business }) {
     setError('')
     setResult(null)
     const values = Object.fromEntries(new FormData(event.currentTarget).entries())
+    if (owner === 'integrations') values.entity_type = OPERATION_ENTITY[values.operation]
     if (values.entity_id) values.entity_id = Number(values.entity_id)
     try {
       setResult(
@@ -63,6 +72,7 @@ export default function ContractTools({ business }) {
           value={owner}
           onChange={(event) => {
             setOwner(event.target.value)
+            setOperation('MESSAGE_SEND')
             setResult(null)
             setError('')
           }}
@@ -79,12 +89,20 @@ export default function ContractTools({ business }) {
             <div className="form-field" key={field}>
               <label htmlFor={`contract-${field}`}>{label(field)}</label>
               {field === 'operation' ? (
-                <select name={field} id={`contract-${field}`} required>
+                <select
+                  name={field}
+                  id={`contract-${field}`}
+                  value={operation}
+                  onChange={(event) => setOperation(event.target.value)}
+                  required
+                >
                   <option value="MESSAGE_SEND">Message send</option>
                   <option value="CALL_INITIATE">Call initiate</option>
                   <option value="SHIPMENT_SUBMIT">Shipment submit</option>
                   <option value="SHIPMENT_CANCEL">Shipment cancel</option>
                 </select>
+              ) : owner === 'integrations' && field === 'entity_type' ? (
+                <input name={field} id={`contract-${field}`} value={OPERATION_ENTITY[operation]} readOnly />
               ) : (
                 <input
                   name={field}

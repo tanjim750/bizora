@@ -12,8 +12,8 @@ Updated: 8 November 2026. Scope: Next.js client in `frontend/`, mounted Django r
 | F04 | Open | Add connection evidence and sync history to service diagnostics when a mounted read contract is available. | `ContractTools.js` only probes seven owner contracts. Configuration and Observability API modules are not mounted in `bizora/urls.py`. |
 | F05 | Blocked by authoritative execution evidence | Complete AI action execution UI only after the executor contract distinguishes simulated, prepared, and confirmed provider effects. | `ReviewForms.js` supports review. `/actions/<pk>/execute/` exists, but the Next.js UI must not imply live provider execution without the backend guarantee. |
 | F06 | Needs backend | Add server pagination and filtering for AI recommendation, issue, and action collections, then add client paging controls. | `AssistantWorkspace` and `ActionReview` render returned arrays; the AI collection endpoints are currently unpaginated. |
-| F07 | Open | Add isolated browser flows for proposal review, refund request, callback schedule, and provider preparation, including role and tenant boundaries. | `frontend/tests/e2e/workspace.spec.js` covers login, overview, navigation, and mobile only. |
-| F08 | Open | Verify against PostgreSQL 16 and resolve the `IntegrationSyncLog.created_at` migration drift before claiming authoritative DB readiness. | `frontend-progress.md` records SQLite-only live frontend verification and one pending field alteration. |
+| F07 | Partial | Add browser coverage for proposal review and role/tenant boundaries. Browser coverage now includes every mounted section and all 32 canonical lists, product source review, identity linking, refund, callback, call preparation, campaign filtering, and seven service-contract probes. The proposal review API has a role and no-execution test. | `frontend/tests/e2e/` and `app/tests/test_frontend_integration.py`. |
+| F08 | Partial | Verify migrations and frontend integration against PostgreSQL 16. The `IntegrationSyncLog.created_at` model/migration drift is resolved in migration 0010, and isolated SQLite migration/check/test runs pass. | Local PostgreSQL binaries are absent and Docker daemon access is denied in this workspace; no PostgreSQL run was possible. |
 | F09 | Blocked by mount | Connect Business Intelligence, Business Graph, Configuration, Observability, and expanded Overview screens once their APIs are mounted and authorized. | `bizora/urls.py` mounts only `app.urls` and `/ops/`; unmounted modules cannot be shown as live data. |
 
 ## Work log
@@ -21,7 +21,25 @@ Updated: 8 November 2026. Scope: Next.js client in `frontend/`, mounted Django r
 - 8 Nov 2026: Inspected Next.js route/component inventory, frontend progress report, Django root routes, domain registry, product assessment and mapping behavior, and existing tests. Found the pre-existing `.gitignore` edit; leave it out of frontend commits.
 - 8 Nov 2026: Implemented guided product assessment and reviewed source mapping (F02 partial). Added source identity validation and candidate checks in `productReview.js`, candidate detail links, manager-only reason and confirmation, a fresh assessment before write, and an idempotency key. Removed the direct mapping action from product detail. Added unit tests and a Playwright browser test. Added expandable identity evidence (F03 partial).
 - Verification: `npm test` 7 passed; `npm run build` passed; `npm run format:check` passed; `ProductIntakeReviewTests` 6 passed with isolated SQLite; Playwright workspace and product review 2 passed against temporary `/tmp/bizora-frontend-audit` data. `makemigrations --check --dry-run` reports pending `0010_alter_integrationsynclog_created_at.py` (F08 remains open).
-- Next step: finish F03 with server-backed lookup and pagination for all identity collections, then F01 field forms. Add the remaining F07 browser flows with isolated fixtures. Recheck DB migrations and PostgreSQL 16 separately; do not count the temporary SQLite run as authoritative DB verification.
+- 8 Nov 2026: Traced all frontend API calls to `app/urls.py` and backend serializers. Added browser integration coverage for 17 mounted navigation sections and 32 canonical lists, refund/callback/call preparation, campaign filtering, identity linking, and all seven domain contract probes. Found and fixed Campaigns `provider` versus `platform` filter mismatch and bound the integration contract operation to its canonical entity type. Playwright now uses one worker for the shared SQLite fixture. Added a backend regression for campaign filtering and a role/no-execution test for proposal review.
+- 8 Nov 2026: Added migration 0010 to remove stale `auto_now_add` from `IntegrationSyncLog.created_at` migration state, matching the model and preserving explicit observation timestamps. Isolated SQLite migrations and `makemigrations --check --dry-run` pass. The observability dispatch test was corrected to run the commit callback under Django `TestCase`; its earlier failure was a test transaction timing error.
+- Final local verification for this integration pass: 5 Playwright browser tests passed serially; 25 focused Django tests passed; 7 Node tests passed; Next.js production build and Prettier check passed; migration check found no changes. Browser tests used `/tmp/bizora-frontend-audit` with `bizora.local_settings` (SQLite). PostgreSQL 16 and unmounted owner modules remain unverified/unconnected.
+- Next step: finish F03 with server-backed lookup and pagination for all identity collections, then F01 field forms. Add a browser fixture for proposal review and explicit viewer/foreign-business checks. Run the migrations and integration suite on PostgreSQL 16 when the database service is accessible. Do not count the SQLite run as PostgreSQL verification.
+
+## Mounted endpoint coverage
+
+| Frontend endpoint family | Integration evidence |
+| --- | --- |
+| Session, login, logout, workspace | Browser workspace test; proxy unit tests for cookies, CSRF, path and origin restrictions. |
+| Overview, support queue, financial timeline, website evidence, AI collections, identity collections | Browser sweep of all 17 navigation sections. |
+| 32 canonical resource lists | Browser sweep of every `RESOURCES` entry, including empty states. |
+| Canonical detail/intake/transition | Product review and operations browser flows; Django domain tests. Full field-specific intake remains F01. |
+| Refunds, callbacks, call preparation | Browser workflow verifies writes and that preparation leaves call state unchanged. |
+| Product assessment/source mapping and identity commands | Browser product review and identity link flows. |
+| Seven owner contracts | Browser probes validate request shapes and display adapter availability without claiming live execution. |
+| Proposal review | Django integration test checks manager write, operator denial, and `UNAVAILABLE` execution result. Browser review fixture remains F07. |
+
+The separate BI, Graph, Configuration, Observability, and expanded Overview URL modules are still not mounted in `bizora/urls.py`. They have no Next.js screens in this integration pass; F09 remains open.
 
 ## Continuation notes
 

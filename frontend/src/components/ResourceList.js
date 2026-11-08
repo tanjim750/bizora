@@ -10,7 +10,7 @@ const FILTERS = {
   payments: ['customer', 'order', 'payment_method', 'status'],
   conversations: ['q', 'channel', 'priority', 'status'],
   'support-queue': ['channel', 'priority', 'assigned', 'status'],
-  campaigns: ['q', 'provider', 'status'],
+  campaigns: ['q', 'platform', 'status'],
   visitors: [],
   shipments: ['q', 'customer', 'order', 'provider', 'status'],
   calls: ['customer', 'order', 'direction', 'status'],

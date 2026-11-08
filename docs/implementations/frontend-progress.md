@@ -25,6 +25,8 @@ Updated: 8 November 2026. Design source: [`DESIGN.md`](../requirements/DESIGN.md
 
 Verification: Next production build; Node unit tests; Django auth and operations tests; browser login, business selection, overview and 320px mobile navigation; live proxy login and customer creation using an isolated local database.
 
+8 November integration pass: all 17 mounted Next.js navigation sections and 32 canonical resource lists loaded through Django in an isolated browser run. Product source review, identity linking, refund, callback scheduling, call preparation, campaign platform filtering, and seven owner contract probes also passed. `IntegrationSyncLog.created_at` migration drift is resolved by migration 0010. PostgreSQL 16 verification remains open because this workspace cannot access a local server or Docker daemon. See [`frontend-handoff.md`](frontend-handoff.md) for exact coverage and remaining work.
+
 ## Not properly complete yet
 
 | Priority | Status | Work still required |
@@ -35,8 +37,8 @@ Verification: Next production build; Node unit tests; Django auth and operations
 | P1 | **Not connected** | Finish the AI action execution lifecycle only after the executor contract distinguishes simulated from live provider evidence. Current UI supports advisory/review, not execution. |
 | P2 | **Partial** | Add connection evidence and operational history to service diagnostics. |
 | P2 | **Backend limitation** | Add pagination and server-side filtering for AI recommendation, action, and issue collections; current APIs return unpaginated arrays. |
-| P2 | **Verification gap** | Add browser coverage for review, refund, callback, and provider preparation with isolated fixtures. Existing browser coverage focuses on login, workspace navigation, overview, and customer creation. |
-| P2 | **Verification gap** | Reconcile the existing `IntegrationSyncLog.created_at` migration drift and run frontend integration verification against PostgreSQL 16. The migration check reported one pending field alteration; current verification used isolated SQLite. |
+| P2 | **Partial verification** | Browser coverage now includes refund, callback, call preparation, product review, identity linking, all mounted sections/lists, and owner contract probes. Add proposal review browser fixture and explicit role/tenant browser cases. |
+| P2 | **Verification gap** | Migration 0010 resolves `IntegrationSyncLog.created_at` drift; run frontend integration verification against PostgreSQL 16. Current live verification used isolated SQLite. |
 
 ## Backend endpoints not connected to this frontend
 

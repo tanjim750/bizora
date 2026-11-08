@@ -62,7 +62,7 @@ class ResourceList(DomainAPIView):
         qs = scoped(name, business)
         fields = {f.name for f in qs.model._meta.fields}
         allowed = {'status', 'priority', 'channel', 'customer', 'order', 'product', 'campaign',
-                   'conversation', 'direction', 'provider', 'payment_method', 'category', 'sku', 'tag',
+                   'conversation', 'direction', 'provider', 'platform', 'payment_method', 'category', 'sku', 'tag',
                    'visitor', 'session', 'payment', 'contact_type', 'assignee_type', 'traffic_source', 'traffic_medium', 'utm_campaign', 'device_type', 'browser', 'operating_system', 'event_type', 'is_anonymous'} & fields
         controls = {'page', 'page_size', 'q', 'since', 'until', 'contact', 'external_id', 'connection_id', 'ordering'}
         if name == 'customers':
