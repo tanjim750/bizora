@@ -690,6 +690,12 @@ td small {
   display: grid;
   gap: 0;
 }
+.module-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
 .disclosure {
   padding: 0;
 }

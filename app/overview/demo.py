@@ -4,6 +4,7 @@ The BI fixture values are declared inputs, not computations performed by Overvie
 """
 import hashlib
 from datetime import timedelta, timezone
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -37,7 +38,9 @@ def run_demo(seed, at, business_slug=None):
         scenario = MockScenario.objects.create(business=business, key=key, name='Overview acceptance',
             scenario_type='OVERVIEW_MONITORING', seed=seed, start_at=at-timedelta(days=2), end_at=at,
             configuration={'owner': 'overview-demo-v1'}, created_at=at, updated_at=at)
-        refs = _build_inputs(scenario, at)
+        # auto_now_add fields ignore explicit create() timestamps; freeze fixture writes.
+        with patch('django.utils.timezone.now', return_value=at):
+            refs = _build_inputs(scenario, at)
         scenario.configuration = {'owner': 'overview-demo-v1', 'refs': refs}
         scenario.save(update_fields=['configuration'])
     else:

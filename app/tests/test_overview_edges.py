@@ -75,15 +75,19 @@ class OverviewEdgeTests(TestCase):
         foreign_order = Order.objects.create(business=self.other_business, **times)
         local_node = GraphNode.objects.create(business=self.business, entity_type='order', entity_id=local_order.pk, node_type='ORDER', **times)
         foreign_node = GraphNode.objects.create(business=self.other_business, entity_type='order', entity_id=foreign_order.pk, node_type='ORDER', **times)
-        edge = GraphEdge.objects.create(business=self.business, source_node=local_node, target_node=foreign_node, relationship_type='PRIVATE', **times)
+        # Historical corrupt rows must bypass today's model-level tenant guard.
+        edge = GraphEdge.objects.bulk_create([GraphEdge(business=self.business, source_node=local_node,
+            target_node=foreign_node, relationship_type='PRIVATE', **times)])[0]
         source = KnowledgeSource.objects.create(business=self.other_business, name='Private', source_type='FILE', **times)
-        document = KnowledgeDocument.objects.create(business=self.business, knowledge_source=source, title='Private', **times)
-        chunk = KnowledgeChunk.objects.create(business=self.business, knowledge_document=document, chunk_index=0, content='PRIVATE CONTENT', **times)
+        document = KnowledgeDocument.objects.bulk_create([KnowledgeDocument(business=self.business,
+            knowledge_source=source, title='Private', **times)])[0]
+        chunk = KnowledgeChunk.objects.bulk_create([KnowledgeChunk(business=self.business,
+            knowledge_document=document, chunk_index=0, content='PRIVATE CONTENT', **times)])[0]
         recommendation = AiRecommendation.objects.create(business=self.business, title='Try', description='Try',
             recommendation_type='TEST', generated_at=NOW, **times)
         for kwargs in ({'graph_edge': edge}, {'knowledge_chunk': chunk}):
-            AiRecommendationEvidence.objects.create(ai_recommendation=recommendation, evidence_type='CONTEXT',
-                description='PRIVATE CONTENT', created_at=NOW, **kwargs)
+            AiRecommendationEvidence.objects.bulk_create([AiRecommendationEvidence(ai_recommendation=recommendation,
+                evidence_type='CONTEXT', description='PRIVATE CONTENT', created_at=NOW, **kwargs)])
         result = self.client.get(self.base+f'recommendations/{recommendation.pk}/').data
         self.assertEqual(result['evidence'], [])
         self.assertNotIn('PRIVATE CONTENT', str(result))

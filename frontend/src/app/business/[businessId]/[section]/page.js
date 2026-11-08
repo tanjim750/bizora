@@ -8,8 +8,16 @@ import IdentityTools from '@/components/IdentityTools'
 import IdentityEvidence from '@/components/IdentityEvidence'
 import ContractTools from '@/components/ContractTools'
 import ProductAssessment from '@/components/ProductAssessment'
+import ModuleExplorer from '@/components/ModuleExplorer'
 import { AssistantWorkspace } from '@/components/AdvisoryTools'
-import { businessApiPath, businessPath, MANAGER_ROLES, SECTIONS, WRITER_ROLES } from '@/lib/catalog'
+import {
+  businessApiPath,
+  businessPath,
+  MANAGER_ROLES,
+  MODULE_VIEWS,
+  SECTIONS,
+  WRITER_ROLES,
+} from '@/lib/catalog'
 import { getSession, serverApi } from '@/lib/serverApi'
 
 export const dynamic = 'force-dynamic'
@@ -23,10 +31,21 @@ export default async function SectionPage({ params, searchParams }) {
   if (!business) notFound()
   const section = SECTIONS.find((item) => item.key === sectionKey)
   if (!section || (section.manager && !MANAGER_ROLES.has(business.role))) notFound()
+  const module = MODULE_VIEWS[sectionKey]
+  const moduleView = module && typeof query.view === 'string' ? query.view : module?.views[0]
+  if (module && !module.views.includes(moduleView)) notFound()
+  const recordId = module && typeof query.record === 'string' ? query.record : null
+  if (recordId && (!/^\d+$/.test(recordId) || !module.details.includes(moduleView))) notFound()
   const queryString = new URLSearchParams(
-    Object.entries(query).filter(([, value]) => typeof value === 'string' && value),
+    Object.entries(query).filter(
+      ([key, value]) => !['view', 'record'].includes(key) && typeof value === 'string' && value,
+    ),
   ).toString()
-  const suffix = section.resource ? `${section.resource}/` : section.endpoint
+  const suffix = module
+    ? `${module.prefix}/${moduleView}/${recordId ? `${recordId}/` : ''}`
+    : section.resource
+      ? `${section.resource}/`
+      : section.endpoint
   const path = suffix ? businessApiPath(businessId, suffix) : null
   const [result, extra, identityLists] = await Promise.all([
     path
@@ -78,6 +97,17 @@ export default async function SectionPage({ params, searchParams }) {
     content = <ActionReview business={business} actions={result.data} />
   } else if (sectionKey === 'contracts') {
     content = <ContractTools business={business} />
+  } else if (module) {
+    content = (
+      <ModuleExplorer
+        businessId={businessId}
+        section={sectionKey}
+        view={moduleView}
+        data={result.data}
+        recordId={recordId}
+        query={query}
+      />
+    )
   } else if (sectionKey === 'identity') {
     content = (
       <>

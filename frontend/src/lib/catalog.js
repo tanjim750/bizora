@@ -5,6 +5,7 @@ export const SECTIONS = [
   { key: 'orders', label: 'Orders', group: 'Business data', resource: 'orders' },
   { key: 'payments', label: 'Payments', group: 'Business data', resource: 'payments' },
   { key: 'finance', label: 'Financial timeline', group: 'Business data', endpoint: 'financial-timeline/' },
+  { key: 'insights', label: 'Business insights', group: 'Workspace' },
   { key: 'inbox', label: 'Inbox', group: 'Operations', resource: 'conversations' },
   { key: 'queue', label: 'Support queue', group: 'Operations', endpoint: 'support-queue/' },
   { key: 'marketing', label: 'Campaigns', group: 'Operations', resource: 'campaigns' },
@@ -27,7 +28,65 @@ export const SECTIONS = [
     manager: true,
   },
   { key: 'contracts', label: 'Service contracts', group: 'Administration', manager: true },
+  { key: 'configuration', label: 'Configuration', group: 'Administration', manager: true },
+  { key: 'observability', label: 'Integration health', group: 'Administration', manager: true },
 ]
+
+export const MODULE_VIEWS = {
+  insights: {
+    prefix: 'overview',
+    views: [
+      'summary',
+      'kpis',
+      'trends',
+      'issues',
+      'health',
+      'activity',
+      'recommendations',
+      'cross-domain',
+      'catalog',
+      'configuration',
+    ],
+    details: ['issues', 'recommendations'],
+  },
+  configuration: {
+    prefix: 'configuration',
+    views: [
+      'effective',
+      'changes',
+      'profile',
+      'general',
+      'ai',
+      'knowledge',
+      'rules',
+      'policies',
+      'freshness',
+      'providers',
+      'connections',
+      'sources',
+      'reprocessing',
+      'monitoring',
+    ],
+    details: ['connections', 'sources'],
+  },
+  observability: {
+    prefix: 'observability',
+    views: [
+      'summary',
+      'connections',
+      'syncs',
+      'failed-records',
+      'webhooks',
+      'freshness',
+      'providers',
+      'errors',
+      'policies',
+      'failed-records/groups',
+      'syncs/statistics',
+    ],
+    details: ['connections', 'syncs', 'failed-records', 'webhooks', 'providers', 'errors'],
+  },
+}
 
 export const RESOURCES = [
   'product-images',

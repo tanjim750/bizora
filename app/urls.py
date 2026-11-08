@@ -21,6 +21,9 @@ from app.views import (
 )
 
 urlpatterns = [
+    path('businesses/<int:business_id>/overview/', include('app.overview.urls')),
+    path('businesses/<int:business_id>/configuration/', include('app.configuration.urls')),
+    path('businesses/<int:business_id>/observability/', include('app.observability.urls')),
     path('frontend/session/', frontend_auth.frontend_session, name='frontend-session'),
     path('frontend/login/', frontend_auth.frontend_login, name='frontend-login'),
     path('frontend/logout/', frontend_auth.frontend_logout, name='frontend-logout'),

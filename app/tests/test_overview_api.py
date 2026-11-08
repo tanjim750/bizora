@@ -49,8 +49,8 @@ class OverviewApiTests(TestCase):
 
     def test_issues_are_ranked_and_historical_lifecycle_is_available(self, _):
         high = issue(self.business)
-        critical = issue(self.business, severity='CRITICAL', title='Critical')
-        resolved = issue(self.business, status='RESOLVED', resolved_at=NOW)
+        critical = issue(self.business, issue_type='CRITICAL_DELIVERY', severity='CRITICAL', title='Critical')
+        resolved = issue(self.business, issue_type='RESOLVED_DELIVERY', status='RESOLVED', resolved_at=NOW)
         issue(self.other_business, severity='CRITICAL', title='Other tenant')
         result = self.client.get(self.base+'issues/').data
         self.assertEqual([r['id'] for r in result['results']], [critical.pk, high.pk])
@@ -66,10 +66,11 @@ class OverviewApiTests(TestCase):
         BusinessIssueEvidence.objects.create(business_issue=row, metric_snapshot=foreign_snapshot,
             evidence_type='METRIC', description='FOREIGN SECRET', created_at=NOW)
         recommendation = self.rec(business_issue=row)
-        AiRecommendationEvidence.objects.create(ai_recommendation=recommendation, metric_snapshot=foreign_snapshot,
-            evidence_type='METRIC', description='FOREIGN SECRET', created_at=NOW)
-        AiAction.objects.create(business=self.other_business, ai_recommendation=recommendation,
-            action_type='PRIVATE', action_payload={'secret': 'PRIVATE'}, created_at=NOW, updated_at=NOW)
+        # Simulate historical bad rows without invoking current model validation.
+        AiRecommendationEvidence.objects.bulk_create([AiRecommendationEvidence(ai_recommendation=recommendation,
+            metric_snapshot=foreign_snapshot, evidence_type='METRIC', description='FOREIGN SECRET', created_at=NOW)])
+        AiAction.objects.bulk_create([AiAction(business=self.other_business, ai_recommendation=recommendation,
+            action_type='PRIVATE', action_payload={'secret': 'PRIVATE'}, created_at=NOW, updated_at=NOW)])
         for path in [f'issues/{row.pk}/', f'recommendations/{recommendation.pk}/']:
             response = self.client.get(self.base+path)
             self.assertEqual(response.status_code, 200)

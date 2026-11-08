@@ -23,7 +23,7 @@ class CrossDomainTests(TestCase):
             relationship_type='ATTRIBUTED_DELIVERY', rule_key='attribution.v1', created_at=NOW, updated_at=NOW)
         row = issue(self.business, metadata={'domains': ['marketing', 'delivery'], 'monitoring_scenarios': ['marketing_delivery']})
         BusinessIssueEvidence.objects.create(business_issue=row, relationship=relationship, evidence_type='RELATIONSHIP', created_at=NOW)
-        issue(self.business, metadata={'monitoring_scenarios': list(CROSS_DOMAIN)})
+        issue(self.business, issue_type='OTHER_SCENARIOS', metadata={'monitoring_scenarios': list(CROSS_DOMAIN)})
         result = self.client.get(self.base+'cross-domain/').data
         self.assertEqual(len(result['results']), 9)
         scenario = next(r for r in result['results'] if r['key'] == 'marketing_delivery')
@@ -62,7 +62,7 @@ class CrossDomainTests(TestCase):
             'support_customer_outcome': ('conversation', 'customer'), 'courier_revenue': ('shipment', 'order'),
             'campaign_customer_quality': ('campaign', 'customer')}
         for key, (source, target) in paths.items():
-            row = issue(self.business, metadata={'monitoring_scenarios': [key]})
+            row = issue(self.business, issue_type=key.upper(), metadata={'monitoring_scenarios': [key]})
             relation = BusinessRelationship.objects.create(business=self.business, source_entity_type=source,
                 source_entity_id=entities[source].pk, target_entity_type=target, target_entity_id=entities[target].pk,
                 relationship_type=key.upper(), **times)

@@ -31,6 +31,7 @@ const ICONS = {
   orders: ClipboardList,
   payments: CreditCard,
   finance: CreditCard,
+  insights: BarChart3,
   inbox: MessageSquareText,
   queue: Headphones,
   marketing: Megaphone,
@@ -42,6 +43,8 @@ const ICONS = {
   actions: Sparkles,
   identity: ShieldCheck,
   contracts: ShieldCheck,
+  configuration: ShieldCheck,
+  observability: BarChart3,
 }
 
 export default function AppShell({ session, business, children }) {

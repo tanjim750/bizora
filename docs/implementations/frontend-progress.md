@@ -40,6 +40,10 @@ Verification: Next production build; Node unit tests; Django auth and operations
 | P2 | **Partial verification** | Browser coverage now includes refund, callback, call preparation, product review, identity linking, all mounted sections/lists, and owner contract probes. Add proposal review browser fixture and explicit role/tenant browser cases. |
 | P2 | **Verification gap** | Migration 0010 resolves `IntegrationSyncLog.created_at` drift; run frontend integration verification against PostgreSQL 16. Current live verification used isolated SQLite. |
 
-## Backend endpoints not connected to this frontend
+## Endpoint audit update
 
-Business Intelligence, Business Graph, Configuration, Observability, and expanded Overview modules remain unmounted at the root URL configuration. Their endpoint workflows cannot be completed in the frontend until those APIs are mounted and available. The UI labels unavailable or not-mounted analytics rather than presenting fabricated data.
+Expanded Overview, Configuration, and Observability URL modules are now mounted under `/api/businesses/{id}/`. Their read collections and supported record details are available in the Business insights, Configuration, and Integration health sections. Both legacy `BusinessAccess` grants and the active `BusinessMembership` used by Next.js are recognized; an existing inactive or lower-role membership overrides a legacy grant. The browser route sweep visits every new read collection and all canonical resource lists.
+
+Verification for this pass: 209 Django tests passed (11 skipped), 7 Node tests passed, all 5 Playwright browser tests passed against an isolated local SQLite database, Next.js production build and Prettier check passed, and migration drift check found no changes. The browser run opened the live Next.js UI and drilled into an integration connection. PostgreSQL 16 was not available for this run.
+
+The new module screens are read-only evidence views. Configuration updates, observability operations, and their history/diagnostic endpoints still need purpose-built controls. Business Intelligence and Business Graph remain unmounted because their views require an authorized `request.business` context that the current router does not provide. The generic canonical intake is still JSON based; AI action execution is still unavailable pending authoritative execution evidence. PostgreSQL 16 integration verification remains open.
