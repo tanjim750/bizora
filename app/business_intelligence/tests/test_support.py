@@ -335,10 +335,10 @@ class SupportTestCase(TestCase):
         # Conv 2: assignment AI followed by assignment AGENT -> escalated!
         c2 = self.conversation(started_at=START)
         models.ConversationAssignment.objects.create(
-            conversation=c2, assignee_type="AI", assigned_at=START, created_at=START,
+            conversation=c2, assignee_type="AI", status="COMPLETED", assigned_at=START, unassigned_at=START + timedelta(minutes=5), created_at=START,
         )
         models.ConversationAssignment.objects.create(
-            conversation=c2, assignee_type="AGENT", assigned_at=START + timedelta(minutes=5), created_at=START,
+            conversation=c2, assignee_type="AGENT", status="ACTIVE", assigned_at=START + timedelta(minutes=5), created_at=START,
         )
 
         # Conv 3: Only handled by AI, not escalated

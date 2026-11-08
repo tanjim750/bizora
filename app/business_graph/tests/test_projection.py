@@ -21,7 +21,7 @@ from app.business_graph import projection as subject
 
 
 D = Decimal
-NOW = datetime(2026, 10, 28, 12, 0, tzinfo=timezone.utc)
+NOW = datetime.now(timezone.utc)
 PAST = NOW - timedelta(days=7)
 FUTURE = NOW + timedelta(days=7)
 

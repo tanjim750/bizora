@@ -167,7 +167,7 @@ def create_or_update_fact(
             "valid_from": valid_from,
             "valid_to": valid_to,
         }
-        fact = models.BusinessFact.objects.filter(**lookup_kwargs).first()
+        fact = models.BusinessFact.all_objects.filter(**lookup_kwargs).first()
 
         if fact is not None:
             # Update in place
@@ -182,7 +182,7 @@ def create_or_update_fact(
             fact.save()
             return fact, False
 
-        fact = models.BusinessFact.objects.create(
+        fact = models.BusinessFact.all_objects.create(
             business_id=business_id,
             fact_type=fact_type,
             subject_entity_type=subject_entity_type,
@@ -218,7 +218,7 @@ def update_fact_lifecycle(
     if new_status not in FACT_STATUSES:
         raise FactValidationError(f"Invalid fact status {new_status!r}; expected one of {sorted(FACT_STATUSES)}")
 
-    fact = models.BusinessFact.objects.filter(pk=fact_id).first()
+    fact = models.BusinessFact.all_objects.filter(pk=fact_id).first()
     if fact is None:
         raise FactValidationError(f"BusinessFact #{fact_id} does not exist.")
 
