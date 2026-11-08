@@ -1,3 +1,4 @@
+from django.contrib import admin
 
 from app.models import (BusinessAccess, ConnectionCheck, FailedRecord, IntegrationError,
                         MonitoringPolicy, ObservationReceipt, ObservabilityAudit,
