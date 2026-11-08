@@ -9,6 +9,9 @@ reachable interfaces, actor permissions, workflows, and known integration gaps.
 This increment includes a replaceable Django operational UI at `/ops/` for all thirteen
 operations groups. Provider transport requires owner adapters; the BI, Graph, Configuration,
 Observability, and expanded Overview URL modules are present but are not mounted in the root URL map.
+The dedicated [Next.js frontend](frontend/README.md) uses the mounted Django APIs and the
+[Clean Teal design system](docs/requirements/DESIGN.md). Its [progress ledger](docs/implementations/frontend-progress.md)
+records endpoint coverage and unfinished screens.
 See the [team-lead handoff](docs/implementations/TEAM_LEAD_HANDOFF.md) and
 [versioned contracts](docs/implementations/contracts/README.md) before integration.
 
@@ -18,7 +21,7 @@ The checked-in `db.sqlite3` has an incompatible legacy schema. Do not migrate or
 The local settings below use a separate database outside the repository.
 
 ```bash
-python3.11 -m venv .venv
+python3.12 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
 export DJANGO_SETTINGS_MODULE=bizora.local_settings

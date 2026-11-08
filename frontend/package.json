@@ -1,0 +1,24 @@
+{
+  "name": "bizora-frontend",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "format:check": "prettier --check 'src/**/*.{js,css}' 'tests/**/*.js' '*.js' '*.mjs'"
+  },
+  "dependencies": {
+    "lucide-react": "0.468.0",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "prettier": "^3.9.10"
+  }
+}
