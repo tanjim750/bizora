@@ -9,7 +9,7 @@
     "start": "next start",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
-    "format:check": "prettier --check 'src/**/*.{js,css}' 'tests/**/*.js' '*.js' '*.mjs'"
+    "format:check": "prettier --check 'src/**/*.{js,css}' 'tests/**/*.js' 'scripts/**/*.js' '*.js' '*.mjs'"
   },
   "dependencies": {
     "lucide-react": "0.468.0",

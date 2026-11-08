@@ -13,7 +13,6 @@ import {
   Megaphone,
   Menu,
   MessageSquareText,
-  Package,
   Phone,
   ShieldCheck,
   Sparkles,

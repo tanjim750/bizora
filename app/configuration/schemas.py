@@ -1,6 +1,5 @@
 """Typed configuration contracts. No expressions, executable imports, or raw secrets."""
 import json
-import re
 from copy import deepcopy
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError

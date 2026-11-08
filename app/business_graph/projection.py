@@ -386,7 +386,6 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
                     nodes_updated += 1
 
         # 2. Project edges for all active relationships
-        now = timezone.now()
         rels = models.BusinessRelationship.objects.filter(
             business_id=business_id,
             rule_key__in=SUPPORTED_RELATIONSHIP_RULES.keys(),

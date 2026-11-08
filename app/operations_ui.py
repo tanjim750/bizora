@@ -8,7 +8,6 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
 from django.views.decorators.http import require_POST
 from app import models as m, domain_views as api
 from app.domains import data, identity, operations, projections

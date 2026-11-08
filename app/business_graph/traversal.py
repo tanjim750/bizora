@@ -29,15 +29,11 @@ from typing import Any
 import datetime
 
 from django.db.models import Q
-from django.utils import timezone
 
 from app import models
 from app.business_graph.projection import (
-    GraphCrossBusinessError,
     GraphScopeError,
     GraphValidationError,
-    SUPPORTED_ENTITY_MODELS,
-    SUPPORTED_RELATIONSHIP_RULES,
 )
 
 

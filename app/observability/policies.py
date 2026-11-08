@@ -49,7 +49,6 @@ def provider_health(rows, min_samples=3, min_connections=2, error_ratio=0.25, la
     count = len(eligible)
     connections = len({r['connection_id'] for r in eligible})
     failed = sum(r['outcome'] in {'PROVIDER_ERROR', 'TIMEOUT', 'CONNECTIVITY_ERROR'} for r in eligible)
-    ratio = failed / count if count else None
     latencies = [r['latency_ms'] for r in eligible if r.get('latency_ms') is not None]
     average = sum(latencies) / len(latencies) if latencies else None
     return classify_provider(count, connections, failed, sum(r['outcome'] == 'RATE_LIMIT' for r in eligible),

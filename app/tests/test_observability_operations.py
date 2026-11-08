@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from app.integrations.payloads import capture_payload
-from app.models import (FailedRecord, IntegrationError, IntegrationPayload, IntegrationSyncLog,
+from app.models import (FailedRecord, IntegrationPayload, IntegrationSyncLog,
                         MonitoringPolicy, OperationAttempt, Product, ProductExternalReference,
                         SourceFreshness, WebhookObservation)
 from app.tests.observability_helpers import NOW, observe, setup_businesses

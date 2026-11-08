@@ -29,7 +29,6 @@ export default function ResourceList({
   query = {},
   path,
   children,
-  canWrite = false,
 }) {
   const rows = Array.isArray(data) ? data : data?.results || []
   const count = Array.isArray(data) ? data.length : (data?.count ?? rows.length)

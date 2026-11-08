@@ -6,10 +6,10 @@ from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 
 from app.models import (AiRecommendation, AiRecommendationEvidence, BusinessFact, BusinessIssueEvidence,
-                        BusinessRelationship, Customer, GraphEdge, GraphNode, KnowledgeChunk, KnowledgeDocument,
+                        GraphEdge, GraphNode, KnowledgeChunk, KnowledgeDocument,
                         KnowledgeSource, MonitoringConfigurationRevision, Order, SourceFreshness)
 from app.tests.observability_helpers import NOW
-from app.tests.overview_helpers import END, START, issue, metric, setup_overview, snapshot
+from app.tests.overview_helpers import START, issue, metric, setup_overview, snapshot
 
 
 @patch('app.overview.views.timezone.now', return_value=NOW)

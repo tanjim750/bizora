@@ -4,12 +4,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.utils import timezone
 from app import models as m
 from app.domains.common import create, DomainError, authorize
-from app.domains.data import ingest, transition
+from app.domains.data import ingest
 from app.domains.mock_transport import MockCommerceTransport
-from app.domains import identity, operations, projections
+from app.domains import identity, operations
 
 
 class Command(BaseCommand):

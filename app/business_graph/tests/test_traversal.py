@@ -11,7 +11,6 @@ Verifies:
 """
 
 from decimal import Decimal
-import datetime
 
 from django.test import TestCase
 from django.utils import timezone
@@ -20,7 +19,6 @@ from app import models
 from app.business_graph import (
     GraphFilter,
     GraphScopeError,
-    GraphValidationError,
     find_paths,
     get_neighbors,
     project_business_graph,
@@ -253,7 +251,7 @@ class GraphTraversalTests(TestCase):
             updated_at=self.now,
         )
 
-        r1 = models.BusinessRelationship.objects.create(
+        models.BusinessRelationship.objects.create(
             business=self.biz_a,
             source_entity_type="CONVERSATION",
             source_entity_id=conv.pk,
@@ -265,7 +263,7 @@ class GraphTraversalTests(TestCase):
             created_at=self.now,
             updated_at=self.now,
         )
-        r2 = models.BusinessRelationship.objects.create(
+        models.BusinessRelationship.objects.create(
             business=self.biz_a,
             source_entity_type="CONVERSATION",
             source_entity_id=conv.pk,

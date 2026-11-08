@@ -8,7 +8,7 @@ from django.db import transaction
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from app.integrations.payloads import capture_payload
-from app.models import (Business, BusinessAccess, FailedRecord, IntegrationConnection, IntegrationError,
+from app.models import (Business, BusinessAccess, IntegrationConnection, IntegrationError,
                         IntegrationSource, IntegrationSyncLog, MockExpectedResult, MockScenario,
                         MockScenarioEvent, Order, SourceFreshness)
 from .operations import execute_operation

@@ -7,7 +7,7 @@ import { businessApiPath } from '@/lib/catalog'
 import { fieldValue, recordTitle, statusText } from '@/lib/format'
 import { StatusBadge } from './DataTable'
 
-function ReviewForm({ path, idField, id, decisions, label, detail }) {
+function ReviewForm({ path, idField, id, decisions, detail }) {
   const router = useRouter()
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')

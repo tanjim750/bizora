@@ -6,7 +6,7 @@ from django.test import TestCase
 from rest_framework.test import APITestCase
 
 from app.integrations.payloads import capture_payload
-from app.models import (BusinessAccess, BusinessIssue, FailedRecord, IntegrationError, IntegrationSyncLog,
+from app.models import (BusinessAccess, BusinessIssue, FailedRecord, IntegrationError,
                         MonitoringPolicy, Product, SourceFreshness, WebhookObservation)
 from app.observability.services import publish_after_commit, record_observation
 from app.tests.observability_helpers import NOW, observe, setup_businesses
