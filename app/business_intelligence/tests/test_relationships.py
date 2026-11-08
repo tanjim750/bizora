@@ -537,10 +537,10 @@ class RelationshipTests(TestCase):
             with self.subTest(phase="create", failing_call=fail_at):
                 calls, observed = [], {}
 
-                def flaky_create(*args, **kwargs):
-                    calls.append(kwargs["rule_key"])
-                    if len(calls) == fail_at:
-                        observed.update(observe())
+                def flaky_create(*args, _calls=calls, _fail_at=fail_at, _observed=observed, **kwargs):
+                    _calls.append(kwargs["rule_key"])
+                    if len(_calls) == _fail_at:
+                        _observed.update(observe())
                         raise IntegrityError("simulated unique tuple race")
                     return real_create(*args, **kwargs)
 

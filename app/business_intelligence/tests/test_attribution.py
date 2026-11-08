@@ -22,6 +22,7 @@ from app.business_intelligence import metrics, relationships
 
 
 D = Decimal
+DEFAULT_CONFIDENCE = D("1.0")
 START = datetime(2026, 10, 1, tzinfo=timezone.utc)
 END = START + timedelta(days=14)
 WINDOW = timedelta(days=30)
@@ -77,7 +78,7 @@ class AttributionTestCase(TestCase):
         )
 
     def relationship(self, name, source_id, target_id, *, business=None, valid_to=None,
-                      relationship_source="DETERMINISTIC", confidence=D("1.0")):
+                      relationship_source="DETERMINISTIC", confidence=DEFAULT_CONFIDENCE):
         rule = relationships.RULES[name]
         return models.BusinessRelationship.objects.create(
             business=business or self.a, source_entity_type=rule.source_type,

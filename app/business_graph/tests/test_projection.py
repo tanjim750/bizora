@@ -11,7 +11,7 @@ Tests verify:
 - Full scoped graph projection.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
@@ -19,9 +19,9 @@ from django.test import TestCase
 from app import models
 from app.business_graph import projection as subject
 
-
 D = Decimal
-NOW = datetime.now(timezone.utc)
+DEFAULT_CONFIDENCE = D("1.0000")
+NOW = datetime.now(UTC)
 PAST = NOW - timedelta(days=7)
 FUTURE = NOW + timedelta(days=7)
 
@@ -72,7 +72,7 @@ class GraphProjectionTestCase(TestCase):
         target_type="ORDER",
         target_id=None,
         rel_type="PLACED_ORDER",
-        confidence=D("1.0000"),
+        confidence=DEFAULT_CONFIDENCE,
         source="DETERMINISTIC",
         valid_from=None,
         valid_to=None,

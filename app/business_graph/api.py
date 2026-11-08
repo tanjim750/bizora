@@ -14,7 +14,7 @@ Key properties:
    - Graph rebuild execution
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 import datetime
 
@@ -65,7 +65,7 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
     if min_conf_raw is not None and min_conf_raw != "":
         try:
             min_confidence = Decimal(str(min_conf_raw))
-        except Exception:
+        except (InvalidOperation, TypeError, ValueError):
             pass
 
     status_val = get_fn("status") or None

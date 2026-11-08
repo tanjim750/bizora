@@ -253,8 +253,8 @@ def ingest(business, actor, name, raw, key, occurred_at=None, connection_id=None
             location = data.get('location')
             require(isinstance(location, dict) and set(location) <= {'latitude', 'longitude', 'label'}, 'INVALID_LOCATION', 'Use latitude, longitude and optional label.')
             require('label' not in location or isinstance(location['label'], str) and len(location['label']) <= 255, 'INVALID_LOCATION', 'Location label must be text up to 255 characters.')
-            for key, low, high in [('latitude', -90, 90), ('longitude', -180, 180)]:
-                value = location.get(key)
+            for coord_key, low, high in [('latitude', -90, 90), ('longitude', -180, 180)]:
+                value = location.get(coord_key)
                 require(isinstance(value, (int, float)) and not isinstance(value, bool) and Decimal(str(value)).is_finite() and low <= value <= high, 'INVALID_LOCATION', 'Coordinates are invalid.')
         else:
             require(not data.get('location'), 'INVALID_LOCATION', 'Location belongs to LOCATION messages.')
