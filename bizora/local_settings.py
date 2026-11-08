@@ -7,6 +7,7 @@ os.environ.setdefault('SECRET_KEY', os.environ.get('DJANGO_SECRET_KEY') or secre
 os.environ.setdefault('DEBUG', '1' if os.environ.get('DJANGO_DEBUG', '1') == '1' else '0')
 
 from .settings import *  # noqa: F403
+from .settings import BASE_DIR, REST_FRAMEWORK
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or secrets.token_urlsafe(48)
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'

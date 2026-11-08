@@ -115,8 +115,8 @@ class SupportTestCase(TestCase):
 
     def test_conversation_volume_and_tenant_isolation(self):
         # 2 conversations in scope for shop-a
-        c1 = self.conversation(started_at=START + timedelta(hours=1), channel="WHATSAPP")
-        c2 = self.conversation(started_at=START + timedelta(hours=2), channel="MESSENGER")
+        self.conversation(started_at=START + timedelta(hours=1), channel="WHATSAPP")
+        self.conversation(started_at=START + timedelta(hours=2), channel="MESSENGER")
 
         # 1 conversation outside period (before)
         self.conversation(started_at=START - timedelta(hours=1))
@@ -296,7 +296,7 @@ class SupportTestCase(TestCase):
     def test_priority_distribution_and_performance(self):
         # 1 URGENT, 2 HIGH, 1 NORMAL
         t_res = START + timedelta(seconds=120)
-        c_urgent = self.conversation(started_at=START, priority="URGENT", status="RESOLVED", resolved_at=t_res)
+        self.conversation(started_at=START, priority="URGENT", status="RESOLVED", resolved_at=t_res)
         self.conversation(started_at=START, priority="HIGH", status="OPEN")
         self.conversation(started_at=START, priority="HIGH", status="OPEN")
         self.conversation(started_at=START, priority="NORMAL", status="OPEN")
@@ -330,7 +330,7 @@ class SupportTestCase(TestCase):
 
     def test_handover_and_escalation_analysis(self):
         # Conv 1: ai_handover_state = 'HANDOVER_TO_HUMAN' -> escalated!
-        c1 = self.conversation(started_at=START, ai_handover_state="HANDOVER_TO_HUMAN")
+        self.conversation(started_at=START, ai_handover_state="HANDOVER_TO_HUMAN")
 
         # Conv 2: assignment AI followed by assignment AGENT -> escalated!
         c2 = self.conversation(started_at=START)
@@ -374,8 +374,8 @@ class SupportTestCase(TestCase):
         )
 
         # 2 conversations for Rahim (repeat contact)
-        c1 = self.conversation(customer=cust, started_at=START, status="RESOLVED", resolved_at=START + timedelta(minutes=10))
-        c2 = self.conversation(customer=cust, started_at=START + timedelta(days=1), status="OPEN")
+        self.conversation(customer=cust, started_at=START, status="RESOLVED", resolved_at=START + timedelta(minutes=10))
+        self.conversation(customer=cust, started_at=START + timedelta(days=1), status="OPEN")
 
         summary = subject.analyze_customer_support_history(
             business_id=self.a.pk,
@@ -411,7 +411,7 @@ class SupportTestCase(TestCase):
         )
 
         # Conversation 2 linked via source_metadata
-        c2 = self.conversation(customer=cust, started_at=START + timedelta(hours=1), source_metadata={"order_id": ord1.pk})
+        self.conversation(customer=cust, started_at=START + timedelta(hours=1), source_metadata={"order_id": ord1.pk})
 
         trends = subject.analyze_support_issue_trends(
             business_id=self.a.pk,

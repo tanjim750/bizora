@@ -149,7 +149,7 @@ class FirstAndLastTouchAttributionTests(AttributionTestCase):
         # Session 1: Day 1 with Spring_Sale campaign
         s1 = self.session(customer=customer, when=START + timedelta(days=1), utm_campaign="Spring_Sale")
         # Session 2: Day 3 without campaign
-        s2 = self.session(customer=customer, when=START + timedelta(days=3))
+        self.session(customer=customer, when=START + timedelta(days=3))
         # Session 3: Day 5 with Retargeting_Ads campaign
         s3 = self.session(customer=customer, when=START + timedelta(days=5), utm_campaign="Retargeting_Ads")
         self.relationship("campaign_session", camp1.pk, s1.pk)
@@ -195,7 +195,7 @@ class FirstAndLastTouchAttributionTests(AttributionTestCase):
     def test_lookback_window_boundary_excludes_older_touchpoints(self):
         customer = self.customer()
         # Session on day 1 (9 days before order)
-        s_old = self.session(customer=customer, when=START + timedelta(days=1))
+        self.session(customer=customer, when=START + timedelta(days=1))
         # Session on day 8 (2 days before order)
         s_recent = self.session(customer=customer, when=START + timedelta(days=8))
         # Order on day 10
@@ -312,8 +312,8 @@ class MultiOrderAndSummaryTests(AttributionTestCase):
 
         s1 = self.session(customer=customer, when=START + timedelta(days=1), utm_campaign="Summer_Kickoff")
         self.relationship("campaign_session", camp.pk, s1.pk)
-        order1 = self.order(customer=customer, when=START + timedelta(days=2), total="100.00", currency="BDT")
-        order2 = self.order(customer=customer, when=START + timedelta(days=4), total="150.00", currency="BDT")
+        self.order(customer=customer, when=START + timedelta(days=2), total="100.00", currency="BDT")
+        self.order(customer=customer, when=START + timedelta(days=4), total="150.00", currency="BDT")
 
         summary = subject.attribute_orders(
             business_id=self.a.pk, period_type="CUSTOM", period_start=START, period_end=END,

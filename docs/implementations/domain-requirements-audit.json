@@ -5782,7 +5782,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -5855,7 +5855,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -5928,7 +5928,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6001,7 +6001,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6074,7 +6074,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6147,7 +6147,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6220,7 +6220,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6293,7 +6293,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6366,7 +6366,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6439,7 +6439,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6512,7 +6512,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6585,7 +6585,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6658,7 +6658,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -6731,7 +6731,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "JourneyView",
-          "line": 290
+          "line": 289
         },
         {
           "path": "app/domains/identity.py",
@@ -13025,7 +13025,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13113,7 +13113,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13201,7 +13201,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13289,7 +13289,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13377,7 +13377,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13465,7 +13465,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13553,7 +13553,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "IdentityView",
-          "line": 170
+          "line": 169
         },
         {
           "path": "app/domains/merge.py",
@@ -13646,17 +13646,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -13744,17 +13744,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -13842,17 +13842,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -13940,17 +13940,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14038,17 +14038,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14136,17 +14136,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14234,17 +14234,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14337,17 +14337,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14440,17 +14440,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14543,17 +14543,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14646,17 +14646,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14749,17 +14749,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14852,17 +14852,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -14955,17 +14955,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15058,17 +15058,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15161,17 +15161,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15264,17 +15264,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15367,17 +15367,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15475,17 +15475,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15583,17 +15583,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15691,17 +15691,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15799,17 +15799,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -15907,17 +15907,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16015,17 +16015,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16123,17 +16123,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16231,17 +16231,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16339,17 +16339,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16447,17 +16447,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16555,17 +16555,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16658,17 +16658,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16761,17 +16761,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16864,17 +16864,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -16967,17 +16967,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17070,17 +17070,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17173,17 +17173,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17276,17 +17276,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17379,17 +17379,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17482,17 +17482,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17585,17 +17585,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17683,17 +17683,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17776,17 +17776,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17869,17 +17869,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -17962,17 +17962,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18055,17 +18055,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18148,17 +18148,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18241,17 +18241,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18334,17 +18334,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18417,7 +18417,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -18432,17 +18432,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18515,7 +18515,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -18530,17 +18530,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18613,7 +18613,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -18628,17 +18628,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18711,7 +18711,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -18726,17 +18726,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18809,7 +18809,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -18824,17 +18824,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -18907,7 +18907,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -18922,17 +18922,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19005,7 +19005,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -19020,17 +19020,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19103,7 +19103,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -19118,17 +19118,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19201,7 +19201,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "ResourceList",
-          "line": 59
+          "line": 58
         },
         {
           "path": "app/domains/projections.py",
@@ -19216,17 +19216,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19299,22 +19299,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19387,22 +19387,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19475,22 +19475,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19563,22 +19563,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19651,22 +19651,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19739,22 +19739,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19827,22 +19827,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -19915,22 +19915,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "SupportQueueView",
-          "line": 129
+          "line": 128
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20008,22 +20008,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20106,22 +20106,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20204,22 +20204,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20302,22 +20302,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20400,22 +20400,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20498,22 +20498,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20596,22 +20596,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20694,22 +20694,22 @@
         {
           "path": "app/domain_views.py",
           "symbol": "AssignmentView",
-          "line": 156
+          "line": 155
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20797,17 +20797,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20895,17 +20895,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -20993,17 +20993,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21091,17 +21091,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21189,17 +21189,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21287,17 +21287,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21385,17 +21385,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21483,17 +21483,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21586,17 +21586,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21694,17 +21694,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21802,17 +21802,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -21910,17 +21910,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22018,17 +22018,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22126,17 +22126,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22234,17 +22234,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22342,17 +22342,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22450,17 +22450,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22558,17 +22558,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22651,7 +22651,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -22661,17 +22661,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22749,7 +22749,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -22759,17 +22759,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22847,7 +22847,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -22857,17 +22857,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -22945,7 +22945,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -22955,17 +22955,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23043,7 +23043,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23053,17 +23053,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23141,7 +23141,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23151,17 +23151,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23239,7 +23239,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23249,17 +23249,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23337,7 +23337,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23347,17 +23347,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23435,7 +23435,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23445,17 +23445,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23533,7 +23533,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23543,17 +23543,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23631,7 +23631,7 @@
         {
           "path": "app/domain_views.py",
           "symbol": "WebsitePerformanceView",
-          "line": 242
+          "line": 241
         },
         {
           "path": "app/domains/projections.py",
@@ -23641,17 +23641,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23744,17 +23744,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23847,17 +23847,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -23950,17 +23950,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24053,17 +24053,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24156,17 +24156,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24259,17 +24259,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24362,17 +24362,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24465,17 +24465,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24568,17 +24568,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24671,17 +24671,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24774,17 +24774,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24872,17 +24872,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -24975,17 +24975,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25078,17 +25078,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25181,17 +25181,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25284,17 +25284,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25387,17 +25387,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25490,17 +25490,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25593,17 +25593,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25696,17 +25696,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25799,17 +25799,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -25902,17 +25902,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",
@@ -26005,17 +26005,17 @@
         {
           "path": "app/operations_ui.py",
           "symbol": "section",
-          "line": 98
+          "line": 97
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "detail",
-          "line": 188
+          "line": 187
         },
         {
           "path": "app/operations_ui.py",
           "symbol": "command",
-          "line": 199
+          "line": 198
         },
         {
           "path": "app/domains/boundaries.py",

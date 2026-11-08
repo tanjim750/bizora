@@ -118,7 +118,7 @@ class CampaignTests(TestCase):
         self.metric(c, spend=D("100"))
         customer = self.customer()
         session = self.session(customer, START + timedelta(days=1))
-        order = self.order(customer, START + timedelta(days=2), amount="300")
+        self.order(customer, START + timedelta(days=2), amount="300")
         rel = self.relation("campaign_session", c.pk, session.pk)
         row = self.analyze().performances[0]
         self.assertEqual(row.attributed_orders, 1)
