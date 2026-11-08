@@ -2,9 +2,10 @@ import { notFound, redirect } from 'next/navigation'
 import AppShell from '@/components/AppShell'
 import Overview from '@/components/Overview'
 import ResourceList, { MoreResources } from '@/components/ResourceList'
-import { DataSections, DataTable, StatusBadge } from '@/components/DataTable'
+import { DataSections, StatusBadge } from '@/components/DataTable'
 import { ActionReview, IdentityReview } from '@/components/ReviewForms'
 import IdentityTools from '@/components/IdentityTools'
+import IdentityEvidence from '@/components/IdentityEvidence'
 import ContractTools from '@/components/ContractTools'
 import ProductAssessment from '@/components/ProductAssessment'
 import { AssistantWorkspace } from '@/components/AdvisoryTools'
@@ -78,7 +79,6 @@ export default async function SectionPage({ params, searchParams }) {
   } else if (sectionKey === 'contracts') {
     content = <ContractTools business={business} />
   } else if (sectionKey === 'identity') {
-    const names = ['Canonical identities', 'External identities', 'Identity links', 'Identity history']
     content = (
       <>
         <IdentityReview
@@ -87,18 +87,7 @@ export default async function SectionPage({ params, searchParams }) {
           candidates={extra?.ok ? extra.data : null}
         />
         <IdentityTools businessId={businessId} />
-        {identityLists?.map(
-          (item, index) =>
-            item.ok && (
-              <section className="surface" key={names[index]}>
-                <div className="section-header">
-                  <h2>{names[index]}</h2>
-                  <span className="count-chip">{item.data?.count ?? 0}</span>
-                </div>
-                <DataTable rows={item.data?.results || []} businessId={businessId} resource="identity" />
-              </section>
-            ),
-        )}
+        <IdentityEvidence lists={identityLists || []} />
       </>
     )
   } else if (sectionKey === 'website-performance') {
@@ -130,7 +119,7 @@ export default async function SectionPage({ params, searchParams }) {
           }
         />
         {sectionKey === 'products' && WRITER_ROLES.has(business.role) && (
-          <ProductAssessment businessId={businessId} />
+          <ProductAssessment businessId={businessId} role={business.role} />
         )}
         <MoreResources businessId={businessId} />
       </>

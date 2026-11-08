@@ -107,26 +107,16 @@ function descriptors(resource, record) {
       },
     )
   if (resource === 'products')
-    entries.push(
-      {
-        key: 'add-variant',
-        title: 'Add variant',
-        fields: [
-          text('name', 'Name', true),
-          text('sku', 'SKU', true),
-          text('price', 'Price'),
-          text('inventory_quantity', 'Inventory quantity'),
-        ],
-      },
-      {
-        key: 'map-product',
-        title: 'Map reviewed source',
-        fields: [
-          text('connection_id', 'Connection ID', true),
-          text('external_product_id', 'External product ID', true),
-        ],
-      },
-    )
+    entries.push({
+      key: 'add-variant',
+      title: 'Add variant',
+      fields: [
+        text('name', 'Name', true),
+        text('sku', 'SKU', true),
+        text('price', 'Price'),
+        text('inventory_quantity', 'Inventory quantity'),
+      ],
+    })
   if (resource === 'variants')
     entries.push({
       key: 'variant',
@@ -206,12 +196,6 @@ async function executeCommand(businessId, resource, record, key, values) {
     })
   if (key === 'read') return clientApi(`${base}messages/${id}/read`, { method: 'POST', body: {} })
   if (key === 'add-variant') return ingest('variants', { product: id, ...values }, {})
-  if (key === 'map-product')
-    return ingest(
-      'product-references',
-      { product: id, external_product_id: values.external_product_id },
-      { connection_id: Number(values.connection_id) },
-    )
   if (key === 'variant')
     return clientApi(`${base}variants/${id}/update`, {
       method: 'POST',
