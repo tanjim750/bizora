@@ -28,10 +28,35 @@ class DatabaseConfigurationTests(SimpleTestCase):
     def test_postgresql_environment_is_used_explicitly(self):
         config = self.settings(BIZORA_DATABASE='postgresql', POSTGRES_DB='observability_test',
                                POSTGRES_USER='test', POSTGRES_PASSWORD='test-only', POSTGRES_HOST='127.0.0.1',
-                               POSTGRES_PORT='55439', POSTGRES_TEST_TEMPLATE='template1')
+                               POSTGRES_PORT='55439', POSTGRES_TEST_TEMPLATE='template1', DATABASE_URL='')
         self.assertEqual(config['ENGINE'], 'django.db.backends.postgresql')
         self.assertEqual(config['NAME'], 'observability_test')
         self.assertEqual(config['PORT'], '55439')
+
+    def test_database_url_configures_postgresql_with_encoded_credentials_and_ssl(self):
+        config = self.settings(BIZORA_DATABASE='postgresql',
+                               DATABASE_URL='postgresql://postgres.project:p%40ss%23word@pooler.example.com:5432/postgres?sslmode=require',
+                               POSTGRES_HOST='127.0.0.1')
+        self.assertEqual(config['ENGINE'], 'django.db.backends.postgresql')
+        self.assertEqual(config['NAME'], 'postgres')
+        self.assertEqual(config['USER'], 'postgres.project')
+        self.assertEqual(config['PASSWORD'], 'p@ss#word')
+        self.assertEqual(config['HOST'], 'pooler.example.com')
+        self.assertEqual(config['PORT'], '5432')
+        self.assertEqual(config['OPTIONS']['sslmode'], 'require')
+
+    def test_database_url_selects_postgresql_without_backend_override(self):
+        config = self.settings(BIZORA_DATABASE='', DATABASE_URL='postgres://test:secret@localhost:5432/bizora')
+        self.assertEqual(config['ENGINE'], 'django.db.backends.postgresql')
+        self.assertEqual(config['NAME'], 'bizora')
+
+    def test_postgresql_parameters_apply_sslmode(self):
+        config = self.settings(BIZORA_DATABASE='postgresql', DATABASE_URL='', POSTGRES_SSLMODE='require')
+        self.assertEqual(config['OPTIONS']['sslmode'], 'require')
+
+    def test_explicit_sqlite_ignores_database_url(self):
+        config = self.settings(BIZORA_DATABASE='sqlite', DATABASE_URL='postgresql://test:secret@localhost/test')
+        self.assertEqual(config['ENGINE'], 'django.db.backends.sqlite3')
 
 
 class ObservabilityMigrationTests(TransactionTestCase):
