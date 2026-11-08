@@ -162,6 +162,19 @@ class IntelligenceAPITests(TestCase):
         self.assertEqual(resp_patch.data["status"], "EXPIRED")
         self.assertIsNotNone(resp_patch.data["valid_to"])
 
+        # GET detail of expired fact remains retrievable by owner
+        resp_get_expired = view_detail(req_get, fact_id=fact_id)
+        self.assertEqual(resp_get_expired.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_get_expired.data["status"], "EXPIRED")
+
+        # GET facts with status=EXPIRED filter retrieves the expired fact
+        req_list_expired = self.factory.get("/facts/?status=EXPIRED")
+        req_list_expired.business = self.biz_a
+        resp_list_expired = view_facts(req_list_expired)
+        self.assertEqual(resp_list_expired.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_list_expired.data["total_count"], 1)
+        self.assertEqual(resp_list_expired.data["results"][0]["id"], fact_id)
+
     def test_issues_crud_and_lifecycle_api(self):
         # POST create issue
         view_issues = api.IssueListCreateView.as_view()

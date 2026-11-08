@@ -7,10 +7,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import ValidationError
 from app import models as m
 from app.domains.common import DomainError, require, authorize
-from app.domains.registry import scoped, resource
+from app.domains.registry import scoped
 from app.domains import data, identity, operations, projections
 from app.serializers.domains import EventInputSerializer, TransitionSerializer, AssignmentSerializer, HandoverSerializer, IdentityCommandSerializer
 

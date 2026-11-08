@@ -135,7 +135,7 @@ def detail(business, name, pk):
 
 def financial_timeline(business, customer_id=None, order_id=None):
     """A chronology of stored financial activity, not revenue recognition or BI."""
-    from django.db.models import Value, CharField, F
+    from django.db.models import Value, CharField
     from django.db.models.functions import Coalesce
     payments, refunds = scoped('payments', business), scoped('refunds', business)
     if customer_id is not None:

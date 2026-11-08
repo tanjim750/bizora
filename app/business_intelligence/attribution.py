@@ -602,7 +602,7 @@ def attribute_orders(*, business_id, period_type, period_start, period_end, look
 def attribute_campaigns(*, business_id, period_type, period_start, period_end,
                         lookback_window=None, model=MODEL_LAST_TOUCH, precomputed_attributions=None):
     """BI §4: Summarize attributed conversions and revenue by marketing campaign."""
-    scope = _period(business_id, period_type, period_start, period_end)
+    _period(business_id, period_type, period_start, period_end)
     if model not in SUPPORTED_MODELS:
         raise AttributionValidationError(f"model must be one of {sorted(SUPPORTED_MODELS)}.")
     lookback_delta = _parse_lookback(lookback_window)
@@ -673,7 +673,7 @@ def attribute_customer_journey(*, business_id, customer_id, lookback_window=None
     lookback_delta = _parse_lookback(lookback_window)
 
     try:
-        customer = models.Customer.objects.get(pk=customer_id, business_id=business_id)
+        models.Customer.objects.get(pk=customer_id, business_id=business_id)
     except models.Customer.DoesNotExist:
         raise AttributionScopeError(f"Customer {customer_id} does not exist for business {business_id}.")
 
