@@ -1,6 +1,11 @@
 """Isolated local/test configuration; never opens the checked-in database."""
 import os
+import secrets
 from pathlib import Path
+
+os.environ.setdefault('SECRET_KEY', os.environ.get('DJANGO_SECRET_KEY') or secrets.token_urlsafe(48))
+os.environ.setdefault('DEBUG', '1' if os.environ.get('DJANGO_DEBUG', '1') == '1' else '0')
+
 from .settings import *  # noqa: F403
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or __import__('secrets').token_urlsafe(48)
