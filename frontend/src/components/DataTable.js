@@ -42,40 +42,50 @@ export function DataTable({ rows = [], businessId, resource, emptyMessage = 'No 
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => {
-            const target =
-              resource === 'financial-timeline'
-                ? { PAYMENT: 'payments', REFUND: 'refunds' }[row.entity_kind]
-                : resource
-            const linkable = RESOURCES.includes(target) && row.id
-            return (
-              <tr key={row.id ?? index}>
-                <td>
-                  <strong>{recordTitle(row)}</strong>
-                  <small>
-                    {row.customer_id
-                      ? `Customer #${row.customer_id}`
-                      : row.business_id
-                        ? `Business #${row.business_id}`
-                        : 'Stored record'}
-                  </small>
-                </td>
-                <td>
-                  <StatusBadge text={statusText(row)} />
-                </td>
-                <td className="tabular">#{row.id ?? '—'}</td>
-                <td>
-                  {linkable ? (
-                    <Link className="row-link" href={detailPath(businessId, target, row.id)}>
-                      Open record
-                    </Link>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </td>
-              </tr>
-            )
-          })}
+          {(() => {
+            const seen = new Set()
+            return rows.map((row, index) => {
+              const target =
+                resource === 'financial-timeline'
+                  ? { PAYMENT: 'payments', REFUND: 'refunds' }[row.entity_kind]
+                  : resource
+              const linkable = RESOURCES.includes(target) && row.id
+              const prefix = target || row.entity_kind || resource || 'row'
+              const idPart = row.id !== undefined && row.id !== null ? row.id : `idx-${index}`
+              let rowKey = `${prefix}-${idPart}`
+              if (seen.has(rowKey)) {
+                rowKey = `${rowKey}-${index}`
+              }
+              seen.add(rowKey)
+              return (
+                <tr key={rowKey}>
+                  <td>
+                    <strong>{recordTitle(row)}</strong>
+                    <small>
+                      {row.customer_id
+                        ? `Customer #${row.customer_id}`
+                        : row.business_id
+                          ? `Business #${row.business_id}`
+                          : 'Stored record'}
+                    </small>
+                  </td>
+                  <td>
+                    <StatusBadge text={statusText(row)} />
+                  </td>
+                  <td className="tabular">#{row.id ?? '—'}</td>
+                  <td>
+                    {linkable ? (
+                      <Link className="row-link" href={detailPath(businessId, target, row.id)}>
+                        Open record
+                      </Link>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })
+          })()}
           {rows.length === 0 && (
             <tr>
               <td colSpan="4">
