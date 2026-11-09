@@ -5,10 +5,10 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 ## Tasks
 | Task | Status | Commit | What changed and how it was verified |
 |---|---|---|---|
-| T0-1 Preflight | done | | Dev servers verified running with dev-status.sh, demo sign-in endpoint enabled and tested on /login. |
-| T0-2 Baseline | done | | Gates verified (18/18 tests pass, format:check clean, build passes). Baseline report in ~/bizora-shots/baseline noted (288 issues). |
-| T0-3 Remove hard-coded password | done | | Replaced hard-coded password in scripts/take_browser_tour.js with BIZORA_E2E_* env vars. git grep DemoPass returns empty. |
-| T1-1 Tokens | todo | | |
+| T0-1 Preflight | done | 14a21ce | Dev servers verified running with dev-status.sh, demo sign-in endpoint enabled and tested on /login. |
+| T0-2 Baseline | done | 14a21ce | Gates verified (18/18 tests pass, format:check clean, build passes). Baseline report in ~/bizora-shots/baseline noted (288 issues). |
+| T0-3 Remove hard-coded password | done | 14a21ce | Replaced hard-coded password in scripts/take_browser_tour.js with BIZORA_E2E_* env vars. git grep DemoPass returns empty. |
+| T1-1 Tokens | done | | Copied tokens.css to src/styles/tokens.css, split globals.css into base.css, layout.css, components.css. Raw colour grep clean. verify-pages login+overview clean (0 issues, shot in ~/bizora-shots/t1-1-tokens). |
 | T1-2 Fonts and type scale | todo | | |
 | T1-3 Themes | todo | | |
 | T1-4 Native controls and states | todo | | |
