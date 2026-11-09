@@ -32,7 +32,13 @@ const bengali = Noto_Sans_Bengali({
   display: 'swap',
 })
 
-export const metadata = { title: 'Bizora Operations', description: 'Business operations workspace' }
+export const metadata = {
+  title: {
+    default: 'Bizora Operations',
+    template: '%s · Bizora',
+  },
+  description: 'Enterprise operations and business intelligence platform',
+}
 
 export default function RootLayout({ children }) {
   return (
