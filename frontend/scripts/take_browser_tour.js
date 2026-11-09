@@ -2,8 +2,17 @@ import { chromium } from '@playwright/test'
 import path from 'path'
 
 const SCREENSHOT_DIR = process.env.BIZORA_SCREENSHOT_DIR || path.join(process.cwd(), 'screenshots')
+const E2E_USERNAME = process.env.BIZORA_E2E_USERNAME
+const E2E_PASSWORD = process.env.BIZORA_E2E_PASSWORD
 
 async function run() {
+  if (!E2E_USERNAME || !E2E_PASSWORD) {
+    console.error(
+      'Missing required environment variables: BIZORA_E2E_USERNAME and BIZORA_E2E_PASSWORD must be set.',
+    )
+    process.exit(1)
+  }
+
   console.log('Starting Playwright web test tour...')
   const browser = await chromium.launch({
     executablePath: '/usr/bin/google-chrome',
@@ -25,8 +34,8 @@ async function run() {
 
   // Sign in
   console.log('Signing in...')
-  await page.getByLabel('Username').fill('demo-owner')
-  await page.getByLabel('Password').fill('DemoPass123!')
+  await page.getByLabel('Username').fill(E2E_USERNAME)
+  await page.getByLabel('Password').fill(E2E_PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // 2. Workspace Page

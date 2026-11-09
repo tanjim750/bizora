@@ -1,13 +1,13 @@
 # Progress log (the agent updates this after every task)
 
-Branch: `frontend-overhaul` · Started: not yet · Status key: todo, doing, done, blocked, skipped. Add the commit hash and how you verified each task.
+Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status key: todo, doing, done, blocked, skipped. Add the commit hash and how you verified each task.
 
 ## Tasks
 | Task | Status | Commit | What changed and how it was verified |
 |---|---|---|---|
-| T0-1 Preflight | todo | | |
-| T0-2 Baseline | todo | | |
-| T0-3 Remove hard-coded password | todo | | |
+| T0-1 Preflight | done | | Dev servers verified running with dev-status.sh, demo sign-in endpoint enabled and tested on /login. |
+| T0-2 Baseline | done | | Gates verified (18/18 tests pass, format:check clean, build passes). Baseline report in ~/bizora-shots/baseline noted (288 issues). |
+| T0-3 Remove hard-coded password | done | | Replaced hard-coded password in scripts/take_browser_tour.js with BIZORA_E2E_* env vars. git grep DemoPass returns empty. |
 | T1-1 Tokens | todo | | |
 | T1-2 Fonts and type scale | todo | | |
 | T1-3 Themes | todo | | |
@@ -43,7 +43,12 @@ Branch: `frontend-overhaul` · Started: not yet · Status key: todo, doing, done
 | T7-1 Final report | todo | | |
 
 ## Phase summaries
-(none yet; write 3 to 5 lines at the end of each phase: what works, what is rough, what is next)
+### Phase 0: Baseline and safety (completed 2026-11-09 23:19)
+- Both dev servers verified OK (backend at 127.0.0.1:8000, frontend at 127.0.0.1:3000).
+- Frontend tests 18/18 pass, format:check clean, production build green.
+- Demo sign-in verified enabled on `/login`.
+- Hard-coded password in `scripts/take_browser_tour.js` removed; now fails cleanly if `BIZORA_E2E_*` is unset.
+- Next: Phase 1 (tokens, fonts, themes, native controls).
 
 ## Decisions I took
 (one line each, with the reason)
