@@ -1,54 +1,54 @@
 # Frontend overhaul: start here
 
-Prepared on 2026-11-09 by Claude (acting as the planning "brain") for an unattended overnight run by another AI agent (written for Google Antigravity; plain files, so any agent tool can use them). Nothing here has been pushed; all work is local.
+Prepared on 2026-11-09 by Claude (the planning "brain") for an unattended overnight run by another AI agent, written for **Google Antigravity** (the owner's machine has the Antigravity IDE). Everything is plain files, so another agent tool can use them too. Nothing here has been pushed; all work is local.
 
 ## What this is
-The teammate's first Next.js frontend (`frontend/`) works and shows real backend data, but it is a generic record browser with a teal hard-coded look and several bugs. This folder holds everything an agent needs to turn it into a professional, hackathon-ready product UI in 7 to 8 hours,
-without touching the backend, and to write down every backend problem it finds, per domain.
+The teammate's first Next.js frontend (`frontend/`) works and shows real backend data, but it is a generic record browser with a teal hard-coded look and several bugs. This folder holds everything an agent needs to turn it into a professional, hackathon-ready product UI in 7 to 8 hours, without touching the backend, and to write down every backend problem it finds, per domain.
 
 | File | Purpose |
 |---|---|
-| `MASTER_PROMPT.md` | The full brief for the agent (read first) |
+| `START_PROMPT.md` | **The prompts to paste** (with `/goal`, with the skill, or plain) |
+| `MASTER_PROMPT.md` | The full brief for the agent |
 | `PLAN.md` | Phases and tasks with acceptance criteria and time boxes |
 | `PROGRESS.md` | The agent's live log (empty checklist now) |
 | `AUDIT_REPORT.md` | What is wrong: colours, contrast, bugs with file and line, structure, route mapping, test breakage, risks |
 | `DESIGN_SPEC.md` | What to build: foundations, nine workspaces, tabs, page content, endpoints, states |
+| `AGENT_TEAM.md` | What Antigravity supports (checked against its docs) and how the reviewer team is used |
 | `assets/tokens.css` | Design tokens (neutral slate plus one cobalt primary, light and dark, contrast-verified; spacing, radius, shadow, type, motion) |
-| `scripts/` | `dev-setup.sh`, `dev-backend.sh`, `dev-frontend.sh`, `dev-status.sh` to run the app locally |
-| `../backend-issues/` | Per-domain backend problem lists (13 domains, plus a summary and the decisions the backend owner must make) |
-| `../frontend.md`, `../frontend-api-reference.md` | Design system, modules and verified API contracts (stack sections of `frontend.md` describing Vite are superseded, see decisions) |
+| `scripts/` | `dev-setup.sh`, `dev-backend.sh`, `dev-frontend.sh`, `dev-status.sh` (run the app) and `verify-pages.mjs` (screenshots plus automatic checks, no Chrome needed) |
+| `../backend-issues/` | Per-domain backend problem lists (13 domains, summary and owner decisions) |
+| `../frontend.md`, `../frontend-api-reference.md` | Design system, modules and verified API contracts (the Vite stack sections of `frontend.md` are superseded, see decisions) |
 
-Private agent configuration (not in git): `.agents/rules/` (always-on rules), `.agents/workflows/` (slash commands: `/system-architect`, `/start-servers`, `/page-overhaul`, `/verify`, `/checkpoint`, `/design-review`, `/code-review`, `/security-review`, `/architect-review`, `/backend-issue`),
-`.agents/skills/` (ECC accessibility, design-system and React skills copied from the local plugin, plus `bizora-*` skills), `.agent` (a link to `.agents`, because sources disagree on the spelling), and a root `GEMINI.md` pointer.
+Private agent configuration (not in git): `.agents/rules/` (4 always-on rules), `.agents/skills/` (our `/system-architect`, `/verify`, `/checkpoint`, `/page-overhaul`, `/design-review`, `/code-review`, `/security-review`, `/architect-review`, `/backend-issue`, `/start-servers`; ECC accessibility, design-system and React skills copied from the local plugin; `bizora-*` skills),
+`.agents/workflows/` (the same commands as legacy workflows), `.agents/agents/` (four read-only reviewer subagents), and a root `GEMINI.md` pointer. Before the overhaul starts, the **baseline** screenshots and automatic-check report of the old UI are in `~/bizora-shots/baseline/` (do not delete).
 
-## How to start the night (5 minutes)
-1. Open the repository folder `/home/hamza/Documents/UniverSity/bizora` in Antigravity. Check the bottom-left branch is `frontend-overhaul` (otherwise `git switch frontend-overhaul`).
-2. Check that the rules were picked up: Antigravity's rules list should show `00-project-law`, `10-frontend-engineering`, `20-design-system`, `30-reports-and-progress` as always on. If it does not, open each file and set it to Always On in the UI (the location of these settings was not verified).
-3. Start the servers in two terminals (or let the agent run `/start-servers`): `bash docs/frontend-overhaul/scripts/dev-backend.sh` and `bash docs/frontend-overhaul/scripts/dev-frontend.sh`. First time on a new machine run `bash docs/frontend-overhaul/scripts/dev-setup.sh` once.
-   Open http://localhost:3000/login and use **Continue as demo owner** to check it works.
-4. Choose the strongest model available and an agent mode that lets it run terminal commands and the browser on localhost without asking each time. Commits are safe: a local hook blocks every push and any commit outside `frontend/` and `docs/` on this branch.
-5. In the agent panel type **`/system-architect start`**. If workflows are not listed, paste this instead:
+## Before you sleep (10 minutes; this decides whether the night works)
+1. **Branch and servers.** Open `/home/hamza/Documents/UniverSity/bizora` in Antigravity. Bottom-left must say `frontend-overhaul` (else `git switch frontend-overhaul`). Servers: `bash docs/frontend-overhaul/scripts/dev-status.sh` should show both OK; if not, start them in two Antigravity terminals: `bash docs/frontend-overhaul/scripts/dev-backend.sh` and `bash docs/frontend-overhaul/scripts/dev-frontend.sh` (first time on a new machine: `bash docs/frontend-overhaul/scripts/dev-setup.sh`). The servers Claude started die when this Claude session closes.
+2. **Rules loaded?** In Antigravity's Customizations panel (agent side panel) you should see the four rules and the skills. If a rule is missing, open the file and check its first line is `trigger: always_on`.
+3. **No approval prompts.** An approval nobody answers stops the whole night, and `/goal` does not remove approvals. In Antigravity's settings set terminal command execution to a mode that does not ask (the docs name the presets Auto, which needs a personal account and a recent version, and Turbo, which has no restrictions; the IDE's exact setting names were not verifiable), and add **deny** rules for `command(git push)` and `command(rm -rf)` (rule format `action(target)`, deny beats allow).
+   The local git hooks block every push and any commit outside `frontend/` and `docs/` anyway. Test it: ask the agent "run `bash docs/frontend-overhaul/scripts/dev-status.sh` and `cd frontend && npm test`" and confirm it runs without asking. If the status script says DOWN while the servers are up, the terminal sandbox is blocking localhost: allow `command(curl)`, `command(node)`, `command(npm)`, `command(bash)` or switch the mode.
+4. **Page-check script works from the agent's terminal:** ask it to run `node docs/frontend-overhaul/scripts/verify-pages.mjs --label preflight /login` and check it prints a table. (The `/browser` subagent needs Google Chrome; only Brave is installed here, so this script is the main verification tool.)
+5. **Browser rule (only if you want `/browser` anyway):** Settings, Browser, Browser Actuation Rules: add an Allow rule for `localhost`.
+6. **Keep the computer awake for 10 hours** (the agent stops when the machine sleeps): run in a terminal and leave it open: `systemd-inhibit --what=idle:sleep:handle-lid-switch --who=bizora --why="overnight agent" sleep 36000`. Plug in the charger, keep Antigravity open, and check your plan's credit or usage limits cover a long run (not verifiable from here).
+7. **Paste a prompt from `START_PROMPT.md`** (type `/` first: `/goal` if listed, else `/system-architect start`, else the plain prompt).
+8. After 30 to 60 minutes glance at `docs/frontend-overhaul/PROGRESS.md` and `git log --oneline -5`: tasks should be getting checked off with commits. If nothing moves, it is probably waiting for an approval; answer it and re-check the settings in step 3.
 
-```text
-You are the system architect for the Bizora frontend overhaul. Read, in this order: .agents/rules/* (always on), docs/frontend-overhaul/MASTER_PROMPT.md, PLAN.md, PROGRESS.md, AUDIT_REPORT.md, DESIGN_SPEC.md.
-Then work through PLAN.md phase by phase for about 7 to 8 hours: build each task properly, verify it in the browser (desktop and 390 px, light and dark) and with npm test, npm run format:check and npm run build, update PROGRESS.md, and make one local commit per task on branch frontend-overhaul.
-Frontend only (frontend/**, docs/frontend-overhaul/**, docs/backend-issues/**). Never touch the backend: write backend problems into docs/backend-issues/<domain>.md. NEVER git push. Never open .env files or print secrets. Do not stop after one or two hours; when finished write docs/frontend-overhaul/FINAL_REPORT.md.
-```
-
-To resume after an interruption: **`/system-architect continue`** (it reads `PROGRESS.md` and carries on).
+## Which Antigravity features are confirmed (details in `AGENT_TEAM.md`)
+Confirmed in the docs for the IDE: rules (`.agents/rules`, `AGENTS.md`, `GEMINI.md`), skills (`.agents/skills`), legacy workflows (`.agents/workflows`), parallel conversations. Documented only for the App and CLI, not stated for the IDE: custom subagents, `/goal`, `/boost`, `/teamwork`. Everything was written so the night works without them (the same review passes exist as skills).
 
 ## In the morning
-Read `PROGRESS.md` and `FINAL_REPORT.md`; `git log --oneline main..frontend-overhaul`; run the app and click through; skim `docs/backend-issues/README.md` for the new counts. If you are happy and want to publish the branch yourself:
-`ALLOW_PUSH=1 git push origin frontend-overhaul` (the local guard blocks pushes unless you set that variable for one command). Nothing has been pushed by the agents or by Claude.
+Read `PROGRESS.md` and `FINAL_REPORT.md`; `git log --oneline main..frontend-overhaul`; compare `~/bizora-shots/baseline/` with the final screenshots; run the app and click through; skim `docs/backend-issues/README.md` for the new counts. To publish the branch yourself:
+`ALLOW_PUSH=1 git push origin frontend-overhaul` (a local guard blocks pushes unless you set that variable for one command). Nothing has been pushed by Claude or the agents.
 
 ## Decisions already made (do not re-open them overnight)
-- **D-F20** Adopt the teammate's Next.js 16 (JavaScript) app; the earlier Vite plan in `docs/frontend.md` section 1 is retired (keep the proxy, session and CSRF design).
+- **D-F20** Adopt the teammate's Next.js 16 (JavaScript) app; the Vite plan in `docs/frontend.md` section 1 is retired (keep the proxy, session and CSRF design).
 - **D-F21** Nine workspace pages with tabs as path segments, drawers and dialogs, grouped navigation; old routes redirect.
 - **D-F22** Neutral slate plus one cobalt primary, light and dark themes, tokens only; non-colour tokens added after the audit.
-- **D-F23** A development-only demo sign-in exists (`/api/demo-login`); it is off in production builds and off unless the server environment enables it.
-- **D-F24** The backend is frozen for this effort; problems are documented in `docs/backend-issues/`. Local hooks block pushes and out-of-scope commits.
+- **D-F23** A development-only demo sign-in exists (`/api/demo-login`); off in production builds and unless the server environment enables it.
+- **D-F24** The backend is frozen for this effort; problems go to `docs/backend-issues/`. Local hooks block pushes and out-of-scope commits.
 - **D-F25** A sample-data (SIMULATED) mode for the Intelligence page is optional, off by default, never mixed with real rows.
+- **D-F26** The page-check script (`verify-pages.mjs`) is the primary verification tool because Chrome is not installed; reviewers are read-only subagents with skill fallbacks.
 
 ## What was verified and what was not
-Verified: all contrast numbers in `AUDIT_REPORT.md` (computed), the token file (31 pairs per theme, chart palette colour-blind checked), both servers running with the demo login, the 18 unit tests, the local guards (push blocked, backend commit blocked), the file locations used by the agent
-(rules and workflows were written to `.agents/`). Not verified: how Antigravity discovers `.agents/` versus `.agent/` (sources disagree; both exist), the exact Antigravity settings names, that any workflow runs as written, the Playwright suite (it skips without credentials and needs Chrome), PostgreSQL behaviour, and any visual check of sections I did not open (the code audit covers them).
+Verified: all contrast numbers (computed), the token file (31 pairs per theme, chart palette colour-blind checked), both servers with the demo login, 18 unit tests, the local guards (push blocked, backend commit blocked), the page-check script (ran on real pages and found a real issue, the login brand dot at 1.42:1), the rule file sizes against the documented limits, and the folder names and formats against the official docs.
+Not verified: that the Antigravity IDE lists the reviewer subagents or `/goal`; the IDE's exact permission setting names; that any skill runs exactly as written; whether the terminal sandbox allows localhost; the Playwright e2e suite (skips without credentials; no Chrome); PostgreSQL behaviour; your plan's usage limits.

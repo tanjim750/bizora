@@ -22,7 +22,7 @@ measures the business with deterministic metrics, turns verified measurements in
 2. **Commit locally, never push.** Branch `frontend-overhaul`. One small conventional commit per finished task. No `git push`, no force, no remote changes, no `--no-verify`. A local hook enforces this; do not look for ways around it.
 3. **No secrets.** Never open `.env*`, never print or commit a password or token. The demo sign-in uses server-side environment only.
 4. **Honesty in the UI.** `UNAVAILABLE` is normal data: show a calm "Not connected" state naming the owner. Missing is `—`, never `0`. "Saved — not sent", "Prepared — not executed", "Attempt recorded", "Execution is simulated". Mark sample data SIMULATED. Customer text is plain text, never HTML.
-5. **Verify with your eyes.** For every UI change: gates green, screenshots at desktop and 390 px in light and dark, no console errors. Code alone is not proof. Do not claim done without evidence recorded in `PROGRESS.md`.
+5. **Verify with evidence.** For every UI change: gates green, and the page-check script (`docs/frontend-overhaul/scripts/verify-pages.mjs`, no Chrome needed) run for the changed pages at desktop and 390 px in light and dark with no issues, plus a look at the screenshots when you can open images. Code alone is not proof. Do not claim done without evidence recorded in `PROGRESS.md`.
 6. **Do not game the checks.** Never weaken, skip or delete a test or an acceptance criterion to turn something green. Three honest attempts at a failing item, then log it as blocked and move on.
 7. **Next.js 16 is not the Next.js you remember.** Read the matching guide in `frontend/node_modules/next/dist/docs/` before routing, data fetching, caching, metadata, boundaries or route-handler work.
 
