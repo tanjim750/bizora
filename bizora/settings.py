@@ -106,49 +106,53 @@ WSGI_APPLICATION = "bizora.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('BIZORA_DB_PATH', BASE_DIR / 'db.sqlite3'),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.environ.get("BIZORA_DB_PATH", BASE_DIR / "db.sqlite3"),
     }
 }
 
-database_url = os.environ.get('DATABASE_URL', '').strip()
-database_backend = os.environ.get('BIZORA_DATABASE') or ('postgresql' if database_url else 'sqlite')
-if database_backend == 'postgresql':
+database_url = os.environ.get("DATABASE_URL", "").strip()
+database_backend = os.environ.get("BIZORA_DATABASE") or ("postgresql" if database_url else "sqlite")
+if database_backend == "postgresql":
     if database_url:
         try:
             parsed_database_url = urlsplit(database_url)
-            if parsed_database_url.scheme not in ('postgres', 'postgresql') or not parsed_database_url.hostname or not parsed_database_url.path.strip('/'):
-                raise ValueError('A PostgreSQL URL needs a host and database name.')
+            if (
+                parsed_database_url.scheme not in ("postgres", "postgresql")
+                or not parsed_database_url.hostname
+                or not parsed_database_url.path.strip("/")
+            ):
+                raise ValueError("A PostgreSQL URL needs a host and database name.")
             database_config = {
-                'NAME': unquote(parsed_database_url.path.lstrip('/')),
-                'USER': unquote(parsed_database_url.username or ''),
-                'PASSWORD': unquote(parsed_database_url.password or ''),
-                'HOST': parsed_database_url.hostname,
-                'PORT': str(parsed_database_url.port or 5432),
-                'OPTIONS': dict(parse_qsl(parsed_database_url.query)),
+                "NAME": unquote(parsed_database_url.path.lstrip("/")),
+                "USER": unquote(parsed_database_url.username or ""),
+                "PASSWORD": unquote(parsed_database_url.password or ""),
+                "HOST": parsed_database_url.hostname,
+                "PORT": str(parsed_database_url.port or 5432),
+                "OPTIONS": dict(parse_qsl(parsed_database_url.query)),
             }
         except ValueError as exc:
-            raise ImproperlyConfigured('DATABASE_URL must be a valid PostgreSQL connection URI.') from exc
+            raise ImproperlyConfigured("DATABASE_URL must be a valid PostgreSQL connection URI.") from exc
     else:
         database_config = {
-            'NAME': os.environ.get('POSTGRES_DB', 'bizora'),
-            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
-            'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-            'OPTIONS': {},
+            "NAME": os.environ.get("POSTGRES_DB", "bizora"),
+            "USER": os.environ.get("POSTGRES_USER", "postgres"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "OPTIONS": {},
         }
-    sslmode = os.environ.get('POSTGRES_SSLMODE')
-    if sslmode and 'sslmode' not in database_config['OPTIONS']:
-        database_config['OPTIONS']['sslmode'] = sslmode
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
+    sslmode = os.environ.get("POSTGRES_SSLMODE")
+    if sslmode and "sslmode" not in database_config["OPTIONS"]:
+        database_config["OPTIONS"]["sslmode"] = sslmode
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
         **database_config,
-        'TEST': {'TEMPLATE': os.environ.get('POSTGRES_TEST_TEMPLATE', 'template1')},
+        "TEST": {"TEMPLATE": os.environ.get("POSTGRES_TEST_TEMPLATE", "template1")},
     }
-elif database_backend != 'sqlite':
-    raise ImproperlyConfigured('BIZORA_DATABASE must be sqlite or postgresql.')
+elif database_backend != "sqlite":
+    raise ImproperlyConfigured("BIZORA_DATABASE must be sqlite or postgresql.")
 
 
 # Password validation
@@ -185,8 +189,8 @@ USE_TZ = True
 # In production, session and CSRF cookies must only cross HTTPS.
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
 
 # Static files (CSS, JavaScript, Images)
@@ -202,7 +206,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
-    ] + (["rest_framework.renderers.BrowsableAPIRenderer"] if DEBUG else []),
+    ]
+    + (["rest_framework.renderers.BrowsableAPIRenderer"] if DEBUG else []),
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.FormParser",
@@ -230,4 +235,3 @@ if sys.version_info >= (3, 14):
 
     _ctx.BaseContext.__copy__ = _basecontext_copy
     _ctx.Context.__copy__ = _context_copy
-
