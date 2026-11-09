@@ -27,6 +27,7 @@ test('proxy forwards cookies and CSRF header to the fixed Django origin', async 
       assert.equal(url.pathname, '/api/frontend/login/')
       assert.equal(options.headers.cookie, 'csrftoken=abc')
       assert.equal(options.headers['x-csrftoken'], 'abc')
+      assert.equal(options.headers.origin, url.origin)
       const headers = new Headers({ 'content-type': 'application/json' })
       headers.append('set-cookie', 'sessionid=xyz; Path=/; HttpOnly; SameSite=Lax')
       return new Response('{"authenticated":true}', { status: 200, headers })

@@ -35,6 +35,7 @@ async function proxy(request, context) {
     const value = request.headers.get(name)
     if (value) headers[name] = value
   }
+  if (request.method !== 'GET') headers.origin = destination.origin
   try {
     const upstream = await fetch(destination, {
       method: request.method,

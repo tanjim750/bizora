@@ -39,3 +39,18 @@ class FrontendAuthTests(TestCase):
         body = json.dumps({'username': 'frontend-user', 'password': 'safe-password-123'})
         response = self.client.post('/api/frontend/login/', body, content_type='application/json', HTTP_X_CSRFTOKEN=token)
         self.assertNotIn('Private shop', response.content.decode())
+
+    def test_secure_login_accepts_the_upstream_origin_with_csrf(self):
+        self.client.get('/api/frontend/session/', secure=True)
+        token = self.client.cookies['csrftoken'].value
+        body = json.dumps({'username': 'frontend-user', 'password': 'safe-password-123'})
+        missing_origin = self.client.post(
+            '/api/frontend/login/', body, content_type='application/json',
+            HTTP_X_CSRFTOKEN=token, secure=True,
+        )
+        self.assertEqual(missing_origin.status_code, 403)
+        login = self.client.post(
+            '/api/frontend/login/', body, content_type='application/json',
+            HTTP_X_CSRFTOKEN=token, HTTP_ORIGIN='https://testserver', secure=True,
+        )
+        self.assertEqual(login.status_code, 200)
