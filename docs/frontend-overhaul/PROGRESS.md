@@ -21,8 +21,8 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T3-2 Feedback and status | done | 5a705a8 | Added Banner (info, success, warning, danger, dismissible), StatusChip (exact code mapping, icon + label required), SeverityChip, ConfidenceMeter (accessible meter), Skeleton (calm opacity pulse, zero gradient), EmptyState, UnavailableState ('Not connected' calm layout, owner, reason), SimulatedBadge, KpiTile (tabular numbers, trend, unavailable state), ToastProvider & useToast (ephemeral notifications, aria-live). 39/39 tests pass, format:check clean, build green. |
 | T3-3 Overlays and navigation | done | fc2293d | Added Tabs (path-segment Link and role=tablist modes, active indicator, counts), Drawer (right-sliding, focus trap, Escape, scrim, body scroll lock), Dialog & ConfirmDialog (modal dialogs, danger variant, loading state), Pagination (range '1–25 of 1,284', accessible navigation), FilterBar (search, filter slots, removable pills, clear all), PageHeader (breadcrumbs, h1, actions, badge). 39/39 tests pass, format:check clean, build green. |
 | T3-4 DataTable | done | fccf2ef | Created src/components/ui/DataTable.js with typed columns (text, money, datetime, status, severity, entity, mono, untrusted), sticky header, right-aligned mono numerics, density toggle (compact/default), skeleton rows, empty state, error banner with retry, pagination footer, and row click drawer (?open=res:id). Refactored components/DataTable.js to proxy to UiDataTable and upgraded StatusBadge to StatusChip (icon + label). 39/39 tests pass, format:check clean, build green. |
-| T3-5 Evidence and time | done | pending | Added Timeline (thin guide line, small nodes, status chips, metadata), EvidencePanel (grounding facts, confidence meter, authoritative source bar, safe plain-text stripping), CopyableCode (inline/block modes with clipboard API and feedback). 39/39 tests pass, format:check clean, build green. |
-| T3-6 Gallery | todo | | |
+| T3-5 Evidence and time | done | ede18f7 | Added Timeline (thin guide line, small nodes, status chips, metadata), EvidencePanel (grounding facts, confidence meter, authoritative source bar, safe plain-text stripping), CopyableCode (inline/block modes with clipboard API and feedback). 39/39 tests pass, format:check clean, build green. |
+| T3-6 Gallery | done | [pending] | Created /business/[businessId]/ui-kit developer gallery with interactive controls (theme switch, density toggle, modal triggers, toast triggers, drawer test, and full typed DataTable showcase). Verified across 12 page checks at 1440x900 and 390x844 light/dark with 0 issues. |
 | T4-1 Shared layout and shell | todo | | |
 | T4-2 Boundaries and metadata | todo | | |
 | T4-3 Route skeleton and redirects | todo | | |
@@ -65,6 +65,17 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 - Resource configurations for all 32 resources in `src/lib/domain/resources.js` with verified query param allow-lists, column definitions, search capability split (14 searchable / 18 exact), workspace mapping, and detail view config.
 - All 4 phase reviewers completed (Architect: APPROVE, Design: SHIP, Security: SHIP with SEC-HIGH-1 & SEC-INFO-2 fixed, Code: SHIP with CR-01 to CR-07 fixed). All gates green: 39/39 tests passing, format clean, build clean in 5.1s, 0 page check issues.
 - Next: Phase 3 (Shared UI kit: Form basics, Feedback, Overlays, DataTable, Evidence, and UI Kit gallery).
+
+### Phase 3: Shared UI kit (completed 2026-11-10 00:40)
+- Complete design-token-driven component library in `src/components/ui/` with zero raw color codes and zero heavy external UI libraries:
+  - Form basics: `Button` (sm/md, primary/secondary/ghost/danger, loading spinner), `IconButton`, `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `MoneyField`, `DateTimeField`.
+  - Feedback & Status: `Banner`, `StatusChip` (exact tone mapping with enforced icon and text label), `SeverityChip`, `ConfidenceMeter`, `Skeleton` (opacity pulse, no gradient), `EmptyState`, `UnavailableState` ('Not connected' calm layout with owner and reason), `SimulatedBadge`, `KpiTile`, `ToastProvider` & `useToast`.
+  - Overlays & Navigation: `Tabs` (path-segment Link and role=tablist modes with count badges), `Drawer` (slide-over with focus trap, Esc, scrim, scroll lock), `Dialog` & `ConfirmDialog`, `Pagination` ('1–25 of 1,284'), `FilterBar` (accessible search, filter slots, removable pills), `PageHeader` (breadcrumbs, h1, actions, badges).
+  - Data presentation: `DataTable` with typed column formatters (`text`, `money`, `datetime`, `status`, `severity`, `entity`, `mono`, `untrusted`), sticky header, density toggle (compact/default), skeleton rows, empty state, error retry, and row-click drawer trigger.
+  - Evidence & Audit: `Timeline` (audit thread with status chips), `EvidencePanel` (grounding citations, confidence meter, authoritative source bar), `CopyableCode` (inline/block modes with clipboard API and visual feedback).
+  - Dev gallery: `/business/[businessId]/ui-kit` interactive testbed verifying all components in every state at desktop (1440x900) and mobile (390x844), light and dark.
+- All 4 phase reviewers completed (Architect: APPROVE, Design: SHIP, Security: SHIP, Code: SHIP with FilterBar accessible name resolved). All gates green: 39/39 tests passing, format:check clean, build green, 12 page checks with 0 issues.
+- Next: Phase 4 (Shell, navigation, routes, boundaries: T4-1 to T4-3).
 
 ## Decisions I took
 - Kept `server.js` and `next/headers` completely separate from `src/lib/api/index.js` and `client.js` so client components never trigger Next.js server-only runtime bundler errors.

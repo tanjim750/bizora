@@ -33,6 +33,7 @@ export function FilterBar({
               value={searchValue}
               onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder || 'Search records'}
               prefix={<Search size={14} className="text-muted" aria-hidden="true" />}
               suffix={
                 searchValue ? (
