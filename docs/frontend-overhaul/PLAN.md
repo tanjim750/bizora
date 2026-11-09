@@ -19,7 +19,7 @@ Reasons and evidence for each task are in `AUDIT_REPORT.md`; what to build is in
 
 ## Phase 0: baseline and safety (0:15)
 - **T0-1 Preflight.** Branch `frontend-overhaul`, servers up (`/start-servers`), demo sign-in works. *Done when:* `bash docs/frontend-overhaul/scripts/dev-status.sh` shows both OK and `/login` shows the demo button.
-- **T0-2 Baseline.** Run `npm test`, `npm run format:check`, `npm run build` in `frontend/`; record the results. Save baseline screenshots (desktop and 390 px) of login, workspace, overview, customers, a customer record, orders, inbox, insights, assistant, identity into `/tmp/bizora-shots/baseline/` (outside git). *Done when:* PROGRESS.md lists the gate results and the screenshot folder.
+- **T0-2 Baseline.** Run `npm test`, `npm run format:check`, `npm run build` in `frontend/`; record the results. The baseline screenshots and the automatic check report of the **old** UI already exist in `~/bizora-shots/baseline/` (46 shots plus `report.json`, taken before the overhaul); do not regenerate them, read `report.json` and note the numbers. *Done when:* PROGRESS.md lists the gate results and the baseline folder.
 - **T0-3 Remove the hard-coded password** in `frontend/scripts/take_browser_tour.js` (lines 28-29): read `BIZORA_E2E_USERNAME` and `BIZORA_E2E_PASSWORD` from the environment and fail with a clear message when missing. *Done when:* `git grep -n "DemoPass"` finds nothing in `frontend/`.
 
 ## Phase 1: foundation (1:00)
@@ -72,7 +72,7 @@ real columns and formatted values; no raw JSON, raw ISO date or "Record #id" tit
 - **T6-2 Accessibility.** Keyboard-only pass on every page (Tab order, Escape closes overlays, focus returns, no traps), labels on every control, one `h1` per page, landmarks, a computed contrast check of every colour pair you introduced, reduced-motion check.
 - **T6-3 Tests.** Update the Playwright specs to the new routes and labels (they must still skip cleanly when `BIZORA_E2E_*` is unset, and say so loudly); add unit tests for the API client, formatters, idempotency, resource config, status tones; add a test that TRANSITIONS in the UI match the documented order and payment transitions. Run `python tests/run_full_stack.py` only if `.venv` and Chrome exist; otherwise record that e2e was not run.
 - **T6-4 Reviews.** `/code-review`, `/security-review`, `/architect-review` and a final `/design-review`; fix every critical, high and medium finding.
-- **T6-5 Gates.** `npm test`, `npm run format:check`, `npm run build` all green; `git grep -n "dangerouslySetInnerHTML"` empty; no credential strings in tracked files; `npm audit` result recorded.
+- **T6-5 Gates.** `npm test`, `npm run format:check`, `npm run build` all green; `git grep -n "dangerouslySetInnerHTML"` empty; no credential strings in tracked files; `npm audit` result recorded; `node docs/frontend-overhaul/scripts/verify-pages.mjs --strict --label final --theme light,dark` over every page of the nine workspaces (all tabs) at both sizes reports **0 issues** (or each remaining one is explained in PROGRESS.md).
 
 ## Phase 7: final report (0:20)
 - **T7-1** Write `FINAL_REPORT.md` (per page: before and after, screenshot names; gates; what is still rough; backend issues per domain with counts and the five most important; how to run the app). Update `docs/backend-issues/README.md` counts. Ensure `git status` is clean apart from ignored files and everything is committed locally. **Do not push.**
