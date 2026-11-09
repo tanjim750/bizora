@@ -1,4 +1,11 @@
 /**
- * Backward compatibility shim re-exporting clientApi and error helpers.
+ * Backward compatibility shim re-exporting clientApi, idempotency, and error helpers.
  */
-export { clientApi, errorMessage, ApiError, normalizeError } from './api/index.js'
+export {
+  clientApi,
+  errorMessage,
+  ApiError,
+  normalizeError,
+  newIdempotencyKey,
+  makeExternalId,
+} from './api/index.js'
