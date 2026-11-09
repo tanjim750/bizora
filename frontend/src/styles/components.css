@@ -353,6 +353,349 @@
   font-size: var(--text-table);
 }
 
+/* Banner component */
+.banner-component {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.banner-icon-col {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.banner-content-col {
+  flex: 1 1 auto;
+}
+
+.banner-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.banner-body {
+  font-size: var(--text-body);
+}
+
+.banner-action-col {
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+
+.banner-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: inherit;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-close-btn:hover {
+  opacity: 1;
+}
+
+/* Status & Severity Chips */
+.status-chip,
+.severity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-chip-icon,
+.severity-icon {
+  flex-shrink: 0;
+}
+
+.badge-sm {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+/* Confidence Meter */
+.confidence-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.confidence-track {
+  width: 64px;
+  height: 6px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+.meter-high .confidence-fill {
+  background: var(--color-success);
+}
+
+.meter-medium .confidence-fill {
+  background: var(--color-warning);
+}
+
+.meter-low .confidence-fill {
+  background: var(--color-danger);
+}
+
+.confidence-value {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+/* Skeleton */
+.skeleton {
+  display: block;
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-circle {
+  border-radius: var(--radius-full);
+}
+
+/* Empty State extras */
+.empty-state-icon-wrap {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: center;
+}
+
+.empty-state-action {
+  margin-top: var(--space-4);
+}
+
+/* Unavailable State extras */
+.unavailable-icon-wrap {
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: center;
+}
+
+.unavailable-reason {
+  margin: var(--space-2) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body);
+}
+
+.unavailable-meta {
+  margin-top: var(--space-3);
+}
+
+.unavailable-owner-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+.unavailable-action {
+  margin-top: var(--space-4);
+}
+
+/* Simulated Badge */
+.simulated-badge {
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: help;
+}
+
+/* KPI Tile extras */
+.kpi-tile .kpi-value {
+  font-size: var(--text-kpi-hero);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.trend-up {
+  color: var(--color-success-text);
+}
+
+.trend-down {
+  color: var(--color-danger-text);
+}
+
+.trend-neutral {
+  color: var(--color-text-muted);
+}
+
+.kpi-unavailable-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.kpi-unavailable-tag {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.kpi-unavailable-reason {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+.kpi-unavailable-owner {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Toast container & items */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-e3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+.toast-info {
+  border-left: 4px solid var(--color-info);
+}
+
+.toast-success {
+  border-left: 4px solid var(--color-success);
+}
+
+.toast-warning {
+  border-left: 4px solid var(--color-warning);
+}
+
+.toast-danger {
+  border-left: 4px solid var(--color-danger);
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.toast-info .toast-icon {
+  color: var(--color-info);
+}
+
+.toast-success .toast-icon {
+  color: var(--color-success);
+}
+
+.toast-warning .toast-icon {
+  color: var(--color-warning);
+}
+
+.toast-danger .toast-icon {
+  color: var(--color-danger);
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  display: block;
+  font-size: var(--text-body);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.toast-message {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-close:hover {
+  color: var(--color-text);
+}
+
 /* Metrics and KPIs */
 .metric-grid {
   display: grid;
