@@ -12,8 +12,8 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T1-2 Fonts and type scale | done | cd67d98 | Configured next/font/google in layout.js for Plus Jakarta Sans, Inter, JetBrains Mono, Noto Sans Bengali. Verified Inter computed font on body, 0 issues on verify-pages. |
 | T1-3 Themes | done | 911b382 | Added ThemeToggle with lucide Sun/Moon, inline head script to avoid flash, data-theme styling and color-scheme. Verified across 8 checks (1440 & 390, light & dark) with 0 issues in ~/bizora-shots/t1-3-themes. |
 | T1-4 Native controls and states | done | 571396a | Styled input, select, option, textarea, checkbox, radio, date inputs, focus ring (2px/2px offset with nav token on rail), table hover, smooth-scroll reduced-motion guard. Verified 8 checks with 0 issues in ~/bizora-shots/t1-4-controls. |
-| T1-5 Foundation review | done | | Ran all four reviewers (design-reviewer: SHIP, architect-reviewer: APPROVE, code-reviewer: SHIP, security-reviewer: SHIP). Fixed F-01 (theme-toggle inline styles -> tokens in components.css) and F-02 (localStorage try/catch guard). npm test 18/18, format:check clean, build passed. |
-| T2-1 Formatters | todo | | |
+| T1-5 Foundation review | done | 84f3608 | Ran all four reviewers (design-reviewer: SHIP, architect-reviewer: APPROVE, code-reviewer: SHIP, security-reviewer: SHIP). Fixed F-01 (theme-toggle inline styles -> tokens in components.css) and F-02 (localStorage try/catch guard). npm test 18/18, format:check clean, build passed. |
+| T2-1 Formatters | done | | Created src/lib/format/ (money, dateTime, date, duration, percent, enumLabel, stripUntrusted, statusTone, statusText) with format.js shim. Fixed INACTIVE -> neutral tone. Added 8 new unit tests (26/26 tests green). |
 | T2-2 API client | todo | | |
 | T2-3 Safe writes | todo | | |
 | T2-4 Resource config | todo | | |
