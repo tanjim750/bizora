@@ -29,3 +29,6 @@ export { ConfirmDialog } from './ConfirmDialog.js'
 export { Pagination } from './Pagination.js'
 export { FilterBar } from './FilterBar.js'
 export { PageHeader } from './PageHeader.js'
+
+// Data presentation (T3-4)
+export { DataTable } from './DataTable.js'
