@@ -32,3 +32,8 @@ export { PageHeader } from './PageHeader.js'
 
 // Data presentation (T3-4)
 export { DataTable } from './DataTable.js'
+
+// Evidence and time (T3-5)
+export { Timeline } from './Timeline.js'
+export { EvidencePanel } from './EvidencePanel.js'
+export { CopyableCode } from './CopyableCode.js'
