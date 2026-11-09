@@ -20,3 +20,12 @@ export { UnavailableState } from './UnavailableState.js'
 export { SimulatedBadge } from './SimulatedBadge.js'
 export { KpiTile } from './KpiTile.js'
 export { ToastProvider, useToast } from './Toast.js'
+
+// Overlays and navigation (T3-3)
+export { Tabs } from './Tabs.js'
+export { Drawer } from './Drawer.js'
+export { Dialog } from './Dialog.js'
+export { ConfirmDialog } from './ConfirmDialog.js'
+export { Pagination } from './Pagination.js'
+export { FilterBar } from './FilterBar.js'
+export { PageHeader } from './PageHeader.js'
