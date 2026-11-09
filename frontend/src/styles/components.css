@@ -142,6 +142,15 @@
   background: var(--color-surface-subtle);
 }
 
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  min-width: var(--hit-min);
+  min-height: var(--hit-min);
+}
+
 .button-sm {
   min-height: 28px;
   padding: 2px var(--space-2);

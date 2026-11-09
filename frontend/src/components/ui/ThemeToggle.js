@@ -14,7 +14,12 @@ export function ThemeToggle({ className = '' }) {
       setTheme(active)
       return
     }
-    const saved = localStorage.getItem('bizora_theme')
+    let saved = null
+    try {
+      saved = localStorage.getItem('bizora_theme')
+    } catch {
+      // Ignore security errors in restricted environments
+    }
     if (saved === 'dark' || saved === 'light') {
       setTheme(saved)
       document.documentElement.setAttribute('data-theme', saved)
@@ -46,14 +51,6 @@ export function ThemeToggle({ className = '' }) {
       aria-label={label}
       title={label}
       className={`theme-toggle button button-ghost ${className}`.trim()}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '6px',
-        minWidth: '36px',
-        minHeight: '36px',
-      }}
     >
       {mounted && isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
     </button>
