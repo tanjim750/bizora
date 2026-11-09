@@ -1,11 +1,14 @@
 import Link from 'next/link'
 import { detailPath, RESOURCES } from '@/lib/catalog'
 import { fieldValue, label, recordTitle, statusText, statusTone } from '@/lib/format'
+import { StatusChip } from './ui/StatusChip'
+import { DataTable as UiDataTable } from './ui/DataTable'
 
 const HIDDEN_FIELDS = new Set(['source_metadata', 'config', 'recording_url'])
 
-export function StatusBadge({ text }) {
-  return <span className={`badge badge-${statusTone(text)}`}>{text}</span>
+export function StatusBadge({ text, status }) {
+  const s = text || status
+  return <StatusChip status={s} />
 }
 
 export function FieldGrid({ data }) {
@@ -29,76 +32,23 @@ export function FieldGrid({ data }) {
   )
 }
 
-export function DataTable({ rows = [], businessId, resource, emptyMessage = 'No records found.' }) {
+export function DataTable({
+  rows = [],
+  businessId,
+  resource,
+  emptyMessage = 'No records found.',
+  columns,
+  ...props
+}) {
   return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Record</th>
-            <th scope="col">State</th>
-            <th scope="col">Reference</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(() => {
-            const seen = new Set()
-            return rows.map((row, index) => {
-              const target =
-                resource === 'financial-timeline'
-                  ? { PAYMENT: 'payments', REFUND: 'refunds' }[row.entity_kind]
-                  : resource
-              const linkable = RESOURCES.includes(target) && row.id
-              const prefix = target || row.entity_kind || resource || 'row'
-              const idPart = row.id !== undefined && row.id !== null ? row.id : `idx-${index}`
-              let rowKey = `${prefix}-${idPart}`
-              if (seen.has(rowKey)) {
-                rowKey = `${rowKey}-${index}`
-              }
-              seen.add(rowKey)
-              return (
-                <tr key={rowKey}>
-                  <td>
-                    <strong>{recordTitle(row)}</strong>
-                    <small>
-                      {row.customer_id
-                        ? `Customer #${row.customer_id}`
-                        : row.business_id
-                          ? `Business #${row.business_id}`
-                          : 'Stored record'}
-                    </small>
-                  </td>
-                  <td>
-                    <StatusBadge text={statusText(row)} />
-                  </td>
-                  <td className="tabular">#{row.id ?? '—'}</td>
-                  <td>
-                    {linkable ? (
-                      <Link className="row-link" href={detailPath(businessId, target, row.id)}>
-                        Open record
-                      </Link>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              )
-            })
-          })()}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan="4">
-                <div className="empty-state">
-                  <strong>{emptyMessage}</strong>
-                  <p>New authorized records will appear here.</p>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+    <UiDataTable
+      rows={rows}
+      businessId={businessId}
+      resource={resource}
+      columns={columns}
+      emptyTitle={emptyMessage}
+      {...props}
+    />
   )
 }
 
