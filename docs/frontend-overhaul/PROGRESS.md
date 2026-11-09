@@ -52,4 +52,8 @@ Branch: `frontend-overhaul` · Started: not yet · Status key: todo, doing, done
 (none yet)
 
 ## Baseline results (T0-2)
-(gate results and screenshot folder)
+Old UI, measured by Claude on 2026-11-09 before any overhaul work: `~/bizora-shots/baseline/` (46 screenshots plus `report.json`; 23 pages at 1440x900 and 390x844, light theme, signed in as the demo owner).
+- Automatic check totals (`verify-pages.mjs`): **288 issues in 46 checks** = 286 raw-content (raw JSON blocks, raw ISO timestamps, "Record #id" titles) + 2 contrast (the `/login` brand dot, 1.42:1). Console errors 0, failed requests 0, horizontal overflow 0, wrong h1 count 0, unnamed controls 0, invisible focus stops 0.
+- Worst pages (both sizes added): identity 110, customer record 84, website-performance 30, business insights 26, configuration 12; inbox, queue and observability 4 each.
+- Gates: `npm test` 18 of 18 pass and `npm run format:check` clean (run after the demo sign-in commit); `npm run build` was not run by Claude; the Playwright suite was not run (no Chrome, and it skips without credentials).
+- Reading this: the old UI already passes most structural checks, so the target is the **raw** column going to 0 and the contrast issue fixed, plus everything the script cannot measure (hierarchy, density, theme, consistency), which only the design review can judge.
