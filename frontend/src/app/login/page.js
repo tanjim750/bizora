@@ -9,6 +9,15 @@ export default function LoginPage() {
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [demoEnabled, setDemoEnabled] = useState(false)
+
+  useEffect(() => {
+    // The demo sign-in exists only in local development with an explicit server-side flag.
+    fetch('/api/demo-login', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => setDemoEnabled(Boolean(data?.enabled)))
+      .catch(() => setDemoEnabled(false))
+  }, [])
 
   useEffect(() => {
     clientApi('frontend/session')
@@ -35,6 +44,25 @@ export default function LoginPage() {
           password: form.get('password'),
         },
       })
+      router.replace('/workspace')
+      router.refresh()
+    } catch (failure) {
+      setError(failure.message)
+      setBusy(false)
+    }
+  }
+
+  async function demoSignIn() {
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch('/api/demo-login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.detail || `Request failed (${response.status})`)
       router.replace('/workspace')
       router.refresh()
     } catch (failure) {
@@ -73,6 +101,19 @@ export default function LoginPage() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        {demoEnabled && (
+          <>
+            <button
+              className="button button-secondary demo-login"
+              type="button"
+              onClick={demoSignIn}
+              disabled={!ready || busy}
+            >
+              Continue as demo owner
+            </button>
+            <p className="muted">Development only. Signs in as the local demo user.</p>
+          </>
+        )}
       </main>
     </div>
   )
