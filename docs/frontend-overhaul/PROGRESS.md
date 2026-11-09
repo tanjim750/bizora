@@ -11,8 +11,8 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T1-1 Tokens | done | 4b94009 | Copied tokens.css to src/styles/tokens.css, split globals.css into base.css, layout.css, components.css. Raw colour grep clean. verify-pages login+overview clean (0 issues, shot in ~/bizora-shots/t1-1-tokens). |
 | T1-2 Fonts and type scale | done | cd67d98 | Configured next/font/google in layout.js for Plus Jakarta Sans, Inter, JetBrains Mono, Noto Sans Bengali. Verified Inter computed font on body, 0 issues on verify-pages. |
 | T1-3 Themes | done | 911b382 | Added ThemeToggle with lucide Sun/Moon, inline head script to avoid flash, data-theme styling and color-scheme. Verified across 8 checks (1440 & 390, light & dark) with 0 issues in ~/bizora-shots/t1-3-themes. |
-| T1-4 Native controls and states | done | | Styled input, select, option, textarea, checkbox, radio, date inputs, focus ring (2px/2px offset with nav token on rail), table hover, smooth-scroll reduced-motion guard. Verified 8 checks with 0 issues in ~/bizora-shots/t1-4-controls. |
-| T1-5 Foundation review | todo | | |
+| T1-4 Native controls and states | done | 571396a | Styled input, select, option, textarea, checkbox, radio, date inputs, focus ring (2px/2px offset with nav token on rail), table hover, smooth-scroll reduced-motion guard. Verified 8 checks with 0 issues in ~/bizora-shots/t1-4-controls. |
+| T1-5 Foundation review | done | | Ran all four reviewers (design-reviewer: SHIP, architect-reviewer: APPROVE, code-reviewer: SHIP, security-reviewer: SHIP). Fixed F-01 (theme-toggle inline styles -> tokens in components.css) and F-02 (localStorage try/catch guard). npm test 18/18, format:check clean, build passed. |
 | T2-1 Formatters | todo | | |
 | T2-2 API client | todo | | |
 | T2-3 Safe writes | todo | | |
@@ -49,6 +49,14 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 - Demo sign-in verified enabled on `/login`.
 - Hard-coded password in `scripts/take_browser_tour.js` removed; now fails cleanly if `BIZORA_E2E_*` is unset.
 - Next: Phase 1 (tokens, fonts, themes, native controls).
+
+### Phase 1: Foundation (completed 2026-11-09 23:38)
+- Tokens installed in `src/styles/tokens.css`; `globals.css` cleanly split into `base.css`, `layout.css`, `components.css`. Raw color grep across `frontend/src` clean (0 matches outside `tokens.css`).
+- Fonts loaded via `next/font/google` for Plus Jakarta Sans, Inter, JetBrains Mono, Noto Sans Bengali with zero external CDN requests.
+- Dark theme and ThemeToggle implemented with inline head script preventing flash of unstyled theme.
+- Native controls (select, option, input, textarea, checkbox, radio, date, focus rings, hover, scrollbars) fully styled and verified across 12 page checks (0 contrast, overflow, focus or console issues).
+- All 4 reviewers passed (design, code, security, architect); all findings resolved; gates green (18/18 tests, build 1.7s).
+- Next: Phase 2 (Data layer and safe writes: formatters, API client, idempotency, resource config).
 
 ## Decisions I took
 (one line each, with the reason)
