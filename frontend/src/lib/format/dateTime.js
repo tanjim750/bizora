@@ -111,6 +111,7 @@ export function relativeTime(iso, now = new Date()) {
   if (!d) return '—'
 
   const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000)
+  if (diffSec < 0) return date(iso)
   if (diffSec < 30) return 'just now'
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`

@@ -4,10 +4,12 @@ import {
   money,
   dateTime,
   date,
+  relativeTime,
   duration,
   percent,
   enumLabel,
   stripUntrusted,
+  recordTitle,
   statusTone,
   statusText,
   missing,
@@ -99,4 +101,36 @@ test('statusText produces honest wording per spec', () => {
   assert.equal(statusText({ is_ai_generated: true, status: 'SUGGESTED' }), 'AI suggestion')
   assert.equal(statusText({ status: 'DELIVERED' }), 'Delivered')
   assert.equal(statusText(null), 'Recorded')
+})
+
+test('recordTitle derives human readable titles using domain identifiers', () => {
+  assert.equal(recordTitle({ display_name: 'Acme Corp' }), 'Acme Corp')
+  assert.equal(recordTitle({ name: 'Jane Doe' }), 'Jane Doe')
+  assert.equal(recordTitle({ transaction_reference: 'TXN-98765' }), 'TXN-98765')
+  assert.equal(recordTitle({ external_refund_id: 'REF-12345' }), 'REF-12345')
+  assert.equal(recordTitle({ tag: 'VIP' }), 'VIP')
+  assert.equal(recordTitle({ sku: 'PROD-SKU-1' }), 'PROD-SKU-1')
+  assert.equal(recordTitle({ value: '+8801700000000' }), '+8801700000000')
+  assert.equal(recordTitle({ id: 42 }), 'Record #42')
+  assert.equal(recordTitle(null), 'Record #—')
+})
+
+test('relativeTime handles past, recent, and future dates properly', () => {
+  const now = new Date('2026-11-09T14:32:00Z')
+  // 10s ago
+  assert.equal(relativeTime('2026-11-09T14:31:50Z', now), 'just now')
+  // 5m ago
+  assert.equal(relativeTime('2026-11-09T14:27:00Z', now), '5m ago')
+  // 2h ago
+  assert.equal(relativeTime('2026-11-09T12:32:00Z', now), '2h ago')
+  // Future date (must not be 'just now')
+  const future = '2026-11-10T14:32:00Z'
+  assert.equal(relativeTime(future, now), date(future))
+})
+
+test('stripUntrusted is resilient against case variations and whitespace', () => {
+  assert.equal(
+    stripUntrusted('<UNTRUSTED_CUSTOMER_DATA>  Sensitive message  </UNTRUSTED_CUSTOMER_DATA>'),
+    'Sensitive message',
+  )
 })
