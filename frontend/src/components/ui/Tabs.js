@@ -10,34 +10,38 @@ import { usePathname } from 'next/navigation'
  * and controlled in-page tab switching (role="tablist").
  */
 export function Tabs({
-  items = [],
+  items,
+  tabs,
   activeTab,
+  activeKey,
   onChange,
   ariaLabel = 'Navigation tabs',
   className = '',
   ...props
 }) {
   const pathname = usePathname()
+  const tabList = items || tabs || []
+  const currentActive = activeTab !== undefined ? activeTab : activeKey
 
-  const isLinkTabs = items.some((item) => Boolean(item.href))
+  const isLinkTabs = tabList.some((item) => Boolean(item.href))
 
   if (isLinkTabs) {
     return (
       <nav aria-label={ariaLabel} className={`tabs-nav ${className}`.trim()} {...props}>
         <div className="tabs-list">
-          {items.map((tab) => {
+          {tabList.map((tab) => {
             const isActive =
               tab.isActive !== undefined
                 ? tab.isActive
-                : activeTab !== undefined
-                  ? activeTab === tab.id
+                : currentActive !== undefined
+                  ? currentActive === (tab.id || tab.key)
                   : pathname === tab.href || pathname.startsWith(`${tab.href}/`)
 
             const Icon = tab.icon
 
             return (
               <Link
-                key={tab.id || tab.href}
+                key={tab.id || tab.key || tab.href}
                 href={tab.href}
                 aria-current={isActive ? 'page' : undefined}
                 className={`tab-item ${isActive ? 'is-active' : ''}`}
@@ -58,20 +62,21 @@ export function Tabs({
   return (
     <div role="tablist" aria-label={ariaLabel} className={`tabs-nav ${className}`.trim()} {...props}>
       <div className="tabs-list">
-        {items.map((tab) => {
-          const isActive = activeTab === tab.id
+        {tabList.map((tab) => {
+          const tabId = tab.id || tab.key
+          const isActive = currentActive === tabId
           const Icon = tab.icon
 
           return (
             <button
-              key={tab.id}
+              key={tabId}
               role="tab"
               type="button"
-              id={`tab-${tab.id}`}
+              id={`tab-${tabId}`}
               aria-selected={isActive ? 'true' : 'false'}
-              aria-controls={`tabpanel-${tab.id}`}
+              aria-controls={`tabpanel-${tabId}`}
               tabIndex={isActive ? 0 : -1}
-              onClick={() => onChange && onChange(tab.id)}
+              onClick={() => onChange && onChange(tabId)}
               className={`tab-item ${isActive ? 'is-active' : ''}`}
             >
               {Icon && <Icon className="tab-icon" size={16} aria-hidden="true" />}

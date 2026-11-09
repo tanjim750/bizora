@@ -2,20 +2,25 @@ import Link from 'next/link'
 import { DataTable, StatusBadge } from './DataTable'
 import { businessPath, MANAGER_ROLES } from '@/lib/catalog'
 
-export default function Overview({ business, data, queueCount }) {
+export default function Overview({ business = {}, data, queueCount, hideHeading = false }) {
   const counts = data?.canonical_counts || {}
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <p className="page-context">Business overview</p>
-          <h1>Overview</h1>
-          <p>Stored activity for {business.name}. Counts are all time unless stated otherwise.</p>
+      {!hideHeading && (
+        <div className="page-heading">
+          <div>
+            <p className="page-context">Business overview</p>
+            <h1>Overview</h1>
+            <p>
+              Stored activity for {business?.name || 'this business'}. Counts are all time unless stated
+              otherwise.
+            </p>
+          </div>
+          <span className="count-chip">
+            {business?.currency} · {business?.timezone}
+          </span>
         </div>
-        <span className="count-chip">
-          {business.currency} · {business.timezone}
-        </span>
-      </div>
+      )}
       <div className="metric-grid">
         <section className="metric-card">
           <h2>Revenue</h2>
