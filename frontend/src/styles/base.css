@@ -170,14 +170,28 @@ option {
   color: var(--color-text);
 }
 
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+  color-scheme: inherit;
+  font-family: var(--font-body);
+}
+
 input[type='checkbox'],
 input[type='radio'] {
   accent-color: var(--color-primary);
   min-height: auto;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   margin: 0;
   vertical-align: middle;
+  cursor: pointer;
+}
+
+input[type='checkbox']:disabled,
+input[type='radio']:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 input::placeholder,

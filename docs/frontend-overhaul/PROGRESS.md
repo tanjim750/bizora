@@ -10,8 +10,8 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T0-3 Remove hard-coded password | done | 14a21ce | Replaced hard-coded password in scripts/take_browser_tour.js with BIZORA_E2E_* env vars. git grep DemoPass returns empty. |
 | T1-1 Tokens | done | 4b94009 | Copied tokens.css to src/styles/tokens.css, split globals.css into base.css, layout.css, components.css. Raw colour grep clean. verify-pages login+overview clean (0 issues, shot in ~/bizora-shots/t1-1-tokens). |
 | T1-2 Fonts and type scale | done | cd67d98 | Configured next/font/google in layout.js for Plus Jakarta Sans, Inter, JetBrains Mono, Noto Sans Bengali. Verified Inter computed font on body, 0 issues on verify-pages. |
-| T1-3 Themes | done | | Added ThemeToggle with lucide Sun/Moon, inline head script to avoid flash, data-theme styling and color-scheme. Verified across 8 checks (1440 & 390, light & dark) with 0 issues in ~/bizora-shots/t1-3-themes. |
-| T1-4 Native controls and states | todo | | |
+| T1-3 Themes | done | 911b382 | Added ThemeToggle with lucide Sun/Moon, inline head script to avoid flash, data-theme styling and color-scheme. Verified across 8 checks (1440 & 390, light & dark) with 0 issues in ~/bizora-shots/t1-3-themes. |
+| T1-4 Native controls and states | done | | Styled input, select, option, textarea, checkbox, radio, date inputs, focus ring (2px/2px offset with nav token on rail), table hover, smooth-scroll reduced-motion guard. Verified 8 checks with 0 issues in ~/bizora-shots/t1-4-controls. |
 | T1-5 Foundation review | todo | | |
 | T2-1 Formatters | todo | | |
 | T2-2 API client | todo | | |
