@@ -12,7 +12,6 @@ from decimal import Decimal
 import datetime
 
 from django.test import TestCase
-from django.utils import timezone
 
 from app import models
 from app.business_graph import (

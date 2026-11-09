@@ -7,7 +7,7 @@ from app.models import ConfigurationEvent, ConfigurationRecord, MetricSnapshot, 
 from app.overview.configuration import configuration
 from app.tests.configuration_helpers import setup_configuration
 from app.tests.observability_helpers import NOW
-from app.tests.overview_helpers import END, START, metric, snapshot
+from app.tests.overview_helpers import END, metric, snapshot
 
 
 @patch('app.configuration.views.timezone.now', return_value=NOW)

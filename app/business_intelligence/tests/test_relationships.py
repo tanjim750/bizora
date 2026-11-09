@@ -120,7 +120,12 @@ class RelationshipTests(TestCase):
             valid_from=T0, valid_to=None, created_at=T0, updated_at=T0,
         )
         defaults.update(values)
-        return models.BusinessRelationship.objects.create(**defaults)
+        row = models.BusinessRelationship.objects.create(**defaults)
+        models.BusinessRelationship.objects.filter(pk=row.pk).update(
+            created_at=defaults["created_at"], updated_at=defaults["updated_at"]
+        )
+        row.refresh_from_db()
+        return row
 
     def test_every_supported_rule_has_an_exact_direction_and_canonical_endpoint(self):
         g = self.full_graph()
@@ -532,10 +537,10 @@ class RelationshipTests(TestCase):
             with self.subTest(phase="create", failing_call=fail_at):
                 calls, observed = [], {}
 
-                def flaky_create(*args, **kwargs):
-                    calls.append(kwargs["rule_key"])
-                    if len(calls) == fail_at:
-                        observed.update(observe())
+                def flaky_create(*args, _calls=calls, _fail_at=fail_at, _observed=observed, **kwargs):
+                    _calls.append(kwargs["rule_key"])
+                    if len(_calls) == _fail_at:
+                        _observed.update(observe())
                         raise IntegrityError("simulated unique tuple race")
                     return real_create(*args, **kwargs)
 

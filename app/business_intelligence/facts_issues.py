@@ -26,9 +26,9 @@ Key principles enforced:
    - All queries, creation, and state updates strictly enforce business scope.
 """
 
+import datetime
 from decimal import Decimal
 from typing import Any
-import datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -167,7 +167,7 @@ def create_or_update_fact(
             "valid_from": valid_from,
             "valid_to": valid_to,
         }
-        fact = models.BusinessFact.objects.filter(**lookup_kwargs).first()
+        fact = models.BusinessFact.all_objects.filter(**lookup_kwargs).first()
 
         if fact is not None:
             # Update in place
@@ -182,7 +182,7 @@ def create_or_update_fact(
             fact.save()
             return fact, False
 
-        fact = models.BusinessFact.objects.create(
+        fact = models.BusinessFact.all_objects.create(
             business_id=business_id,
             fact_type=fact_type,
             subject_entity_type=subject_entity_type,
@@ -218,7 +218,7 @@ def update_fact_lifecycle(
     if new_status not in FACT_STATUSES:
         raise FactValidationError(f"Invalid fact status {new_status!r}; expected one of {sorted(FACT_STATUSES)}")
 
-    fact = models.BusinessFact.objects.filter(pk=fact_id).first()
+    fact = models.BusinessFact.all_objects.filter(pk=fact_id).first()
     if fact is None:
         raise FactValidationError(f"BusinessFact #{fact_id} does not exist.")
 
@@ -400,9 +400,6 @@ __all__ = [
     "FACT_TYPE_DELIVERY_FAILURE_RATE",
     "FACT_TYPE_REVENUE_CHANGE",
     "FACT_TYPE_SUPPORT_DELAY",
-    "FactError",
-    "FactScopeError",
-    "FactValidationError",
     "ISSUE_SEVERITIES",
     "ISSUE_STATUSES",
     "ISSUE_STATUS_ACKNOWLEDGED",
@@ -414,13 +411,16 @@ __all__ = [
     "ISSUE_TYPE_LOW_CAMPAIGN_ROAS",
     "ISSUE_TYPE_REVENUE_DECLINE",
     "ISSUE_TYPE_SUPPORT_RESPONSE_DELAY",
-    "IssueError",
-    "IssueScopeError",
-    "IssueValidationError",
     "SEVERITY_CRITICAL",
     "SEVERITY_HIGH",
     "SEVERITY_LOW",
     "SEVERITY_MEDIUM",
+    "FactError",
+    "FactScopeError",
+    "FactValidationError",
+    "IssueError",
+    "IssueScopeError",
+    "IssueValidationError",
     "create_or_update_fact",
     "create_or_update_issue",
     "update_fact_lifecycle",

@@ -17,7 +17,7 @@ from decimal import Decimal
 from django.test import TestCase
 
 from app import models
-from app.business_intelligence import metrics, relationships, website as subject
+from app.business_intelligence import metrics, website as subject
 
 
 D = Decimal

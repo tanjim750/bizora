@@ -7,7 +7,7 @@ from app.observability.access import require_access
 from app.overview.configuration import ConfigurationConflict, StrictSerializer
 from .schemas import KNOWLEDGE_TYPES, SOURCE_TYPES, bounded_json
 from .selectors import effective_revisions, knowledge_configuration
-from .services import CONTROL, merge, record_data, save_record
+from .services import merge, record_data, save_record
 
 
 class SourceSchema(StrictSerializer):

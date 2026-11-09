@@ -34,7 +34,6 @@ from dataclasses import dataclass, field
 from decimal import Decimal, localcontext
 import datetime
 
-from django.db import transaction
 from django.utils import timezone
 
 from app import models

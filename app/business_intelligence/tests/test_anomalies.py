@@ -23,6 +23,7 @@ from app.business_intelligence import anomalies as subject, metrics
 
 
 D = Decimal
+DEFAULT_VALUE = D("0.0500")
 START = datetime(2026, 10, 1, 0, 0, tzinfo=timezone.utc)
 END = START + timedelta(days=7)
 PREV_START = START - timedelta(days=7)
@@ -46,7 +47,7 @@ class AnomalyDetectionTestCase(TestCase):
         *,
         business=None,
         metric_key="bi.metric.delivery_failure_rate.v1",
-        value=D("0.0500"),
+        value=DEFAULT_VALUE,
         period_type="WEEK",
         period_start=START,
         period_end=END,

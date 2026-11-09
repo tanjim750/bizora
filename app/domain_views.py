@@ -7,10 +7,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import ValidationError
 from app import models as m
 from app.domains.common import DomainError, require, authorize
-from app.domains.registry import scoped, resource
+from app.domains.registry import scoped
 from app.domains import data, identity, operations, projections
 from app.serializers.domains import EventInputSerializer, TransitionSerializer, AssignmentSerializer, HandoverSerializer, IdentityCommandSerializer
 
@@ -62,7 +61,7 @@ class ResourceList(DomainAPIView):
         qs = scoped(name, business)
         fields = {f.name for f in qs.model._meta.fields}
         allowed = {'status', 'priority', 'channel', 'customer', 'order', 'product', 'campaign',
-                   'conversation', 'direction', 'provider', 'payment_method', 'category', 'sku', 'tag',
+                   'conversation', 'direction', 'provider', 'platform', 'payment_method', 'category', 'sku', 'tag',
                    'visitor', 'session', 'payment', 'contact_type', 'assignee_type', 'traffic_source', 'traffic_medium', 'utm_campaign', 'device_type', 'browser', 'operating_system', 'event_type', 'is_anonymous'} & fields
         controls = {'page', 'page_size', 'q', 'since', 'until', 'contact', 'external_id', 'connection_id', 'ordering'}
         if name == 'customers':

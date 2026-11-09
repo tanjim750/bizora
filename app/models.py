@@ -1,5 +1,7 @@
+import re
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from app.overview.models import MonitoringConfiguration, MonitoringConfigurationRevision  # noqa: F401
@@ -1497,6 +1499,9 @@ class AiRecommendationEvidence(models.Model):
 
     def clean(self):
         super().clean()
+        evidence_business_id = self.business_id or (
+            self.ai_recommendation.business_id if self.ai_recommendation_id else None
+        )
         has_fk = any([
             self.business_fact_id,
             self.business_issue_id,
@@ -1508,7 +1513,7 @@ class AiRecommendationEvidence(models.Model):
         ])
         if not has_fk:
             raise ValidationError("AiRecommendationEvidence must be grounded by at least one evidence reference.")
-        if self.ai_recommendation_id and self.business_id and self.ai_recommendation.business_id != self.business_id:
+        if self.ai_recommendation_id and evidence_business_id and self.ai_recommendation.business_id != evidence_business_id:
             raise ValidationError("Evidence and recommendation must belong to the same business.")
         for field_name in (
             'business_fact',
@@ -1521,7 +1526,7 @@ class AiRecommendationEvidence(models.Model):
         ):
             if getattr(self, f'{field_name}_id'):
                 referenced = getattr(self, field_name)
-                if referenced.business_id != self.business_id:
+                if referenced.business_id != evidence_business_id:
                     raise ValidationError(f'{field_name} evidence must belong to the recommendation business.')
 
     def save(self, *args, **kwargs):
@@ -1643,6 +1648,184 @@ class MockExpectedResult(models.Model):
 
 
 # Keep model discovery and existing app.models imports stable.
+class AdAccount(models.Model):
+    external_account_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    audience = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    business = models.ForeignKey('Business', models.PROTECT)
+    integration_connection = models.ForeignKey('IntegrationConnection', models.PROTECT)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['integration_connection', 'external_account_id'], name='ad_account_source_id')]
+
+
+class CampaignAdSet(models.Model):
+    external_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    audience = models.JSONField(default=dict)
+    budget = models.DecimalField(max_digits=18, decimal_places=2, null=True)
+    status = models.CharField(max_length=30, default='ACTIVE')
+    campaign = models.ForeignKey('Campaign', models.PROTECT)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['campaign', 'external_id'], name='adset_campaign_external')]
+
+
+class CampaignCreative(models.Model):
+    external_id = models.CharField(max_length=255)
+    content = models.JSONField(default=dict)
+    business = models.ForeignKey('Business', models.PROTECT)
+
+
+class CampaignAd(models.Model):
+    external_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    status = models.CharField(max_length=30, default='ACTIVE')
+    ad_set = models.ForeignKey('CampaignAdSet', models.PROTECT)
+    creative = models.ForeignKey('CampaignCreative', models.PROTECT, null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['ad_set', 'external_id'], name='ad_adset_external')]
+
+
+class ProductImage(models.Model):
+    url = models.URLField(max_length=2000)
+    alt_text = models.CharField(max_length=255, blank=True)
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    product = models.ForeignKey('Product', models.PROTECT)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['product', 'url'], name='product_image_url_unique')]
+
+
+class CallbackRequest(models.Model):
+    scheduled_at = models.DateTimeField(null=True)
+    status = models.CharField(max_length=30, default='PENDING')
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    business = models.ForeignKey('Business', models.PROTECT)
+    conversation = models.ForeignKey('Conversation', models.PROTECT, null=True)
+    customer = models.ForeignKey('Customer', models.PROTECT)
+    order = models.ForeignKey('Order', models.PROTECT, null=True)
+
+
+class SupportTeam(models.Model):
+    name = models.CharField(max_length=150)
+    business = models.ForeignKey('Business', models.PROTECT)
+    members = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['business', 'name'], name='team_business_name')]
+
+
+class ConversationEvent(models.Model):
+    event_type = models.CharField(max_length=50)
+    from_state = models.CharField(max_length=50, null=True)
+    to_state = models.CharField(max_length=50, null=True)
+    reason = models.TextField(blank=True)
+    context = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, models.PROTECT, null=True)
+    conversation = models.ForeignKey('Conversation', models.PROTECT)
+
+
+class DomainAudit(models.Model):
+    action = models.CharField(max_length=100)
+    entity_type = models.CharField(max_length=50)
+    entity_id = models.BigIntegerField()
+    evidence = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, models.PROTECT, null=True)
+    business = models.ForeignKey('Business', models.PROTECT)
+
+    class Meta:
+        indexes = [models.Index(fields=['business', 'entity_type', 'entity_id', 'created_at'], name='audit_entity_time')]
+
+
+class ProcessingReceipt(models.Model):
+    key = models.CharField(max_length=255)
+    resource = models.CharField(max_length=50)
+    payload_hash = models.CharField(max_length=64)
+    entity_id = models.BigIntegerField()
+    occurred_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    business = models.ForeignKey('Business', models.PROTECT)
+    connection = models.ForeignKey('IntegrationConnection', models.PROTECT, null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['business', 'key'], name='receipt_business_key')]
+        indexes = [models.Index(fields=['business', 'resource', 'entity_id', 'occurred_at'], name='receipt_entity_time')]
+
+
+class IdentityHistory(models.Model):
+    action = models.CharField(max_length=50)
+    rule_key = models.CharField(max_length=100, blank=True)
+    evidence = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, models.PROTECT, null=True)
+    business = models.ForeignKey('Business', models.PROTECT)
+    canonical_identity = models.ForeignKey('CanonicalIdentity', models.PROTECT, null=True)
+    external_identity = models.ForeignKey('ExternalIdentity', models.PROTECT, null=True)
+
+
+class BusinessMemory(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE)
+    memory_type = models.CharField(max_length=100, db_index=True)
+    subject_entity_type = models.CharField(max_length=50, null=True, blank=True, db_index=True)
+    subject_entity_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    content = models.TextField()
+    metadata = models.JSONField(null=True, blank=True)
+    source_reference = models.CharField(max_length=1000, null=True, blank=True)
+    version = models.IntegerField(default=1)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'business_memory'
+        indexes = [models.Index(fields=['business', 'memory_type', 'is_active'], name='idx_bm_bmi_8f921a')]
+
+
+class HistoricalDecision(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE)
+    decision_type = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=500)
+    rationale = models.TextField(null=True, blank=True)
+    context = models.JSONField(null=True, blank=True)
+    outcome = models.CharField(max_length=50, default='APPROVED', db_index=True)
+    target_entity_type = models.CharField(max_length=50, null=True, blank=True, db_index=True)
+    target_entity_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    decided_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        db_table = 'historical_decisions'
+        indexes = [models.Index(fields=['business', 'decision_type'], name='idx_hd_bdt_4c991b'), models.Index(fields=['business', 'outcome'], name='idx_hd_out_91ab23')]
+
+
+class ApprovedSuggestion(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    business = models.ForeignKey('Business', models.CASCADE)
+    suggestion_type = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=500)
+    suggestion = models.TextField()
+    approved_at = models.DateTimeField()
+    status = models.CharField(max_length=30, default='APPROVED', db_index=True)
+    context = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ai_recommendation = models.ForeignKey('AiRecommendation', models.SET_NULL, null=True, blank=True)
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL, null=True)
+
+    class Meta:
+        db_table = 'approved_suggestions'
+        indexes = [models.Index(fields=['business', 'suggestion_type'], name='idx_as_bst_3a10cf')]
+
+
 from app.configuration.models import (  # noqa: E402,F401
     ConfigurationEvent, ConfigurationRecord, ConfigurationRevision, KnowledgeReprocessingRequest,
 )

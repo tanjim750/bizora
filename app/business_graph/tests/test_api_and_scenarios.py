@@ -18,9 +18,9 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
 from app import models
-from app.business_graph import api, urls
+from app.business_graph import api
 from app.business_graph.projection import project_business_graph
-from app.business_graph.snapshots import build_evidence_context, explain_path
+from app.business_graph.snapshots import explain_path
 from app.business_graph.traversal import find_paths
 
 

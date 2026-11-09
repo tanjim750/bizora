@@ -109,9 +109,9 @@ class ExternalBoundaryContractTests(DomainFixture):
 
             class BadAdapter(FixtureAdapter):
 
-                def exchange(adapter, envelope):
+                def exchange(adapter, envelope, k=key, v=value):
                     result = super().exchange(envelope)
-                    result[key] = value
+                    result[k] = v
                     return result
             with self.subTest(key=key), self.assertRaises(DomainError):
                 exchange(self.business, self.manager, 'Business Intelligence', 'entity_context', self.inputs('Business Intelligence'), 'request', BadAdapter())

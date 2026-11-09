@@ -317,7 +317,7 @@ class ExternalContractTests(DomainFixture):
     def test_mixed_foreign_evidence_cannot_leak_or_approve(self):
         rec, _, action = self.recommendation()
         foreign = create(m.BusinessFact, business=self.other, fact_type='PRIVATE', statement='Foreign private fact', detected_at=timezone.now())
-        create(m.AiRecommendationEvidence, ai_recommendation=rec, business_fact=foreign, evidence_type='FACT')
+        m.AiRecommendationEvidence.objects.bulk_create([m.AiRecommendationEvidence(ai_recommendation=rec, business_fact=foreign, evidence_type='FACT')])
         self.assertEqual(projections.authority_context(self.business)['recommendations']['count'], 0)
         with self.assertRaises(DomainError):
             operations.review_action(self.business, self.manager, action.pk, 'APPROVED', 'Review')
@@ -442,7 +442,7 @@ class PersistedGraphContractTests(DomainFixture):
     def test_foreign_neighbor_and_edge_are_not_exposed(self):
         node = create(m.GraphNode, business=self.business, entity_type='CUSTOMER', entity_id=self.customer.pk, node_type='CUSTOMER')
         foreign = create(m.GraphNode, business=self.other, entity_type='CUSTOMER', entity_id=self.other_customer.pk, node_type='CUSTOMER')
-        create(m.GraphEdge, business=self.business, source_node=node, target_node=foreign, relationship_type='BAD')
+        m.GraphEdge.objects.bulk_create([m.GraphEdge(business=self.business, source_node=node, target_node=foreign, relationship_type='BAD')])
         result = projections.graph_context(self.business, 'CUSTOMER', self.customer.pk)
         self.assertEqual(result['edges']['count'], 0)
         self.assertEqual(result['nodes']['count'], 1)

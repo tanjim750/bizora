@@ -30,18 +30,12 @@ from rest_framework.views import APIView
 
 from app import models
 from app.business_intelligence.anomalies import (
-    AnomalyRuleConfig,
     AnomalyScopeError,
     AnomalyValidationError,
-    evaluate_anomaly_rule,
 )
 from app.business_intelligence.facts_issues import (
-    FACT_STATUSES,
-    FACT_STATUS_VERIFIED,
     FactScopeError,
     FactValidationError,
-    ISSUE_SEVERITIES,
-    ISSUE_STATUSES,
     IssueScopeError,
     IssueValidationError,
     create_or_update_fact,
@@ -51,13 +45,9 @@ from app.business_intelligence.facts_issues import (
 )
 from app.business_intelligence.metrics import (
     MetricValidationError,
-    get_metric_definition,
-    list_metric_definitions,
-    record_metric_snapshot,
     sync_metric_registry,
 )
 from app.business_intelligence.relationships import (
-    RelationshipConflictError,
     RelationshipRebuildResult,
     RelationshipValidationError,
     rebuild_relationships,
@@ -265,9 +255,10 @@ class FactListCreateView(BaseIntelligenceAPIView):
 
     def get(self, request):
         biz = self.get_authorized_business()
-        facts_qs = models.BusinessFact.objects.filter(business_id=biz.pk).order_by("-detected_at")
-
         status_param = request.query_params.get("status")
+        facts_manager = models.BusinessFact.all_objects if status_param else models.BusinessFact.objects
+        facts_qs = facts_manager.filter(business_id=biz.pk).order_by("-detected_at")
+
         if status_param:
             facts_qs = facts_qs.filter(status=status_param.upper())
 
@@ -334,7 +325,7 @@ class FactDetailView(BaseIntelligenceAPIView):
 
     def get(self, request, fact_id: int):
         biz = self.get_authorized_business()
-        fact = models.BusinessFact.objects.filter(pk=fact_id).first()
+        fact = models.BusinessFact.all_objects.filter(pk=fact_id).first()
         if not fact or fact.business_id != biz.pk:
             # SEC-MED-1: Return uniform 403/404 to avoid ID oracle
             return Response(

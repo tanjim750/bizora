@@ -2,7 +2,7 @@
 from django.db import transaction
 from django.utils import timezone
 from app import models as m
-from .common import require, normalize_contact, related, create, authorize, business_id, external_identifier
+from .common import require, normalize_contact, related, create, authorize, external_identifier
 
 ENTITY_MODELS = {k.upper(): v for k, v in {
     'customer': m.Customer, 'product': m.Product, 'order': m.Order, 'payment': m.Payment,

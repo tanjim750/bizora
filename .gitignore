@@ -27,9 +27,14 @@ htmlcov/
 .skills
 skills-lock.json
 .skills-lock.json
-__pycache__/
-*.py[cod]
+
+# Local ECC source checkout; project Codex skills are installed in ignored .agents/.
+/.ecc-vendor/
 *$py.class
-.DS_Store
-.venv/
+screenshots/
+*.DS_Store
+Thumbs.db
+.idea/
+.neon/
+node_modules/
 

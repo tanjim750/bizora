@@ -106,12 +106,15 @@ class DeliveryTestCase(TestCase):
         business = business or self.a
         if order is None:
             order = self.make_order(business=business)
-        return models.Shipment.objects.create(
+        row = models.Shipment.objects.create(
             business=business, order=order, customer=customer, provider=provider,
             status=status, delivery_charge=Decimal(charge), currency=currency,
             submitted_at=submitted, picked_up_at=picked, delivered_at=delivered,
             source_metadata=metadata, created_at=created, updated_at=created,
         )
+        models.Shipment.objects.filter(pk=row.pk).update(created_at=created, updated_at=created)
+        row.refresh_from_db()
+        return row
 
     # -- service calls ----------------------------------------------------
 

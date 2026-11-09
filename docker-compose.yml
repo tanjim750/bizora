@@ -10,6 +10,7 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: bizora.settings
+      BIZORA_DATABASE: postgresql
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
     depends_on:

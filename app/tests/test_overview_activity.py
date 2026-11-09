@@ -55,7 +55,8 @@ class ActivityTests(TestCase):
 
     def test_feed_is_paginated_stable_and_excludes_foreign_and_future_events(self, _):
         for business, at in [(self.business, self.at)]*6 + [(self.other_business, self.at), (self.business, NOW+timedelta(seconds=1))]:
-            Order.objects.create(business=business, created_at=at, updated_at=at)
+            row = Order.objects.create(business=business)
+            Order.objects.filter(pk=row.pk).update(created_at=at, updated_at=at)
         first = self.client.get(self.base+'activity/', {'page_size': 2}).data
         second = self.client.get(self.base+'activity/', {'page_size': 2, 'page': 2}).data
         self.assertEqual(first['count'], 6)
@@ -64,7 +65,8 @@ class ActivityTests(TestCase):
         self.assertEqual(self.client.get(self.base+'activity/', {'page': 100}).status_code, 404)
 
     def test_activity_time_filter_uses_half_open_bounds(self, _):
-        Order.objects.create(business=self.business, created_at=self.at, updated_at=self.at)
+        row = Order.objects.create(business=self.business)
+        Order.objects.filter(pk=row.pk).update(created_at=self.at, updated_at=self.at)
         result = self.client.get(self.base+'activity/', {'from': self.at.isoformat(), 'to': NOW.isoformat()})
         self.assertEqual(result.data['count'], 1)
         result = self.client.get(self.base+'activity/', {'from': (self.at-timedelta(seconds=1)).isoformat(), 'to': self.at.isoformat()})

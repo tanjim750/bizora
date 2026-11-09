@@ -1,10 +1,16 @@
 """Isolated local/test configuration; never opens the checked-in database."""
 import os
+import secrets
 from pathlib import Path
-from .settings import *  # noqa: F403
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or __import__('secrets').token_urlsafe(48)
-DEBUG = os.environ.get('DJANGO_DEBUG', '0') == '1'
+os.environ.setdefault('SECRET_KEY', os.environ.get('DJANGO_SECRET_KEY') or secrets.token_urlsafe(48))
+os.environ.setdefault('DEBUG', '1' if os.environ.get('DJANGO_DEBUG', '1') == '1' else '0')
+
+from .settings import *  # noqa: F403
+from .settings import BASE_DIR, REST_FRAMEWORK
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or secrets.token_urlsafe(48)
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 _data_dir = Path(os.environ.get('BIZORA_DATA_DIR', '/tmp/bizora-local'))
 _data_dir.mkdir(parents=True, exist_ok=True)

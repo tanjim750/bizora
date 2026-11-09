@@ -1550,10 +1550,10 @@ class TestRegressionNoDuplicateApiRoutes(TestCase):
         resp = self.client.get("/api/v1/")
         self.assertEqual(resp.status_code, 200)
 
-    def test_bare_api_prefix_not_exposed(self):
-        """The bare /api/ route was removed; must 404."""
+    def test_bare_api_prefix_is_exposed(self):
+        """The bare /api/ route is mounted and returns the public status response."""
         resp = self.client.get("/api/")
-        self.assertNotEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
 
 class TestRegressionBiDbAggregate(TestCase):

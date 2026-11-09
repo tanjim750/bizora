@@ -36,7 +36,7 @@ def main():
             # The entrypoint briefly starts a socket-only initialization server.
             # Wait for TCP, which is enabled only by the final PostgreSQL server.
             result = subprocess.run(['docker', 'exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'bizora_verify', '-d', db],
-                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if result.returncode == 0:
                 break
             time.sleep(0.5)

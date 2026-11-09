@@ -11,7 +11,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from app import models as m
 from app.domains import data, identity, operations, projections
-from app.domains.common import DomainError, create, money, normalize_contact, authorize
+from app.domains.common import DomainError, create, money, normalize_contact
 
 
 class NormalizationTests(SimpleTestCase):

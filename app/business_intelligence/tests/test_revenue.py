@@ -259,12 +259,15 @@ class RevenueTestCase(TestCase):
 
     def order(self, status="DELIVERED", total="100.00", *, at=MID, currency="BDT",
               business=None, customer=None, connection=None):
-        return models.Order.objects.create(
+        row = models.Order.objects.create(
             business=business or self.business, customer=customer,
             integration_connection=connection, status=status, currency=currency,
             subtotal=D(total), total_amount=D(total), ordered_at=at,
             created_at=MID, updated_at=MID,
         )
+        models.Order.objects.filter(pk=row.pk).update(created_at=MID, updated_at=MID)
+        row.refresh_from_db()
+        return row
 
     def bulk_orders(self, status, count, *, at=MID):
         models.Order.objects.bulk_create([
@@ -276,6 +279,19 @@ class RevenueTestCase(TestCase):
         ])
 
     def item(self, order, product=None, quantity=1, total="10.00", variant=None):
+        if quantity <= 0:
+            from django.db import connection
+            if connection.vendor == 'sqlite':
+                with connection.cursor() as cursor:
+                    cursor.execute("PRAGMA ignore_check_constraints = ON")
+                    cursor.execute(
+                        "INSERT INTO order_items (order_id, product_id, product_variant_id, product_name, quantity, unit_price, discount_amount, total_amount, created_at) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, 0, %s, %s)",
+                        [order.pk, product.pk if product else None, variant.pk if variant else None, "Fixture item", quantity, str(total), str(total), STAMP]
+                    )
+                    cursor.execute("PRAGMA ignore_check_constraints = OFF")
+                    item_id = cursor.lastrowid
+                return models.OrderItem.objects.get(pk=item_id)
         return models.OrderItem.objects.create(
             order=order, product=product, product_variant=variant,
             product_name="Fixture item", quantity=quantity, unit_price=D(total),

@@ -56,9 +56,10 @@ class RecordingTests(TestCase):
         from django.apps import apps
         apps.get_app_config('app').ready()
         apps.get_app_config('app').ready()
-        dispatch(DomainEvent('integration.observation', dict(business_id=self.business.pk,
-            connection_id=self.connection.pk, key='dispatch', kind='connection_check',
-            data={'outcome': 'SUCCESS'}, observed_at=NOW, received_at=NOW)))
+        with self.captureOnCommitCallbacks(execute=True):
+            dispatch(DomainEvent('integration.observation', dict(business_id=self.business.pk,
+                connection_id=self.connection.pk, key='dispatch', kind='connection_check',
+                data={'outcome': 'SUCCESS'}, observed_at=NOW, received_at=NOW)))
         self.assertEqual(ConnectionCheck.objects.count(), 1)
 
     def test_outer_transaction_rollback_removes_accepted_observation(self):

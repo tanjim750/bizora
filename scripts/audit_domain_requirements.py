@@ -151,9 +151,8 @@ for group in ('Merge Detection','Identity History','Canonical Identity'):
     code,tests=GROUPS[group]
     GROUPS[group]=(code+';app/domains/merge.py:plan,dry_run',tests+';app/test_integration_readiness.py:MergeReadinessTests,SourceContradictionAndMergeRaceTests')
 # External seams are executable, fixture-tested and replaceable through trusted settings.
-for group in GROUPS:
-    code,tests=GROUPS[group]
-    GROUPS[group]=(code+';app/domains/boundaries.py:exchange,configured_adapter',tests+';app/test_integration_readiness.py:ExternalBoundaryContractTests,AdapterConfigurationTests')
+for group, (code, tests) in GROUPS.items():
+    GROUPS[group] = (code+';app/domains/boundaries.py:exchange,configured_adapter', tests+';app/test_integration_readiness.py:ExternalBoundaryContractTests,AdapterConfigurationTests')
 
 
 @lru_cache(maxsize=None)
