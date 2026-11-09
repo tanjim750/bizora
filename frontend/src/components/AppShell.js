@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import {
   BarChart3,
   Boxes,
@@ -199,6 +200,7 @@ export default function AppShell({ session, business, children }) {
               <input id="customer-search" type="search" name="q" placeholder="Search customers" />
               <button type="submit">Search</button>
             </form>
+            <ThemeToggle />
             <div className="account">
               <span>{session.username}</span>
               <button type="button" onClick={signOut}>

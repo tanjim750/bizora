@@ -38,8 +38,12 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${jakarta.variable} ${inter.variable} ${jetbrains.variable} ${bengali.variable}`}
     >
+      <head>
+        <script id="theme-init">{`try{var t=localStorage.getItem('bizora_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}`}</script>
+      </head>
       <body>{children}</body>
     </html>
   )
