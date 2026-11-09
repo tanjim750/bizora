@@ -10,6 +10,8 @@ Next.js 16 operations client for the mounted Django APIs. The visual system foll
 
 The server-side `DJANGO_API_ORIGIN` defaults to `http://127.0.0.1:8000`. Set it to the internal Django origin in deployment. Browser requests go through `/api/backend/...` on the Next.js origin. The proxy forwards Django session and CSRF cookies; it checks the browser origin for writes. Keep frontend traffic on HTTPS in production.
 
+Paginated responses from `/api/backend/...` expose same-origin relative `next` and `previous` links, so clients can follow them without contacting Django's internal host.
+
 The frontend does not keep credentials or access tokens in local storage. Login and logout use `/api/frontend/` session endpoints; all business authorization remains in Django.
 
 ## Checks

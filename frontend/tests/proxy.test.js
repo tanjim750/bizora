@@ -49,3 +49,22 @@ test('proxy forwards cookies and CSRF header to the fixed Django origin', async 
     globalThis.fetch = original
   }
 })
+
+test('proxy pagination links remain same-origin relative', async () => {
+  const original = globalThis.fetch
+  try {
+    globalThis.fetch = async (url) =>
+      Response.json({
+        count: 2,
+        next: `${url.origin}${url.pathname}?page=2&page_size=1`,
+        previous: null,
+        results: [{ id: 1 }],
+      })
+    const request = new Request('http://localhost:3000/api/backend/businesses/1/products?page_size=1')
+    const response = await GET(request, context(['businesses', '1', 'products']))
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).next, '/api/backend/businesses/1/products/?page=2&page_size=1')
+  } finally {
+    globalThis.fetch = original
+  }
+})

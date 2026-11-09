@@ -21,7 +21,7 @@ export default function Overview({ business, data, queueCount }) {
           <h2>Revenue</h2>
           <strong>—</strong>
           <p>
-            <StatusBadge text="Unavailable" /> Analytics source not mounted
+            <StatusBadge text="Unavailable" /> No revenue metric in the core overview
           </p>
         </section>
         <section className="metric-card">
@@ -47,14 +47,15 @@ export default function Overview({ business, data, queueCount }) {
               <h2>Analytics</h2>
               <p>Revenue and trend data</p>
             </div>
-            <StatusBadge text="Not mounted" />
+            <StatusBadge text="Partial" />
           </div>
           <div className="empty-state">
             <strong>Analytics unavailable</strong>
             <p>
-              The separate Overview &amp; Monitoring API is not mounted. No revenue or trend is inferred from
-              raw orders.
+              Revenue and trends are not provided by this core overview. Open Business insights for available
+              monitoring evidence.
             </p>
+            <Link href={businessPath(business.id, 'insights')}>Open Business insights</Link>
           </div>
         </section>
         <section className="surface">

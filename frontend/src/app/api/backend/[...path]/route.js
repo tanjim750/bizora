@@ -44,10 +44,30 @@ async function proxy(request, context) {
       cache: 'no-store',
       redirect: 'manual',
     })
-    const response = new Response(await upstream.text(), {
+    const contentType = upstream.headers.get('content-type') || 'application/json'
+    let body = await upstream.text()
+    if (upstream.ok && contentType.includes('application/json') && body.includes('"results"')) {
+      try {
+        const data = JSON.parse(body)
+        if (Array.isArray(data.results)) {
+          let changed = false
+          for (const key of ['next', 'previous']) {
+            if (typeof data[key] !== 'string') continue
+            const link = new URL(data[key])
+            if (link.origin !== destination.origin || !link.pathname.startsWith('/api/')) continue
+            data[key] = `/api/backend${link.pathname.slice(4)}${link.search}`
+            changed = true
+          }
+          if (changed) body = JSON.stringify(data)
+        }
+      } catch {
+        // Keep the upstream response if a nonstandard JSON payload cannot be inspected.
+      }
+    }
+    const response = new Response(body, {
       status: upstream.status,
       headers: {
-        'content-type': upstream.headers.get('content-type') || 'application/json',
+        'content-type': contentType,
         'cache-control': 'no-store',
       },
     })

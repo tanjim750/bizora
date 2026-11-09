@@ -13,8 +13,10 @@ export default function ModuleExplorer({ businessId, section, view, data, record
       ([key, value]) => !['view', 'record'].includes(key) && typeof value === 'string' && value,
     ),
   )
-  const previous = data?.previous ? new URL(data.previous).searchParams.get('page') : null
-  const next = data?.next ? new URL(data.next).searchParams.get('page') : null
+  const previous = data?.previous
+    ? new URL(data.previous, 'https://frontend.invalid').searchParams.get('page')
+    : null
+  const next = data?.next ? new URL(data.next, 'https://frontend.invalid').searchParams.get('page') : null
   const pageHref = (page) => {
     const params = new URLSearchParams(queryValues)
     params.set('view', view)

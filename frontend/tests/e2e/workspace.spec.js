@@ -17,7 +17,11 @@ test('session login, live overview, and mobile navigation', async ({ page }) => 
   await expect(business).toBeVisible()
   await business.click()
   await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible()
+  const businessId = new URL(page.url()).pathname.split('/')[2]
   await expect(page.getByText('Analytics unavailable')).toBeVisible()
+  await page.getByRole('link', { name: 'Open Business insights' }).click()
+  await expect(page.getByRole('heading', { name: 'Business insights' })).toBeVisible()
+  await page.goto(`/business/${businessId}/overview`)
   await page.setViewportSize({ width: 320, height: 700 })
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
   await page.getByRole('button', { name: 'Open navigation' }).click()

@@ -62,6 +62,7 @@ BusinessMembership.objects.create(user=viewer, business=business, role='VIEWER')
 source = IntegrationSource.objects.create(key='browser-test-source', name='Test source', category='COMMERCE')
 connection = IntegrationConnection.objects.create(business=business, integration_source=source)
 product = Product.objects.create(business=business, name='Tea', sku='TEA', price='10.00')
+Product.objects.create(business=business, name='Coffee', sku='COFFEE', price='15.00')
 print(json.dumps({'business': business.pk, 'foreign': foreign.pk, 'connection': connection.pk, 'product': product.pk}))
 """
         result = subprocess.run(

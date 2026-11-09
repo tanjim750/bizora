@@ -33,8 +33,8 @@ export default function ResourceList({
   const rows = Array.isArray(data) ? data : data?.results || []
   const count = Array.isArray(data) ? data.length : (data?.count ?? rows.length)
   const filters = FILTERS[resource] || []
-  const previous = data?.previous ? new URL(data.previous).search : null
-  const next = data?.next ? new URL(data.next).search : null
+  const previous = data?.previous ? new URL(data.previous, 'https://frontend.invalid').search : null
+  const next = data?.next ? new URL(data.next, 'https://frontend.invalid').search : null
   return (
     <>
       <div className="page-heading">
