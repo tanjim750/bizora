@@ -15,8 +15,8 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T1-5 Foundation review | done | 84f3608 | Ran all four reviewers (design-reviewer: SHIP, architect-reviewer: APPROVE, code-reviewer: SHIP, security-reviewer: SHIP). Fixed F-01 (theme-toggle inline styles -> tokens in components.css) and F-02 (localStorage try/catch guard). npm test 18/18, format:check clean, build passed. |
 | T2-1 Formatters | done | 5b7dcea | Created src/lib/format/ (money, dateTime, date, duration, percent, enumLabel, stripUntrusted, statusTone, statusText) with format.js shim. Fixed INACTIVE -> neutral tone. Added 8 new unit tests (26/26 tests green). |
 | T2-2 API client | done | b955442 | Created src/lib/api/ (ApiError, normalizeError parsing 7 backend shapes, clientApi with timeout/CSRF retry/403 session expiry redirect, serverApi with cached getSession). Added 4 unit tests (30/30 tests green). |
-| T2-3 Safe writes | done | | Created idempotency.js (v4 UUID fallback for non-secure origins, makeExternalId) and useActionForm hook (busy, ApiError, key reuse across retries, rotation on payload change, 409 reload flow). Added 4 unit tests (34/34 tests green). |
-| T2-4 Resource config | todo | | |
+| T2-3 Safe writes | done | e83b7a2 | Created idempotency.js (v4 UUID fallback for non-secure origins, makeExternalId) and useActionForm hook (busy, ApiError, key reuse across retries, rotation on payload change, 409 reload flow). Added 4 unit tests (34/34 tests green). |
+| T2-4 Resource config | done | pending | Created src/lib/domain/resources.js with config for all 32 resources (columns, titles, tabs, workspaces, 14 searchable split, filterQueryParams allow-list). Fixed all 4 reviewer findings (isSafeRelativePath open-redirect hardening, stripUntrusted regex, getSession 503 fallback, 403 login-loop guard, recordTitle domain keys, future relativeTime, HTML error detection, useActionForm idempotency state). 39/39 tests pass, format:check clean, build green, 8 page checks 0 issues. |
 | T3-1 Form basics | todo | | |
 | T3-2 Feedback and status | todo | | |
 | T3-3 Overlays and navigation | todo | | |
@@ -58,8 +58,19 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 - All 4 reviewers passed (design, code, security, architect); all findings resolved; gates green (18/18 tests, build 1.7s).
 - Next: Phase 2 (Data layer and safe writes: formatters, API client, idempotency, resource config).
 
+### Phase 2: Data layer and safe writes (completed 2026-11-10 00:08)
+- Complete formatter suite in `src/lib/format/` (money, dateTime, date, relativeTime, duration, percent, enumLabel, stripUntrusted, recordTitle, statusTone, statusText, missing). Exact enum matching prevents substring issues (INACTIVE is neutral, not active).
+- Robust API client in `src/lib/api/` with unified ApiError, 7 backend error shapes, automatic CSRF token retry, safe same-origin redirect on session expiry with open-redirect guard, and React-cached server `getSession`. Segregated serverApi and clientApi to ensure server modules and cookies are never bundled into client components.
+- Idempotency and safe writes via `newIdempotencyKey` and `useActionForm` hook supporting busy states, 409 stale-state detection with non-destructive reload flow, key reuse across identical retries, and automatic key rotation on success or payload alteration.
+- Resource configurations for all 32 resources in `src/lib/domain/resources.js` with verified query param allow-lists, column definitions, search capability split (14 searchable / 18 exact), workspace mapping, and detail view config.
+- All 4 phase reviewers completed (Architect: APPROVE, Design: SHIP, Security: SHIP with SEC-HIGH-1 & SEC-INFO-2 fixed, Code: SHIP with CR-01 to CR-07 fixed). All gates green: 39/39 tests passing, format clean, build clean in 5.1s, 0 page check issues.
+- Next: Phase 3 (Shared UI kit: Form basics, Feedback, Overlays, DataTable, Evidence, and UI Kit gallery).
+
 ## Decisions I took
-(one line each, with the reason)
+- Kept `server.js` and `next/headers` completely separate from `src/lib/api/index.js` and `client.js` so client components never trigger Next.js server-only runtime bundler errors.
+- Enforced strict allow-list on query parameters (`filterQueryParams`) in `resources.js` to guard against Django DRF 400 Bad Request on unrecognized filter parameters.
+- Hardened `isSafeRelativePath` using WHATWG `new URL` parsing to reject backslashes and control characters, preventing open-redirect vulnerabilities when navigating login redirects.
+- In `useActionForm`, maintained both a ref and React state for `idempotencyKey` so components re-render cleanly when keys rotate while preserving synchronous execution.
 
 ## Blocked / questions for the owner
 (none yet)

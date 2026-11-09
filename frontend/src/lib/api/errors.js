@@ -41,7 +41,7 @@ export function normalizeError(data, status = 500) {
   else if (status === 400) code = 'VALIDATION_ERROR'
 
   if (!data || typeof data !== 'object') {
-    if (typeof data === 'string' && data.length > 0 && !data.startsWith('<')) {
+    if (typeof data === 'string' && data.length > 0 && !data.trim().startsWith('<')) {
       detail = data
     } else {
       detail = `Request failed (${status})`

@@ -60,9 +60,14 @@ test('normalizeError parses all 7 backend error shapes correctly', () => {
   assert.equal(shape6.fieldErrors.query, "Unknown query parameter 'platform'.")
   assert.equal(shape6.detail, "query: Unknown query parameter 'platform'.")
 
-  // Shape 7: HTML / Non-JSON 500 string
+  // Shape 7: HTML / Non-JSON 500 string (including leading whitespace)
   const shape7 = normalizeError('<!DOCTYPE html><html><body>500 Internal Error</body></html>', 500)
   assert.equal(shape7.detail, 'Request failed (500)')
+  const shape7Whitespace = normalizeError(
+    '\n  \t<!DOCTYPE html><html><body>500 Internal Error</body></html>',
+    500,
+  )
+  assert.equal(shape7Whitespace.detail, 'Request failed (500)')
 })
 
 test('errorMessage backward compatibility shim produces expected strings', () => {
@@ -79,6 +84,9 @@ test('isSafeRelativePath strictly allows only same-site relative paths', () => {
 
   // Prevent open redirect vectors
   assert.equal(isSafeRelativePath('//attacker.com'), false)
+  assert.equal(isSafeRelativePath('/\\attacker.com'), false)
+  assert.equal(isSafeRelativePath('/foo\\bar'), false)
+  assert.equal(isSafeRelativePath('/ \nattacker.com'), false)
   assert.equal(isSafeRelativePath('https://attacker.com'), false)
   assert.equal(isSafeRelativePath('http://attacker.com/workspace'), false)
   assert.equal(isSafeRelativePath('javascript:alert(1)'), false)

@@ -48,5 +48,5 @@ export async function serverApi(path, options = {}) {
  */
 export const getSession = cache(async () => {
   const result = await serverApi('frontend/session/')
-  return result.data || { authenticated: false, businesses: [] }
+  return result.ok && result.data?.authenticated ? result.data : { authenticated: false, businesses: [] }
 })

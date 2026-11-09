@@ -11,8 +11,18 @@ function csrfToken() {
  * to prevent open redirects.
  */
 export function isSafeRelativePath(path) {
-  if (typeof path !== 'string') return false
-  return path.startsWith('/') && !path.startsWith('//') && !path.includes('://')
+  if (typeof path !== 'string' || !path.startsWith('/') || path.includes('\\')) {
+    return false
+  }
+  if (path.startsWith('//') || /[\s\0-\x1F]/.test(path)) {
+    return false
+  }
+  try {
+    const url = new URL(path, 'http://localhost')
+    return url.origin === 'http://localhost' && url.pathname.startsWith('/')
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -67,7 +77,7 @@ export async function clientApi(
           normalized.code === 'UNAUTHENTICATED' ||
           normalized.code === 'SESSION_EXPIRED')
       ) {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
           const currentPath = window.location.pathname + window.location.search
           const next = isSafeRelativePath(currentPath) ? encodeURIComponent(currentPath) : ''
           window.location.href = next ? `/login?next=${next}` : '/login'

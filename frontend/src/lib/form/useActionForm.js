@@ -19,6 +19,7 @@ export function useActionForm({ onReload, onSuccess } = {}) {
   const [stale, setStale] = useState(false)
 
   const keyRef = useRef(newIdempotencyKey())
+  const [idempotencyKey, setIdempotencyKey] = useState(() => keyRef.current)
   const lastPayloadRef = useRef(null)
 
   const reset = useCallback(() => {
@@ -27,7 +28,9 @@ export function useActionForm({ onReload, onSuccess } = {}) {
     setSuccess('')
     setFieldErrors({})
     setStale(false)
-    keyRef.current = newIdempotencyKey()
+    const nextKey = newIdempotencyKey()
+    keyRef.current = nextKey
+    setIdempotencyKey(nextKey)
     lastPayloadRef.current = null
   }, [])
 
@@ -44,7 +47,9 @@ export function useActionForm({ onReload, onSuccess } = {}) {
       // If retrying the exact same payload, reuse the existing key!
       const serialized = JSON.stringify(payload)
       if (lastPayloadRef.current !== null && lastPayloadRef.current !== serialized) {
-        keyRef.current = newIdempotencyKey()
+        const nextKey = newIdempotencyKey()
+        keyRef.current = nextKey
+        setIdempotencyKey(nextKey)
       }
       lastPayloadRef.current = serialized
 
@@ -54,7 +59,9 @@ export function useActionForm({ onReload, onSuccess } = {}) {
         setSuccess('Action completed successfully.')
 
         // Rotate key on success for the next user intent
-        keyRef.current = newIdempotencyKey()
+        const nextKey = newIdempotencyKey()
+        keyRef.current = nextKey
+        setIdempotencyKey(nextKey)
         lastPayloadRef.current = null
 
         if (onSuccess) onSuccess(result)
@@ -94,7 +101,7 @@ export function useActionForm({ onReload, onSuccess } = {}) {
     success,
     fieldErrors,
     stale,
-    idempotencyKey: keyRef.current,
+    idempotencyKey,
     execute,
     reset,
     setError,

@@ -49,7 +49,9 @@ export function missing(value) {
  */
 export function stripUntrusted(text) {
   if (!text) return ''
-  return String(text).replaceAll('<untrusted_customer_data>', '').replaceAll('</untrusted_customer_data>', '')
+  return String(text)
+    .replace(/<\/?untrusted_customer_data>/gi, '')
+    .trim()
 }
 
 /**
@@ -71,7 +73,12 @@ export function recordTitle(record) {
     'name',
     'subject',
     'order_number',
+    'transaction_reference',
+    'external_refund_id',
     'tracking_code',
+    'tag',
+    'sku',
+    'value',
     'title',
     'event_type',
     'action',
