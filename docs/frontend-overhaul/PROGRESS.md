@@ -14,8 +14,8 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T1-4 Native controls and states | done | 571396a | Styled input, select, option, textarea, checkbox, radio, date inputs, focus ring (2px/2px offset with nav token on rail), table hover, smooth-scroll reduced-motion guard. Verified 8 checks with 0 issues in ~/bizora-shots/t1-4-controls. |
 | T1-5 Foundation review | done | 84f3608 | Ran all four reviewers (design-reviewer: SHIP, architect-reviewer: APPROVE, code-reviewer: SHIP, security-reviewer: SHIP). Fixed F-01 (theme-toggle inline styles -> tokens in components.css) and F-02 (localStorage try/catch guard). npm test 18/18, format:check clean, build passed. |
 | T2-1 Formatters | done | 5b7dcea | Created src/lib/format/ (money, dateTime, date, duration, percent, enumLabel, stripUntrusted, statusTone, statusText) with format.js shim. Fixed INACTIVE -> neutral tone. Added 8 new unit tests (26/26 tests green). |
-| T2-2 API client | done | | Created src/lib/api/ (ApiError, normalizeError parsing 7 backend shapes, clientApi with timeout/CSRF retry/403 session expiry redirect, serverApi with cached getSession). Added 4 unit tests (30/30 tests green). |
-| T2-3 Safe writes | todo | | |
+| T2-2 API client | done | b955442 | Created src/lib/api/ (ApiError, normalizeError parsing 7 backend shapes, clientApi with timeout/CSRF retry/403 session expiry redirect, serverApi with cached getSession). Added 4 unit tests (30/30 tests green). |
+| T2-3 Safe writes | done | | Created idempotency.js (v4 UUID fallback for non-secure origins, makeExternalId) and useActionForm hook (busy, ApiError, key reuse across retries, rotation on payload change, 409 reload flow). Added 4 unit tests (34/34 tests green). |
 | T2-4 Resource config | todo | | |
 | T3-1 Form basics | todo | | |
 | T3-2 Feedback and status | todo | | |
