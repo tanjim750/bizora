@@ -120,22 +120,24 @@ export function RecordAdvisoryTools({ business, resource, record }) {
   )
 }
 
-export function AssistantWorkspace({ business, recommendations, issues }) {
+export function AssistantWorkspace({ business, recommendations, issues, hideHeading = false }) {
   const suggestions = Array.isArray(recommendations) ? recommendations : []
   const issueRows = Array.isArray(issues) ? issues : []
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <p className="page-context">Assistance</p>
-          <h1>AI assistant</h1>
-          <p>
-            Ask a question about this business. Responses are advisory and must be checked against recorded
-            evidence.
-          </p>
+      {!hideHeading && (
+        <div className="page-heading">
+          <div>
+            <p className="page-context">Assistance</p>
+            <h1>AI assistant</h1>
+            <p>
+              Ask a question about this business. Responses are advisory and must be checked against recorded
+              evidence.
+            </p>
+          </div>
+          <StatusBadge text="AI suggestion" />
         </div>
-        <StatusBadge text="AI suggestion" />
-      </div>
+      )}
       <section className="surface">
         <AdvisoryTool
           businessId={business.id}

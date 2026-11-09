@@ -30,8 +30,8 @@ export default function GlobalError({ error, retry, reset }) {
             --surface: #1E293B;
             --text: #F1F5F9;
             --text-muted: #94A3B8;
-            --primary: #3B82F6;
-            --primary-hover: #2563EB;
+            --primary: #1D4ED8;
+            --primary-hover: #1E40AF;
             --danger: #EF4444;
             --border: #334155;
           }

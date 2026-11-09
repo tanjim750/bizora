@@ -44,7 +44,7 @@ export default function BusinessError({ error, retry, reset }) {
         </Banner>
 
         <div className="workspace-error-actions">
-          <Button variant="primary" onClick={handleRetry} icon={<RefreshCw size={14} aria-hidden="true" />}>
+          <Button variant="primary" onClick={handleRetry} icon={RefreshCw}>
             Retry operation
           </Button>
 

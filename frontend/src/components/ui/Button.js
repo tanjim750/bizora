@@ -32,6 +32,15 @@ export function Button({
   const sizeClass = size === 'sm' ? 'button-sm' : ''
   const isActionDisabled = disabled || isLoading
 
+  const renderIcon = (iconItem, posClass) => {
+    if (!iconItem) return null
+    if (React.isValidElement(iconItem)) {
+      return iconItem
+    }
+    const IconComponent = iconItem
+    return <IconComponent className={posClass} size={size === 'sm' ? 14 : 16} aria-hidden="true" />
+  }
+
   return (
     <button
       type={type}
@@ -51,13 +60,9 @@ export function Button({
         </>
       ) : (
         <>
-          {Icon && iconPosition === 'left' && (
-            <Icon className="button-icon-left" size={size === 'sm' ? 14 : 16} aria-hidden="true" />
-          )}
+          {Icon && iconPosition === 'left' && renderIcon(Icon, 'button-icon-left')}
           <span>{children}</span>
-          {Icon && iconPosition === 'right' && (
-            <Icon className="button-icon-right" size={size === 'sm' ? 14 : 16} aria-hidden="true" />
-          )}
+          {Icon && iconPosition === 'right' && renderIcon(Icon, 'button-icon-right')}
         </>
       )}
     </button>

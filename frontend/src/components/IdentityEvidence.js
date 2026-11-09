@@ -3,10 +3,11 @@ import { fieldValue, statusText } from '@/lib/format'
 
 const NAMES = ['Canonical identities', 'External identities', 'Identity links', 'Identity history']
 
-export default function IdentityEvidence({ lists }) {
+export default function IdentityEvidence({ lists = [] }) {
+  const safeLists = Array.isArray(lists) ? lists : []
   return (
     <div className="section-stack">
-      {lists.map((item, index) => (
+      {safeLists.map((item, index) => (
         <section className="surface" key={NAMES[index]}>
           <div className="section-header">
             <div>

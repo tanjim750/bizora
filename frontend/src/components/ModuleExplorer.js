@@ -3,7 +3,15 @@ import { FieldGrid, StatusBadge } from './DataTable'
 import { businessPath, MODULE_VIEWS, SECTIONS } from '@/lib/catalog'
 import { fieldValue, label, recordTitle, statusText } from '@/lib/format'
 
-export default function ModuleExplorer({ businessId, section, view, data, recordId, query }) {
+export default function ModuleExplorer({
+  businessId,
+  section,
+  view,
+  data,
+  recordId,
+  query,
+  hideHeading = false,
+}) {
   const module = MODULE_VIEWS[section]
   const base = businessPath(businessId, section)
   const rows = Array.isArray(data) ? data : data?.results
@@ -25,14 +33,16 @@ export default function ModuleExplorer({ businessId, section, view, data, record
   }
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <p className="page-context">{label(view.replaceAll('/', ' '))}</p>
-          <h1>{SECTIONS.find((item) => item.key === section).label}</h1>
-          <p>Business scoped records and evidence from the {label(module.prefix)} service.</p>
+      {!hideHeading && (
+        <div className="page-heading">
+          <div>
+            <p className="page-context">{label(view.replaceAll('/', ' '))}</p>
+            <h1>{SECTIONS.find((item) => item.key === section).label}</h1>
+            <p>Business scoped records and evidence from the {label(module.prefix)} service.</p>
+          </div>
+          <StatusBadge text={recordId ? `Record #${recordId}` : 'Recorded evidence'} />
         </div>
-        <StatusBadge text={recordId ? `Record #${recordId}` : 'Recorded evidence'} />
-      </div>
+      )}
       <nav className="module-nav" aria-label={`${label(section)} views`}>
         {module.views.map((item) => (
           <Link

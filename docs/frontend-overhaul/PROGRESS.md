@@ -25,7 +25,7 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T3-6 Gallery | done | ae31e98 | Created /business/[businessId]/ui-kit developer gallery with interactive controls (theme switch, density toggle, modal triggers, toast triggers, drawer test, and full typed DataTable showcase). Verified across 12 page checks at 1440x900 and 390x844 light/dark with 0 issues. |
 | T4-1 Shared layout and shell | done | 27df4a5 | Overhauled AppShell with collapsible 256px rail (72px collapsed with localStorage preference and bottom toggle), 6 enterprise nav groups (Overview, Operations, Intelligence, Data & identity, Integrations, Settings), active route matching for 9 workspaces and legacy routes, mobile drawer with focus trap, Esc dismiss, and scroll lock, sticky 56px topbar with business switcher, role chip, global search Ctrl+K trigger and QuickSearchDialog, context indicator, theme toggle, and user sign-out menu. Verified across 12 page checks (0 issues, verify-pages clean). |
 | T4-2 Boundaries and metadata | done | b694377 | Added root global-error.js (html/body compliant, safe fatal boundary), root not-found.js (clear 404 message, illustration-free enterprise design, return to workspaces/login), business-level error.js (inline Banner variant=danger with server detail, retry button, links to Overview and workspace), business-level loading.js (skeleton shaped like final page with header, KPIs, filter bar, and table rows; zero white flash), business-level not-found.js, and route metadata template in root layout.js (%s · Bizora). Verified 404 response on /does-not-exist and gates clean. |
-| T4-3 Route skeleton and redirects | todo | | |
+| T4-3 Route skeleton and redirects | done | pending | Created nine-workspace route skeleton (P2 Overview, P3 Customers, P4 Commerce, P5 Support, P6 Growth, P7 Intelligence, P8 AI, P9 Admin) with optional catch-all [[...tab]] segments, tab metadata, and backward-compatible redirects from legacy /records/[resource]/[id] (to tab + ?open=res:id), /resources/[resource] (to tab), and /[section] (to target workspace). 43/43 tests pass, build 5.3s, verify-pages 40/40 checks clean (0 issues). |
 | T5-P1 Sign-in and business choice | todo | | |
 | T5-P2 Overview | todo | | |
 | T5-P4 Commerce | todo | | |
@@ -77,7 +77,39 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 - All 4 phase reviewers completed (Architect: APPROVE, Design: SHIP, Security: SHIP, Code: SHIP with FilterBar accessible name resolved). All gates green: 39/39 tests passing, format:check clean, build green, 12 page checks with 0 issues.
 - Next: Phase 4 (Shell, navigation, routes, boundaries: T4-1 to T4-3).
 
+### Phase 4: Shell, navigation, routes, boundaries (completed 2026-11-10 01:13)
+- Overhauled enterprise AppShell: 256px rail (72px collapsed with persistent preference and clean toggle button), 6 enterprise nav groups with 9 workspaces mapping, mobile drawer (<1024px) with focus trap, Esc dismiss, and scroll lock, sticky 56px topbar with styled business switcher, role tag, global search `Ctrl+K` trigger and `QuickSearchDialog`, context tag (`BDT · Asia/Dhaka`), theme toggle, and user profile sign-out menu.
+- Full Next.js 16 App Router error, loading, and not-found boundaries:
+  - Root `global-error.js` with HTML/body shell, high-contrast action buttons (WCAG 2.2 AA compliant), and recovery flow.
+  - Root `not-found.js` and business-scoped `not-found.js` with clear navigation back to authorized workspaces.
+  - Business `error.js` with inline Banner (variant="danger"), server detail, and retry button with link fallbacks.
+  - Business `loading.js` skeleton shaped like final page (header, KPIs, filter bar, table rows; zero white flash).
+  - Title metadata template in `layout.js` (`%s · Bizora`).
+- Nine-workspace route skeletons created with optional catch-all segments `[[...tab]]`:
+  - P2 Overview (`/business/[id]/overview/[[...tab]]`)
+  - P3 Customers (`/business/[id]/customers/[[...tab]]`)
+  - P4 Commerce (`/business/[id]/commerce/[[...tab]]`)
+  - P5 Support (`/business/[id]/support/[[...tab]]`)
+  - P6 Growth (`/business/[id]/growth/[[...tab]]`)
+  - P7 Intelligence (`/business/[id]/intelligence/[[...tab]]`)
+  - P8 AI (`/business/[id]/ai/[[...tab]]`)
+  - P9 Admin (`/business/[id]/admin/[[...tab]]` with `MANAGER_ROLES` guard)
+- Backward-compatible redirects in `src/lib/domain/redirects.js` mapping all legacy routes and 32 resources:
+  - Legacy `records/[resource]/[id]` redirects to the destination workspace tab with `?open=resource:id` drawer parameter.
+  - Canonical `resources/[resource]` redirects to the destination workspace tab.
+  - Legacy sections redirect to their mapped workspace tabs.
+- Backward compatibility and heading normalization: added `hideHeading` to `ResourceList`, `Overview`, `ReviewForms`, `ModuleExplorer`, and `AdvisoryTools` to ensure exactly 1 authoritative `h1` per page.
+- Hardened `Button` to support both component references and pre-rendered React elements for the `icon` prop.
+- All 40 page checks across all 10 pages at desktop (1440x900) and mobile (390x844), light and dark: **TOTAL ISSUES: 0**.
+- Gates green: 43/43 unit tests pass, format:check clean, build green in 5.3s.
+- Next: Phase 5 (Workspaces and screens: T5-P1 to T5-P9).
+
 ## Decisions I took
+- Used optional catch-all segments `[[...tab]]` in Next.js 16 App Router for clean handling of both base workspace URLs (`/business/[id]/commerce`) and tab segments (`/business/[id]/commerce/orders`) with query fallback.
+- Added `hideHeading` prop to `ResourceList`, `Overview`, `ReviewForms`, `ModuleExplorer`, and `AdvisoryTools` to avoid duplicate `h1` headings when wrapped in modern `PageHeader`.
+- Hardened `Button` to support both component classes/functions and pre-rendered React elements for the `icon` prop.
+- Adjusted error card primary button contrast in `global-error.js` to WCAG 2.2 AA (4.5:1+).
+- Sanitized `Tabs.js` to absorb `activeKey` and `tabs` without leaking unhandled props to underlying DOM containers.
 - Kept `server.js` and `next/headers` completely separate from `src/lib/api/index.js` and `client.js` so client components never trigger Next.js server-only runtime bundler errors.
 - Enforced strict allow-list on query parameters (`filterQueryParams`) in `resources.js` to guard against Django DRF 400 Bad Request on unrecognized filter parameters.
 - Hardened `isSafeRelativePath` using WHATWG `new URL` parsing to reject backslashes and control characters, preventing open-redirect vulnerabilities when navigating login redirects.
