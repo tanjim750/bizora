@@ -5,9 +5,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { getSession } from '@/lib/serverApi'
 import { businessApiPath } from '@/lib/catalog'
 import { serverApi } from '@/lib/serverApi'
-import ResourceList from '@/components/ResourceList'
-import CreateRecord from '@/components/CreateRecord'
-import { WRITER_ROLES } from '@/lib/catalog'
+import Commerce from '@/components/Commerce'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,24 +26,30 @@ export default async function CommerceWorkspacePage({ params, searchParams }) {
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'orders'
 
   const commerceTabs = [
-    { key: 'orders', label: 'Orders', href: `/business/${businessId}/commerce/orders` },
+    { key: 'orders', label: 'Orders', href: `/business/${businessId}/commerce` },
     { key: 'payments', label: 'Payments & Refunds', href: `/business/${businessId}/commerce/payments` },
     { key: 'deliveries', label: 'Deliveries', href: `/business/${businessId}/commerce/deliveries` },
     { key: 'products', label: 'Products & Variants', href: `/business/${businessId}/commerce/products` },
   ]
 
-  // Map tab to underlying primary resource
-  const tabResourceMap = {
-    orders: 'orders',
-    payments: 'payments',
-    deliveries: 'shipments',
-    products: 'products',
+  // Fetch data across commerce domains
+  const [ordersResult, paymentsResult, timelineResult, shipmentsResult, productsResult] = await Promise.all([
+    serverApi(businessApiPath(businessId, 'orders/?page_size=25')),
+    serverApi(businessApiPath(businessId, 'payments/?page_size=25')),
+    serverApi(businessApiPath(businessId, 'financial-timeline/?page_size=25')),
+    serverApi(businessApiPath(businessId, 'shipments/?page_size=25')),
+    serverApi(businessApiPath(businessId, 'products/?page_size=25')),
+  ])
+
+  // Handle server-side prefetching for open record drawer if specified in ?open=res:id
+  let initialActiveRecord = null
+  if (query?.open && typeof query.open === 'string' && query.open.includes(':')) {
+    const [openResource, openId] = query.open.split(':')
+    const detailRes = await serverApi(businessApiPath(businessId, `${openResource}/${openId}/`))
+    if (detailRes.ok && detailRes.data) {
+      initialActiveRecord = { resource: openResource, ...detailRes.data }
+    }
   }
-
-  const primaryResource = tabResourceMap[currentTab] || 'orders'
-
-  // Fetch list data for the active tab's primary resource
-  const listResult = await serverApi(businessApiPath(businessId, `${primaryResource}/?page_size=25`))
 
   return (
     <div className="workspace-page">
@@ -63,19 +67,17 @@ export default async function CommerceWorkspacePage({ params, searchParams }) {
       <Tabs tabs={commerceTabs} activeKey={currentTab} className="workspace-tabs" />
 
       <div className="workspace-tab-content">
-        <ResourceList
-          title={commerceTabs.find((t) => t.key === currentTab)?.label || 'Commerce'}
+        <Commerce
+          business={business}
           businessId={businessId}
-          resource={primaryResource}
-          data={listResult.data}
-          query={query}
-          path={`/business/${businessId}/commerce/${currentTab}`}
-          hideHeading={true}
-        >
-          {WRITER_ROLES.has(business.role) && (
-            <CreateRecord businessId={businessId} resource={primaryResource} />
-          )}
-        </ResourceList>
+          activeTab={currentTab}
+          ordersData={ordersResult.data}
+          paymentsData={paymentsResult.data}
+          timelineData={timelineResult.data}
+          shipmentsData={shipmentsResult.data}
+          productsData={productsResult.data}
+          initialActiveRecord={initialActiveRecord}
+        />
       </div>
     </div>
   )
