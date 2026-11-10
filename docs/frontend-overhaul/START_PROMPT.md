@@ -5,7 +5,7 @@ The agent team is the owner's A-Team (see `AGENT_TEAM.md`). Its session hook inj
 Pick **one**. Type `/` in the Antigravity agent panel first and look at the list.
 - `/goal` is listed: use **A** (keeps the agent working until the goal is met; the docs describe it as built for long overnight work, no iteration cap, approvals still apply).
 - Only `/system-architect` is listed: use **B**.
-- Neither is listed, or slash commands do nothing: use **D** (plain text, tells the agent to read the team files directly; recommended). **C** is the shorter plain version.
+- Neither is listed, or slash commands do nothing: use **F** (the complete prompt; D and E are older and shorter). **D** (plain text, tells the agent to read the team files directly; recommended). **C** is the shorter plain version.
 
 Before sleeping, finish the checklist in `README.md` section "Before you sleep"; an approval prompt nobody answers stops the whole night.
 
@@ -78,6 +78,35 @@ FIRST do task T1-6 "Formal theme: palette and typography" (it is in PLAN.md). Th
 THEN continue the programme exactly as before: take the first task in PLAN.md not done in PROGRESS.md (T5-P1) and work through Phase 5, 6 and 7 in order, one task at a time, one local commit per task, verify each (npm test, format:check, build, verify-pages for the pages touched at 1440x900 and 390x844 in both themes), run the four reviewers at the end of each phase and fix every critical, high and medium finding, update PROGRESS.md and docs/CHECKPOINT.md after every task. New pages must use only tokens and the existing UI kit components and classes (no raw colours, no new fonts, no weights above 600, no negative letter-spacing). Do not stop after one or two hours; finish with docs/frontend-overhaul/FINAL_REPORT.md.
 
 Hard rules: frontend only (frontend/**, docs/frontend-overhaul/**, docs/backend-issues/**); never edit the backend (write problems into docs/backend-issues/<domain>.md); NEVER git push, no force, no tags, no remote changes, never use --no-verify or ALLOW_* variables; never open .env files or print secrets; adding a heavy dependency is the owner's decision, so record it as blocked.
+```
+
+## F. Complete the whole frontend (formal theme, better sidebar, libraries, clean layout, all screen sizes) - USE THIS ONE (added 2026-11-10)
+Supersedes prompt E as the main prompt (E still defines the steps of task T1-6, which F tells the agent to follow). It finishes everything that is left, in a fixed order, with the specs in `UX_POLISH_SPEC.md`. Paste the whole block as one message.
+```text
+You are the autonomous lead engineer of the Bizora frontend overhaul. I will NOT answer questions: never ask me anything, never wait for approval, never end your turn to check in. When unsure, take the default from the docs, record the decision in docs/frontend-overhaul/PROGRESS.md and continue. If truly blocked, write it under "Blocked / questions for the owner" in PROGRESS.md and move to the next independent task.
+
+GOAL: finish the ENTIRE frontend properly: formal colours and typography, a clearly better sidebar, good libraries, a clean consistent layout, and correct behaviour on phone, tablet and desktop. The earlier run stopped after T4-3 (about 2 of 7 to 8 hours): Phase 5 (the nine pages), Phase 6 and Phase 7 are still to do, plus four late additions (T1-6, T4-4, T4-5, T3-7).
+
+READ FIRST, in this order: docs/CHECKPOINT.md, every file in .agents/rules/, docs/frontend-overhaul/MASTER_PROMPT.md, PLAN.md, PROGRESS.md, DESIGN_SPEC.md, UX_POLISH_SPEC.md (the source of truth for libraries, sidebar, layout and responsive behaviour), assets/PALETTE_FORMAL.md, and .agents/skills/system-architect/SKILL.md (last section "Programme mode"). Slash commands may not exist: open skills and reviewers as files (.agents/skills/<name>/SKILL.md, .agents/agents/<name>.md). The branch must be frontend-overhaul. Check the servers with `bash docs/frontend-overhaul/scripts/dev-status.sh` (start them per .agents/skills/start-servers/SKILL.md if one is DOWN).
+
+ORDER OF WORK (one task at a time, ONE local commit per task):
+1. T1-6 Formal theme: do exactly steps 1 to 7 of prompt E in docs/frontend-overhaul/START_PROMPT.md (ignore the final "THEN continue" paragraph of E). Do not change any colour value in assets/tokens.formal.css.
+2. T4-4 Sidebar redesign, 3. T4-5 Responsive foundation and layout primitives, 4. T3-7 Chart components. Specs: the task text in PLAN.md and UX_POLISH_SPEC.md sections 1 to 4.
+5. Phase 5 in PLAN.md order: T5-P1, T5-P2, T5-P4, T5-P3, T5-P5, T5-P8, T5-P7, T5-P6, T5-P9. Every page COMPLETE (all tabs, all states, real backend data), never a skeleton. Definition of done: UX_POLISH_SPEC.md section 5 plus the common acceptance in PLAN.md.
+6. Phase 6 (T6-1 to T6-5), then Phase 7 (T7-1: docs/frontend-overhaul/FINAL_REPORT.md).
+
+LIBRARIES: install ONLY the approved list in UX_POLISH_SPEC.md section 1, with the procedure there (exact versions, npm audit, record each in PROGRESS.md under "Dependencies added", import only through wrapper components in src/components/ui). No Tailwind or other UI kit, no animation library, no other dependency.
+
+HOW TO VERIFY every task: in frontend/ run npm test, npm run format:check and npm run build (all exit 0). Run `node docs/frontend-overhaul/scripts/verify-pages.mjs` for the pages you touched, both themes, at 1440x900 and 390x844 (after T4-5 use the --matrix flag: 360x740, 390x844, 768x1024, 1024x768, 1280x800, 1440x900, 1920x1080); it must report 0 issues. Then LOOK at the screenshots (open the PNG files in ~/bizora-shots/<label>/): nothing overlaps, clips or looks cramped, the sidebar is clean, no words run together, no wall of blue, dark mode is neutral charcoal. Fix what you see and run it again. At the end of every phase run the four reviewers (design-reviewer, code-reviewer, security-reviewer, architect-reviewer) as agents if you can start subagents, otherwise as files you follow yourself, and fix every critical, high and medium finding before the next phase.
+
+DO NOT STOP: after each commit start the next task immediately. A finished task or phase is not a stopping point. Do not write a closing summary until docs/frontend-overhaul/FINAL_REPORT.md exists and every task in PROGRESS.md is done, or blocked with a reason. After every task update PROGRESS.md and docs/CHECKPOINT.md (current state and the exact NEXT task) so a restarted session can resume. If your context gets long, carry on from docs/CHECKPOINT.md.
+
+HARD RULES: frontend only (frontend/**, docs/frontend-overhaul/**, docs/backend-issues/**); never edit the backend (write problems into docs/backend-issues/<domain>.md and give the UI an honest workaround); NEVER git push, no force push, no tags, no remote changes, never use --no-verify or the ALLOW_* variables; stage only frontend/ and docs/ files, never .agents/, GEMINI.md or docs/CHECKPOINT.md; never open .env files or print secrets; follow the honesty wording and design rules in .agents/rules/ exactly (UNAVAILABLE is a calm "Not connected" state, never zero, never red).
+```
+
+## G. Short resume prompt (use when the agent stops or the session restarts)
+```text
+Continue the Bizora frontend overhaul exactly where it stopped. Read docs/CHECKPOINT.md, the rules in .agents/rules/, docs/frontend-overhaul/PROGRESS.md, PLAN.md (see its ORDER NOTE) and UX_POLISH_SPEC.md. Take the first task that is not done and work through all remaining tasks and phases, one task at a time, one local commit per task, verifying each (npm test, npm run format:check, npm run build, verify-pages in both themes, the --matrix sizes once T4-5 is done, and LOOK at the screenshots). Same rules as before: never ask me anything, frontend only, never git push, never open .env files, approved libraries only (UX_POLISH_SPEC.md section 1), run the four reviewers at the end of every phase and fix every critical, high and medium finding, update PROGRESS.md and docs/CHECKPOINT.md after every task. Do not stop and do not write a closing summary until docs/frontend-overhaul/FINAL_REPORT.md exists and every task is done or blocked with a reason.
 ```
 
 ## If it stops

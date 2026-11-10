@@ -47,7 +47,7 @@ Investigate before polishing: if a page looks empty or a number looks odd, check
 - Documents the owner and the next engineer can use: `PROGRESS.md`, `FINAL_REPORT.md`, `docs/backend-issues/*` updated with everything you found.
 
 ## 7. Do not
-Do not migrate to TypeScript, add a CSS framework or a UI kit, add heavy dependencies, redesign the palette, add gradients or illustrations or animation libraries, change the proxy's security semantics, remove existing honest wording, invent backend behaviour, hide errors, push, or ask the owner questions mid-night (record them in `PROGRESS.md` under "Blocked / questions for the owner" and continue with the next independent task).
+Do not migrate to TypeScript, add a CSS framework (Tailwind, Bootstrap) or a second UI kit (MUI, Chakra, Ant, shadcn) or an animation library, add dependencies that are not on the approved list in `UX_POLISH_SPEC.md` section 1 (owner decision D-F29, 2026-11-10), change the colours beyond `assets/tokens.formal.css`, add gradients or illustrations, change the proxy's security semantics, remove existing honest wording, invent backend behaviour, hide errors, push, or ask the owner questions mid-night (record them in `PROGRESS.md` under "Blocked / questions for the owner" and continue with the next independent task).
 
 ## 8. When you finish
 Write `docs/frontend-overhaul/FINAL_REPORT.md`, update the counts in `docs/backend-issues/README.md`, make sure everything is committed locally, and stop. Your last message: what was done per page, the gate results, what is still rough, the five most important backend problems, and the commands to run the app. **Do not push.**

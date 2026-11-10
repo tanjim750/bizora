@@ -1,5 +1,8 @@
 # Design spec: what to build
 
+> **2026-11-10 update:** the sidebar, the layout classes, the responsive behaviour and the approved libraries are specified in `UX_POLISH_SPEC.md`, and the palette and typeface in `assets/PALETTE_FORMAL.md`. Where this file disagrees, those win.
+
+
 Status: 2026-11-09. This is the build target for the overhaul. Background and reasons: `docs/frontend.md` section 2 (design system) and section 3 (modules), contracts: `docs/frontend-api-reference.md`
 (endpoint ids such as D8, E12, BG-1 are defined there). Where this file and an older doc disagree, this file wins.
 
@@ -52,7 +55,7 @@ role chip) with an Open button; one business opens directly. Honour `?next=`.
 **P2 Overview.** Header (business, "BDT · Asia/Dhaka", period selector Day, Week, Month, Rolling 7, Rolling 30, compare toggle). **Real tiles from `GET overview/` (D8) canonical counts:** customers, orders, payments, open conversations, shipments, calls, campaigns.
 KPI tiles (gross revenue, net revenue, orders, average order value, delivery success, cart abandonment) come from the overview module `kpis/`; today they are UNAVAILABLE, so show `UnavailableState` tiles with the reason; never zero. Recent activity feed from D8 (`recent_activity`),
 with domain filter chips. Health and issues from `health/` and `issues/` (UNAVAILABLE until Business Intelligence runs). Trends tab: chart or `UnavailableState`. Health tab: per-domain rows. Endpoints: D8, overview module (`summary`, `kpis`, `trends`, `health`, `issues`, `activity`, `recommendations`, `cross-domain`).
-Charts: hand-built SVG or a tiny helper (no chart library unless justified in PROGRESS.md); direct labels; a data-table alternative.
+Charts: Recharts through the wrappers in `src/components/ui/charts` (task T3-7), colours from `--chart-*` tokens only, direct labels, a data-table alternative ("View as table").
 
 **P3 Customers.** List: search, filters (status, tag, contact), columns name (display name or first and last name), status, primary contact, tags, order count, last activity. Row opens the 360 view (master-detail on wide screens). 360: profile header, linked identities with confidence (`—` when manual),
 tabs as in the table above using D9 `customers/{pk}/360/` sections and the child list endpoints. Timeline tab merges orders, payments, shipments, messages and calls on one vertical line. "AI customer context" block: `UnavailableState`. Open issues block from E12. Graph tab: the one-hop context from D22 `graph-context/customer/{pk}/`.
