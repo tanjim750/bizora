@@ -16,8 +16,8 @@
 .page-context {
   color: var(--color-primary);
   font-size: var(--text-overline);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-overline);
   text-transform: uppercase;
   margin-bottom: var(--space-1);
 }
@@ -112,12 +112,12 @@
 
 .button-secondary {
   background: var(--color-surface);
-  color: var(--color-primary);
+  color: var(--color-text);
   border-color: var(--color-border-input);
 }
 
 .button-secondary:hover {
-  background: var(--color-primary-subtle);
+  background: var(--color-surface-subtle);
 }
 
 .button-danger {
@@ -136,6 +136,10 @@
   background: transparent;
   border-color: transparent;
   color: var(--color-text);
+}
+
+.button-ghost:hover {
+  background: var(--color-surface-subtle);
 }
 
 .button-ghost:hover {
@@ -310,7 +314,7 @@
 }
 
 .alert strong {
-  font-weight: 700;
+  font-weight: var(--weight-heading);
 }
 
 /* Empty states */
@@ -540,8 +544,8 @@
 
 /* Simulated Badge */
 .simulated-badge {
-  letter-spacing: 0.05em;
-  font-weight: 700;
+  letter-spacing: var(--tracking-overline);
+  font-weight: var(--weight-heading);
   font-size: 11px;
   cursor: help;
 }
@@ -549,17 +553,17 @@
 /* KPI Tile extras */
 .kpi-tile .kpi-value {
   font-size: var(--text-kpi-hero);
-  font-weight: 700;
+  font-weight: var(--weight-heading);
   color: var(--color-text);
-  line-height: 1.2;
+  line-height: var(--leading-heading);
 }
 
 .kpi-trend {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font-weight: 600;
-  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
 }
 
 .trend-up {
@@ -796,7 +800,7 @@
   box-shadow: var(--shadow-e3);
   display: flex;
   flex-direction: column;
-  animation: slideInRight var(--duration-normal) var(--ease-out);
+  animation: slideInRight var(--duration-base) var(--ease-out);
   outline: none;
 }
 
@@ -1145,8 +1149,8 @@
 .page-title {
   margin: 0;
   font-size: var(--text-page-title);
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
   color: var(--color-text);
 }
 
@@ -1184,8 +1188,9 @@
   display: block;
   color: var(--color-text);
   font-size: var(--text-kpi-hero);
-  letter-spacing: -0.035em;
-  line-height: 1.2;
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
   margin: var(--space-3) 0 var(--space-2);
 }
 
@@ -1228,7 +1233,7 @@
 .snapshot-list dd {
   margin: 0;
   color: var(--color-text);
-  font-weight: 700;
+  font-weight: var(--weight-medium);
 }
 
 .advisory {
@@ -1306,7 +1311,7 @@
 
 .form-required {
   color: var(--color-danger);
-  font-weight: 700;
+  font-weight: var(--weight-medium);
 }
 
 .form-hint {
@@ -1441,7 +1446,7 @@
 
 /* Datetime and Money specific */
 .datetime-tz-badge {
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-caption);
   color: var(--color-text-muted);
 }
@@ -1480,7 +1485,7 @@ table {
 th,
 td {
   text-align: left;
-  padding: var(--space-3);
+  padding: 10px var(--space-4);
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
@@ -1488,7 +1493,8 @@ td {
 th {
   color: var(--color-text-secondary);
   background: var(--color-surface-subtle);
-  font-weight: 600;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
   white-space: nowrap;
   position: sticky;
   top: 0;
@@ -1835,8 +1841,8 @@ td small {
 
 .auth-context {
   text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-overline);
   color: var(--color-primary);
   font-size: var(--text-overline);
 }
@@ -1931,7 +1937,7 @@ td small {
   border-radius: var(--radius-md);
   background: var(--color-primary-subtle);
   color: var(--color-primary-text);
-  font-weight: 700;
+  font-weight: var(--weight-heading);
   font-size: var(--text-section);
 }
 
@@ -2201,7 +2207,7 @@ td small {
 
 .evidence-bullet {
   color: var(--color-primary);
-  font-weight: 700;
+  font-weight: var(--weight-heading);
   user-select: none;
 }
 
@@ -2388,7 +2394,7 @@ td small {
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-overline);
 }
 
 .not-found-lead {

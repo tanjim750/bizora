@@ -71,25 +71,25 @@ h5,
 h6 {
   color: var(--color-text);
   font-family: var(--font-heading);
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-heading);
 }
 
 h1 {
   font-size: var(--text-page-title);
-  letter-spacing: -0.025em;
+  letter-spacing: var(--tracking-heading);
   margin-bottom: var(--space-2);
 }
 
 h2 {
   font-size: var(--text-section);
-  letter-spacing: -0.016em;
+  letter-spacing: var(--tracking-heading);
   margin-bottom: var(--space-2);
 }
 
 h3 {
   font-size: var(--text-card-title);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-heading);
   margin-bottom: var(--space-1);
 }
 

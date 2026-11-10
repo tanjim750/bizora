@@ -97,13 +97,13 @@ export function DataTable({
     switch (col.type) {
       case 'money':
         return (
-          <span className="font-mono tabular-nums font-semibold">
+          <span className="tabular-nums font-semibold">
             {money(val, row.currency || col.currency || 'BDT')}
           </span>
         )
 
       case 'datetime':
-        return <span className="font-mono text-caption text-secondary">{dateTime(val)}</span>
+        return <span className="tabular-nums text-caption text-secondary">{dateTime(val)}</span>
 
       case 'relativeTime':
         return (

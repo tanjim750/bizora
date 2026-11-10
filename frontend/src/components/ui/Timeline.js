@@ -38,7 +38,7 @@ export function Timeline({ events = [], showRelativeTime = false, className = ''
                   <time
                     dateTime={event.timestamp}
                     title={dateTime(event.timestamp)}
-                    className="timeline-time font-mono text-caption"
+                    className="timeline-time tabular-nums text-caption"
                   >
                     {timeDisplay}
                   </time>
