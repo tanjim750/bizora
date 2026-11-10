@@ -26,15 +26,16 @@ export default async function OverviewWorkspacePage({ params, searchParams }) {
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'overview'
 
   const overviewTabs = [
-    { key: 'overview', label: 'Overview', href: `/business/${businessId}/overview/overview` },
+    { key: 'overview', label: 'Overview', href: `/business/${businessId}/overview` },
     { key: 'trends', label: 'Trends', href: `/business/${businessId}/overview/trends` },
     { key: 'health', label: 'Health', href: `/business/${businessId}/overview/health` },
   ]
 
-  // Fetch overview data from backend
-  const [overviewResult, queueResult] = await Promise.all([
+  // Fetch overview data, queue count, and open issues from backend
+  const [overviewResult, queueResult, issuesResult] = await Promise.all([
     serverApi(businessApiPath(businessId, 'overview/')),
     serverApi(businessApiPath(businessId, 'support-queue/?page_size=1')),
+    serverApi(businessApiPath(businessId, 'issues/')),
   ])
 
   return (
@@ -57,6 +58,7 @@ export default async function OverviewWorkspacePage({ params, searchParams }) {
           business={business}
           data={overviewResult.data}
           queueCount={queueResult.data?.count}
+          issues={issuesResult.ok && Array.isArray(issuesResult.data) ? issuesResult.data : []}
           businessId={businessId}
           activeTab={currentTab}
           hideHeading={true}
