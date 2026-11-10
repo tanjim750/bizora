@@ -1,6 +1,5 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import AppShell from '@/components/AppShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs } from '@/components/ui/Tabs'
 import { getSession } from '@/lib/serverApi'
@@ -44,37 +43,35 @@ export default async function GrowthWorkspacePage({ params, searchParams }) {
   const listResult = await serverApi(businessApiPath(businessId, `${primaryResource}/?page_size=25`))
 
   return (
-    <AppShell session={session} business={business}>
-      <div className="workspace-page">
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Workspaces', href: '/workspace' },
-            { label: business.name, href: `/business/${businessId}/overview` },
-            { label: 'Growth' },
-          ]}
-          title="Growth & Marketing"
-          description="Omnichannel marketing campaign telemetry, ad spend attribution, and website visitor sessions."
-          badge="Platform-reported"
-        />
+    <div className="workspace-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Workspaces', href: '/workspace' },
+          { label: business.name, href: `/business/${businessId}/overview` },
+          { label: 'Growth' },
+        ]}
+        title="Growth & Marketing"
+        description="Omnichannel marketing campaign telemetry, ad spend attribution, and website visitor sessions."
+        badge="Platform-reported"
+      />
 
-        <Tabs tabs={growthTabs} activeKey={currentTab} className="workspace-tabs" />
+      <Tabs tabs={growthTabs} activeKey={currentTab} className="workspace-tabs" />
 
-        <div className="workspace-tab-content">
-          <ResourceList
-            title={growthTabs.find((t) => t.key === currentTab)?.label || 'Growth'}
-            businessId={businessId}
-            resource={primaryResource}
-            data={listResult.data}
-            query={query}
-            path={`/business/${businessId}/growth/${currentTab}`}
-            hideHeading={true}
-          >
-            {WRITER_ROLES.has(business.role) && (
-              <CreateRecord businessId={businessId} resource={primaryResource} />
-            )}
-          </ResourceList>
-        </div>
+      <div className="workspace-tab-content">
+        <ResourceList
+          title={growthTabs.find((t) => t.key === currentTab)?.label || 'Growth'}
+          businessId={businessId}
+          resource={primaryResource}
+          data={listResult.data}
+          query={query}
+          path={`/business/${businessId}/growth/${currentTab}`}
+          hideHeading={true}
+        >
+          {WRITER_ROLES.has(business.role) && (
+            <CreateRecord businessId={businessId} resource={primaryResource} />
+          )}
+        </ResourceList>
       </div>
-    </AppShell>
+    </div>
   )
 }

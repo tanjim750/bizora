@@ -1,6 +1,5 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import AppShell from '@/components/AppShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs } from '@/components/ui/Tabs'
 import { UnavailableState } from '@/components/ui/UnavailableState'
@@ -37,61 +36,59 @@ export default async function IntelligenceWorkspacePage({ params, searchParams }
   const issuesResult = await serverApi(businessApiPath(businessId, 'issues/'))
 
   return (
-    <AppShell session={session} business={business}>
-      <div className="workspace-page">
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Workspaces', href: '/workspace' },
-            { label: business.name, href: `/business/${businessId}/overview` },
-            { label: 'Intelligence' },
-          ]}
-          title="Business Intelligence & Graph"
-          description="Authoritative facts, entity graph topology, real-time issue detection, and analytical pipelines."
-          badge="Deterministic Brain"
-        />
+    <div className="workspace-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Workspaces', href: '/workspace' },
+          { label: business.name, href: `/business/${businessId}/overview` },
+          { label: 'Intelligence' },
+        ]}
+        title="Business Intelligence & Graph"
+        description="Authoritative facts, entity graph topology, real-time issue detection, and analytical pipelines."
+        badge="Deterministic Brain"
+      />
 
-        <Tabs tabs={intelligenceTabs} activeKey={currentTab} className="workspace-tabs" />
+      <Tabs tabs={intelligenceTabs} activeKey={currentTab} className="workspace-tabs" />
 
-        <div className="workspace-tab-content">
-          {currentTab === 'facts' && (
-            <div className="facts-tab-container">
-              {issuesResult.data?.results?.length ? (
-                <p>Issues detected</p>
-              ) : (
-                <UnavailableState
-                  title="Business Intelligence facts service"
-                  owner="Business Intelligence"
-                  reason="The Business Intelligence fact derivation engine has not generated snapshots for this period."
-                />
-              )}
-            </div>
-          )}
+      <div className="workspace-tab-content">
+        {currentTab === 'facts' && (
+          <div className="facts-tab-container">
+            {issuesResult.data?.results?.length ? (
+              <p>Issues detected</p>
+            ) : (
+              <UnavailableState
+                title="Business Intelligence facts service"
+                owner="Business Intelligence"
+                reason="The Business Intelligence fact derivation engine has not generated snapshots for this period."
+              />
+            )}
+          </div>
+        )}
 
-          {currentTab === 'graph' && (
-            <UnavailableState
-              title="Full Graph Traversal & Topology"
-              owner="Business Graph"
-              reason="Multi-hop graph traversal and topology views are unavailable in this environment."
-            />
-          )}
+        {currentTab === 'graph' && (
+          <UnavailableState
+            title="Full Graph Traversal & Topology"
+            owner="Business Graph"
+            reason="Multi-hop graph traversal and topology views are unavailable in this environment."
+          />
+        )}
 
-          {currentTab === 'metrics' && (
-            <UnavailableState
-              title="Metrics & Multi-dimensional Analysis"
-              owner="Business Intelligence"
-              reason="Analytical metrics registry and snapshot store are unmounted."
-            />
-          )}
+        {currentTab === 'metrics' && (
+          <UnavailableState
+            title="Metrics & Multi-dimensional Analysis"
+            owner="Business Intelligence"
+            reason="Analytical metrics registry and snapshot store are unmounted."
+          />
+        )}
 
-          {currentTab === 'pipeline' && (
-            <UnavailableState
-              title="Automated Data Pipeline"
-              owner="Platform Operations"
-              reason="Pipeline orchestration and continuous ingestion runners are offline."
-            />
-          )}
-        </div>
+        {currentTab === 'pipeline' && (
+          <UnavailableState
+            title="Automated Data Pipeline"
+            owner="Platform Operations"
+            reason="Pipeline orchestration and continuous ingestion runners are offline."
+          />
+        )}
       </div>
-    </AppShell>
+    </div>
   )
 }

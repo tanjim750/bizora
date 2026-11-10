@@ -1,6 +1,5 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import AppShell from '@/components/AppShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs } from '@/components/ui/Tabs'
 import { UnavailableState } from '@/components/ui/UnavailableState'
@@ -55,79 +54,73 @@ export default async function AdminWorkspacePage({ params, searchParams }) {
   ])
 
   return (
-    <AppShell session={session} business={business}>
-      <div className="workspace-page">
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Workspaces', href: '/workspace' },
-            { label: business.name, href: `/business/${businessId}/overview` },
-            { label: 'Admin' },
-          ]}
-          title="Administration & Controls"
-          description="Entity identity resolution, integration sync status, business governance rules, and system configuration."
-          badge="Restricted · Manager Access"
-        />
+    <div className="workspace-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Workspaces', href: '/workspace' },
+          { label: business.name, href: `/business/${businessId}/overview` },
+          { label: 'Admin' },
+        ]}
+        title="Administration & Controls"
+        description="Entity identity resolution, integration sync status, business governance rules, and system configuration."
+        badge="Restricted · Manager Access"
+      />
 
-        <Tabs tabs={adminTabs} activeKey={currentTab} className="workspace-tabs" />
+      <Tabs tabs={adminTabs} activeKey={currentTab} className="workspace-tabs" />
 
-        <div className="workspace-tab-content">
-          {currentTab === 'identity' && (
-            <div className="admin-identity-tab">
-              <IdentityTools businessId={businessId} />
-              <IdentityReview
-                business={business}
-                conflicts={identityConflictsResult.data}
-                hideHeading={true}
-              />
-              <IdentityEvidence lists={[]} />
-            </div>
-          )}
+      <div className="workspace-tab-content">
+        {currentTab === 'identity' && (
+          <div className="admin-identity-tab">
+            <IdentityTools businessId={businessId} />
+            <IdentityReview business={business} conflicts={identityConflictsResult.data} hideHeading={true} />
+            <IdentityEvidence lists={[]} />
+          </div>
+        )}
 
-          {currentTab === 'integrations' && (
-            <div className="admin-integrations-tab">
-              <ModuleExplorer
-                title="Integrations & Observability"
-                section="observability"
-                businessId={businessId}
-                view={query.view || 'summary'}
-                data={{}}
-                query={query}
-                hideHeading={true}
-              />
-            </div>
-          )}
-
-          {currentTab === 'configuration' && (
-            <div className="admin-configuration-tab">
-              <ModuleExplorer
-                title="Business Configuration"
-                section="configuration"
-                businessId={businessId}
-                view={query.view || 'effective'}
-                data={{}}
-                query={query}
-                hideHeading={true}
-              />
-            </div>
-          )}
-
-          {currentTab === 'knowledge' && (
-            <UnavailableState
-              title="Memory & Knowledge Base"
-              owner="Memory Knowledge"
-              reason="Vector knowledge repository and business semantic memory are unmounted in this environment."
+        {currentTab === 'integrations' && (
+          <div className="admin-integrations-tab">
+            <ModuleExplorer
+              title="Integrations & Observability"
+              section="observability"
+              businessId={businessId}
+              view={query.view || 'summary'}
+              data={{}}
+              query={query}
+              hideHeading={true}
             />
-          )}
+          </div>
+        )}
 
-          {currentTab === 'simulation' && (
-            <UnavailableState
-              title="Prototype Simulation & Sandbox"
-              owner="Prototype Simulation"
-              reason="What-if simulation engine and scenario sandbox are unmounted in this environment."
+        {currentTab === 'configuration' && (
+          <div className="admin-configuration-tab">
+            <ModuleExplorer
+              title="Business Configuration"
+              section="configuration"
+              businessId={businessId}
+              view={query.view || 'effective'}
+              data={{}}
+              query={query}
+              hideHeading={true}
             />
-          )}
-        </div>
+          </div>
+        )}
+
+        {currentTab === 'knowledge' && (
+          <UnavailableState
+            title="Memory & Knowledge Base"
+            owner="Memory Knowledge"
+            reason="Vector knowledge repository and business semantic memory are unmounted in this environment."
+          />
+        )}
+
+        {currentTab === 'simulation' && (
+          <UnavailableState
+            title="Prototype Simulation & Sandbox"
+            owner="Prototype Simulation"
+            reason="What-if simulation engine and scenario sandbox are unmounted in this environment."
+          />
+        )}
       </div>
-    </AppShell>
+    </div>
   )
 }

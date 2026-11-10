@@ -1,6 +1,5 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import AppShell from '@/components/AppShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs } from '@/components/ui/Tabs'
 import { getSession } from '@/lib/serverApi'
@@ -47,37 +46,35 @@ export default async function SupportWorkspacePage({ params, searchParams }) {
   const listResult = await serverApi(businessApiPath(businessId, endpoint))
 
   return (
-    <AppShell session={session} business={business}>
-      <div className="workspace-page">
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Workspaces', href: '/workspace' },
-            { label: business.name, href: `/business/${businessId}/overview` },
-            { label: 'Support' },
-          ]}
-          title="Customer Support"
-          description="Omnichannel customer messaging, SLA priority queue, and recorded callback logging."
-          badge="Saved — not sent"
-        />
+    <div className="workspace-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Workspaces', href: '/workspace' },
+          { label: business.name, href: `/business/${businessId}/overview` },
+          { label: 'Support' },
+        ]}
+        title="Customer Support"
+        description="Omnichannel customer messaging, SLA priority queue, and recorded callback logging."
+        badge="Saved — not sent"
+      />
 
-        <Tabs tabs={supportTabs} activeKey={currentTab} className="workspace-tabs" />
+      <Tabs tabs={supportTabs} activeKey={currentTab} className="workspace-tabs" />
 
-        <div className="workspace-tab-content">
-          <ResourceList
-            title={supportTabs.find((t) => t.key === currentTab)?.label || 'Support'}
-            businessId={businessId}
-            resource={primaryResource}
-            data={listResult.data}
-            query={query}
-            path={`/business/${businessId}/support/${currentTab}`}
-            hideHeading={true}
-          >
-            {WRITER_ROLES.has(business.role) && (
-              <CreateRecord businessId={businessId} resource={primaryResource} />
-            )}
-          </ResourceList>
-        </div>
+      <div className="workspace-tab-content">
+        <ResourceList
+          title={supportTabs.find((t) => t.key === currentTab)?.label || 'Support'}
+          businessId={businessId}
+          resource={primaryResource}
+          data={listResult.data}
+          query={query}
+          path={`/business/${businessId}/support/${currentTab}`}
+          hideHeading={true}
+        >
+          {WRITER_ROLES.has(business.role) && (
+            <CreateRecord businessId={businessId} resource={primaryResource} />
+          )}
+        </ResourceList>
       </div>
-    </AppShell>
+    </div>
   )
 }

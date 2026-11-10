@@ -1,6 +1,5 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import AppShell from '@/components/AppShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs } from '@/components/ui/Tabs'
 import { getSession } from '@/lib/serverApi'
@@ -49,37 +48,35 @@ export default async function CommerceWorkspacePage({ params, searchParams }) {
   const listResult = await serverApi(businessApiPath(businessId, `${primaryResource}/?page_size=25`))
 
   return (
-    <AppShell session={session} business={business}>
-      <div className="workspace-page">
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Workspaces', href: '/workspace' },
-            { label: business.name, href: `/business/${businessId}/overview` },
-            { label: 'Commerce' },
-          ]}
-          title="Commerce Operations"
-          description="Order lifecycle fulfillment, payment settlement, refund tracking, and SKU inventory management."
-          badge={`Commerce · ${business.currency}`}
-        />
+    <div className="workspace-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Workspaces', href: '/workspace' },
+          { label: business.name, href: `/business/${businessId}/overview` },
+          { label: 'Commerce' },
+        ]}
+        title="Commerce Operations"
+        description="Order lifecycle fulfillment, payment settlement, refund tracking, and SKU inventory management."
+        badge={`Commerce · ${business.currency}`}
+      />
 
-        <Tabs tabs={commerceTabs} activeKey={currentTab} className="workspace-tabs" />
+      <Tabs tabs={commerceTabs} activeKey={currentTab} className="workspace-tabs" />
 
-        <div className="workspace-tab-content">
-          <ResourceList
-            title={commerceTabs.find((t) => t.key === currentTab)?.label || 'Commerce'}
-            businessId={businessId}
-            resource={primaryResource}
-            data={listResult.data}
-            query={query}
-            path={`/business/${businessId}/commerce/${currentTab}`}
-            hideHeading={true}
-          >
-            {WRITER_ROLES.has(business.role) && (
-              <CreateRecord businessId={businessId} resource={primaryResource} />
-            )}
-          </ResourceList>
-        </div>
+      <div className="workspace-tab-content">
+        <ResourceList
+          title={commerceTabs.find((t) => t.key === currentTab)?.label || 'Commerce'}
+          businessId={businessId}
+          resource={primaryResource}
+          data={listResult.data}
+          query={query}
+          path={`/business/${businessId}/commerce/${currentTab}`}
+          hideHeading={true}
+        >
+          {WRITER_ROLES.has(business.role) && (
+            <CreateRecord businessId={businessId} resource={primaryResource} />
+          )}
+        </ResourceList>
       </div>
-    </AppShell>
+    </div>
   )
 }

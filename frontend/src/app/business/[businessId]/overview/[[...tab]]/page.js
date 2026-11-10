@@ -1,6 +1,5 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import AppShell from '@/components/AppShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs } from '@/components/ui/Tabs'
 import { getSession } from '@/lib/serverApi'
@@ -39,32 +38,30 @@ export default async function OverviewWorkspacePage({ params, searchParams }) {
   ])
 
   return (
-    <AppShell session={session} business={business}>
-      <div className="workspace-page">
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Workspaces', href: '/workspace' },
-            { label: business.name, href: `/business/${businessId}/overview` },
-            { label: 'Overview' },
-          ]}
-          title="Executive Overview"
-          description="High-level operational metrics, performance trends, and live business monitoring."
-          badge={`${business.currency} · ${business.timezone || 'Asia/Dhaka'}`}
+    <div className="workspace-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Workspaces', href: '/workspace' },
+          { label: business.name, href: `/business/${businessId}/overview` },
+          { label: 'Overview' },
+        ]}
+        title="Executive Overview"
+        description="High-level operational metrics, performance trends, and live business monitoring."
+        badge={`${business.currency} · ${business.timezone || 'Asia/Dhaka'}`}
+      />
+
+      <Tabs tabs={overviewTabs} activeKey={currentTab} className="workspace-tabs" />
+
+      <div className="workspace-tab-content">
+        <Overview
+          business={business}
+          data={overviewResult.data}
+          queueCount={queueResult.data?.count}
+          businessId={businessId}
+          activeTab={currentTab}
+          hideHeading={true}
         />
-
-        <Tabs tabs={overviewTabs} activeKey={currentTab} className="workspace-tabs" />
-
-        <div className="workspace-tab-content">
-          <Overview
-            business={business}
-            data={overviewResult.data}
-            queueCount={queueResult.data?.count}
-            businessId={businessId}
-            activeTab={currentTab}
-            hideHeading={true}
-          />
-        </div>
       </div>
-    </AppShell>
+    </div>
   )
 }
