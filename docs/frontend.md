@@ -433,6 +433,30 @@ Computed with the WCAG relative-luminance formula for every foreground/backgroun
 }
 ```
 
+#### 2.1.6 High-Craft Surface Elevation and Translucent Badges (2026-11-10)
+
+To eliminate flat "AI-generated slop" and achieve modern SaaS visual craftsmanship (Linear / Vercel / Stripe aesthetic):
+
+1. **Surface Layering & Recessed Wells:**
+   - `--color-surface-elevated`: `#ffffff` (light) / `#1b2330` (dark).
+   - `--color-surface-recessed`: `#edf0f4` (light) / `#0a0e14` (dark) for input backgrounds, code containers, and empty state pods.
+   - `--color-border-subtle`: Hairline translucent border dividers (`rgba(255, 255, 255, 0.08)` in dark mode).
+   - `--color-border-strong`: Medium-contrast control boundary for hover and focus states.
+
+2. **Specular Top Hairline Highlights & Elevation:**
+   - `--shadow-card`: `0 1px 3px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)` in dark mode.
+   - `--shadow-button-primary`: `inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(18, 28, 43, 0.14)`.
+
+3. **Translucent Status Pills & Banners:**
+   - Status chips and badges utilize pill radius (`var(--radius-full)`), `color-mix(in srgb, var(--tone) 24%, transparent)` hairline borders, and muted font-weight (500, 11px) instead of harsh 100% solid saturated borders.
+   - Alert banners feature low-opacity tinted surfaces, 28x28 rounded icon badges, and hairline borders with subtle top highlights.
+   - Form inputs feature recessed wells, hairline borders, and glowing multi-ring focus outlines.
+
+4. **Interactive Component Showcase (`/business/[id]/ui-kit`):**
+   - Live design tokens & color swatch grid with quick-copy tooltips.
+   - Sticky quick-jump pill navigation bar with backdrop blur.
+   - Typography scale specimens and structured demo containers.
+
 ### 2.2 Typography
 
 Three families, all open-licence Google Fonts. Every stack ends with **Noto Sans Bengali** because the product has a

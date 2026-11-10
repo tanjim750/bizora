@@ -13,6 +13,15 @@ import {
   ShoppingBag,
   CreditCard,
   Truck,
+  Palette,
+  CheckSquare,
+  Bell,
+  Sliders,
+  Table as TableIcon,
+  GitCommit,
+  BarChart3,
+  Check,
+  Copy,
 } from 'lucide-react'
 import {
   Button,
@@ -110,6 +119,285 @@ function ToastDemos() {
         Danger Toast
       </Button>
     </div>
+  )
+}
+
+function TokensShowcase() {
+  const [copiedToken, setCopiedToken] = useState(null)
+
+  const copyToClipboard = (tokenName, text) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+      setCopiedToken(tokenName)
+      setTimeout(() => setCopiedToken(null), 1800)
+    }
+  }
+
+  const surfaceTokens = [
+    { name: 'Canvas', cssVar: '--color-canvas', bg: 'var(--color-canvas)' },
+    { name: 'Surface (Card)', cssVar: '--color-surface', bg: 'var(--color-surface)' },
+    { name: 'Elevated Surface', cssVar: '--color-surface-elevated', bg: 'var(--color-surface-elevated)' },
+    { name: 'Recessed Surface', cssVar: '--color-surface-recessed', bg: 'var(--color-surface-recessed)' },
+    { name: 'Subtle Surface', cssVar: '--color-surface-subtle', bg: 'var(--color-surface-subtle)' },
+    { name: 'Border Hairline', cssVar: '--color-border', bg: 'var(--color-border)' },
+  ]
+
+  const semanticTokens = [
+    { name: 'Primary Cobalt', cssVar: '--color-primary', bg: 'var(--color-primary)' },
+    { name: 'Primary Subtle', cssVar: '--color-primary-subtle', bg: 'var(--color-primary-subtle)' },
+    { name: 'Success Emerald', cssVar: '--color-success', bg: 'var(--color-success)' },
+    { name: 'Success Subtle', cssVar: '--color-success-subtle', bg: 'var(--color-success-subtle)' },
+    { name: 'Warning Amber', cssVar: '--color-warning', bg: 'var(--color-warning)' },
+    { name: 'Warning Subtle', cssVar: '--color-warning-subtle', bg: 'var(--color-warning-subtle)' },
+    { name: 'Danger Crimson', cssVar: '--color-danger', bg: 'var(--color-danger)' },
+    { name: 'Danger Subtle', cssVar: '--color-danger-subtle', bg: 'var(--color-danger-subtle)' },
+    { name: 'Info Steel', cssVar: '--color-info', bg: 'var(--color-info)' },
+    { name: 'Info Subtle', cssVar: '--color-info-subtle', bg: 'var(--color-info-subtle)' },
+  ]
+
+  const chartTokens = [
+    { name: 'Series 1 (Blue)', cssVar: '--chart-1', bg: 'var(--chart-1)' },
+    { name: 'Series 2 (Orange)', cssVar: '--chart-2', bg: 'var(--chart-2)' },
+    { name: 'Series 3 (Teal)', cssVar: '--chart-3', bg: 'var(--chart-3)' },
+    { name: 'Series 4 (Gold)', cssVar: '--chart-4', bg: 'var(--chart-4)' },
+    { name: 'Series 5 (Rose)', cssVar: '--chart-5', bg: 'var(--chart-5)' },
+    { name: 'Series 6 (Green)', cssVar: '--chart-6', bg: 'var(--chart-6)' },
+    { name: 'Series 7 (Violet)', cssVar: '--chart-7', bg: 'var(--chart-7)' },
+    { name: 'Series 8 (Coral)', cssVar: '--chart-8', bg: 'var(--chart-8)' },
+  ]
+
+  const typeSpecimens = [
+    { level: 'Page Title', size: '26px / 34px', weight: '600', sample: 'Executive Business Overview' },
+    {
+      level: 'Section Title',
+      size: '18px / 26px',
+      weight: '600',
+      sample: 'Customer Accounts & Ledger Summary',
+    },
+    { level: 'Card Title', size: '16px / 24px', weight: '600', sample: 'Payment Gateway Configuration' },
+    { level: 'Subsection', size: '15px / 22px', weight: '500', sample: 'Reconciled transaction volume' },
+    {
+      level: 'Body Regular',
+      size: '14px / 21px',
+      weight: '400',
+      sample: 'Standard copy for table content, labels, and notices.',
+    },
+    {
+      level: 'Table / Compact',
+      size: '13px / 20px',
+      weight: '400',
+      sample: 'Dense tabular records and timeline descriptions.',
+    },
+    {
+      level: 'Caption',
+      size: '12px / 16px',
+      weight: '400',
+      sample: 'Monospace metadata, timestamps, and secondary status context.',
+    },
+    { level: 'Overline', size: '11px / 16px', weight: '600', sample: 'STATUS · SPEC T3-1 · ENTERPRISE' },
+  ]
+
+  return (
+    <section id="section-tokens" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+      <div className="section-header">
+        <div>
+          <h2>Design Tokens & High-Craft Foundations</h2>
+          <p>
+            WCAG 2.2 AA calibrated formal color palette, layered surface elevations, and typographic scale.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+        {/* Surface & Depth Architecture */}
+        <div>
+          <div className="ui-kit-demo-label">
+            <span className="ui-kit-demo-title">Surface Elevation & Recessed Wells</span>
+            <span className="text-caption text-muted">Hairline borders with subtle specular highlights</span>
+          </div>
+          <div className="token-swatch-grid">
+            {surfaceTokens.map((item) => (
+              <button
+                key={item.cssVar}
+                type="button"
+                className="token-swatch-card"
+                onClick={() => copyToClipboard(item.cssVar, `var(${item.cssVar})`)}
+                title={`Click to copy var(${item.cssVar})`}
+                style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--color-border)' }}
+              >
+                <div className="token-swatch-color" style={{ background: item.bg }} />
+                <div className="token-swatch-info">
+                  <span className="token-swatch-name">{item.name}</span>
+                  <span className="token-swatch-var">
+                    {copiedToken === item.cssVar ? 'Copied!' : item.cssVar}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Semantic Tones */}
+        <div>
+          <div className="ui-kit-demo-label">
+            <span className="ui-kit-demo-title">Semantic Tones & Translucent Tint Fills</span>
+            <span className="text-caption text-muted">WCAG 4.5:1 text contrast on subtles</span>
+          </div>
+          <div className="token-swatch-grid">
+            {semanticTokens.map((item) => (
+              <button
+                key={item.cssVar}
+                type="button"
+                className="token-swatch-card"
+                onClick={() => copyToClipboard(item.cssVar, `var(${item.cssVar})`)}
+                title={`Click to copy var(${item.cssVar})`}
+                style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--color-border)' }}
+              >
+                <div className="token-swatch-color" style={{ background: item.bg }} />
+                <div className="token-swatch-info">
+                  <span className="token-swatch-name">{item.name}</span>
+                  <span className="token-swatch-var">
+                    {copiedToken === item.cssVar ? 'Copied!' : item.cssVar}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chart Series Tokens */}
+        <div>
+          <div className="ui-kit-demo-label">
+            <span className="ui-kit-demo-title">Data Visualization Spectrum (T3-7)</span>
+            <span className="text-caption text-muted">8 distinct accessible dataviz categorical hues</span>
+          </div>
+          <div className="token-swatch-grid">
+            {chartTokens.map((item) => (
+              <button
+                key={item.cssVar}
+                type="button"
+                className="token-swatch-card"
+                onClick={() => copyToClipboard(item.cssVar, `var(${item.cssVar})`)}
+                title={`Click to copy var(${item.cssVar})`}
+                style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--color-border)' }}
+              >
+                <div className="token-swatch-color" style={{ background: item.bg }} />
+                <div className="token-swatch-info">
+                  <span className="token-swatch-name">{item.name}</span>
+                  <span className="token-swatch-var">
+                    {copiedToken === item.cssVar ? 'Copied!' : item.cssVar}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Typography Hierarchy */}
+        <div>
+          <div className="ui-kit-demo-label">
+            <span className="ui-kit-demo-title">Typography Hierarchy (IBM Plex Sans & Mono)</span>
+            <span className="text-caption text-muted">Strict vertical rhythm with tabular numerals</span>
+          </div>
+          <div className="ui-kit-demo-box" style={{ overflowX: 'auto' }}>
+            <table className="type-specimen-table">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    LEVEL
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    SPEC
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    WEIGHT
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    SAMPLE RENDERING
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {typeSpecimens.map((spec) => (
+                  <tr key={spec.level}>
+                    <td style={{ fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>{spec.level}</td>
+                    <td
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '12px',
+                        color: 'var(--color-text-muted)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {spec.size}
+                    </td>
+                    <td
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '12px',
+                        color: 'var(--color-text-muted)',
+                      }}
+                    >
+                      {spec.weight}
+                    </td>
+                    <td style={{ color: 'var(--color-text)' }}>
+                      {spec.level === 'Overline' ? (
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {spec.sample}
+                        </span>
+                      ) : spec.level === 'Page Title' ? (
+                        <span style={{ fontSize: '20px', fontWeight: 600 }}>{spec.sample}</span>
+                      ) : spec.level === 'Section Title' ? (
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>{spec.sample}</span>
+                      ) : (
+                        <span style={{ fontSize: '14px', fontWeight: spec.weight === '600' ? 600 : 400 }}>
+                          {spec.sample}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -235,8 +523,43 @@ export function UiKitGalleryClient({ business }) {
           }
         />
 
+        {/* Sticky Section Quick-Jump Nav Bar */}
+        <nav aria-label="UI Kit sections" className="ui-kit-nav-bar">
+          <a href="#section-tokens" className="ui-kit-nav-pill">
+            <Palette size={13} aria-hidden="true" />
+            <span>00 Tokens</span>
+          </a>
+          <a href="#section-forms" className="ui-kit-nav-pill">
+            <CheckSquare size={13} aria-hidden="true" />
+            <span>01 Forms</span>
+          </a>
+          <a href="#section-feedback" className="ui-kit-nav-pill">
+            <Bell size={13} aria-hidden="true" />
+            <span>02 Feedback</span>
+          </a>
+          <a href="#section-overlays" className="ui-kit-nav-pill">
+            <Sliders size={13} aria-hidden="true" />
+            <span>03 Overlays</span>
+          </a>
+          <a href="#section-tables" className="ui-kit-nav-pill">
+            <TableIcon size={13} aria-hidden="true" />
+            <span>04 Tables</span>
+          </a>
+          <a href="#section-evidence" className="ui-kit-nav-pill">
+            <GitCommit size={13} aria-hidden="true" />
+            <span>05 Evidence</span>
+          </a>
+          <a href="#section-charts" className="ui-kit-nav-pill">
+            <BarChart3 size={13} aria-hidden="true" />
+            <span>06 Charts</span>
+          </a>
+        </nav>
+
+        {/* Section 0: Design Tokens & Foundations */}
+        <TokensShowcase />
+
         {/* Section 1: Form Basics */}
-        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-forms" className="surface" style={{ marginTop: 'var(--space-6)' }}>
           <div className="section-header">
             <div>
               <h2>Form Controls & Actions (T3-1)</h2>
@@ -245,8 +568,13 @@ export function UiKitGalleryClient({ business }) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-            <div>
-              <p className="form-label">Button Variants & Sizes</p>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Button Hierarchy & Micro-States</span>
+                <span className="text-caption text-muted">
+                  Primary top highlight, secondary e1 shadow, active translate
+                </span>
+              </div>
               <div className="button-row" style={{ flexWrap: 'wrap' }}>
                 <Button variant="primary">Primary</Button>
                 <Button variant="secondary">Secondary</Button>
@@ -325,21 +653,29 @@ export function UiKitGalleryClient({ business }) {
               </Field>
             </div>
 
-            <div style={{ display: 'flex', gap: 'var(--space-6)', flexWrap: 'wrap' }}>
-              <Checkbox
-                id="cb-1"
-                label="Receive delivery SMS updates"
-                hint="Sent to primary mobile number"
-                defaultChecked
-              />
-              <Checkbox id="cb-2" label="Require signature on delivery" />
-              <Checkbox id="cb-3" label="Account locked by administrator" disabled />
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Checkboxes & Radios</span>
+                <span className="text-caption text-muted">
+                  Native accessible controls with custom theme accent
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--space-6)', flexWrap: 'wrap' }}>
+                <Checkbox
+                  id="cb-1"
+                  label="Receive delivery SMS updates"
+                  hint="Sent to primary mobile number"
+                  defaultChecked
+                />
+                <Checkbox id="cb-2" label="Require signature on delivery" />
+                <Checkbox id="cb-3" label="Account locked by administrator" disabled />
+              </div>
             </div>
           </div>
         </section>
 
         {/* Section 2: Feedback & Status */}
-        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-feedback" className="surface" style={{ marginTop: 'var(--space-6)' }}>
           <div className="section-header">
             <div>
               <h2>Feedback & Status Indicators (T3-2)</h2>
@@ -371,8 +707,11 @@ export function UiKitGalleryClient({ business }) {
               </Banner>
             </div>
 
-            <div>
-              <p className="form-label">Status Chips (Strict Value Mapping with Icon + Label)</p>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Status Chips (Icon + Exact Label, Translucent Tint)</span>
+                <span className="text-caption text-muted">Never color alone · WCAG 2.2 AA compliant</span>
+              </div>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                 <StatusChip status="ACTIVE" />
                 <StatusChip status="INACTIVE" />
@@ -388,8 +727,11 @@ export function UiKitGalleryClient({ business }) {
               </div>
             </div>
 
-            <div>
-              <p className="form-label">Severity Chips & Confidence Meters</p>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Severity Chips & Confidence Meters</span>
+                <span className="text-caption text-muted">Recessed track with smooth rounded indicator</span>
+              </div>
               <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center', flexWrap: 'wrap' }}>
                 <SeverityChip severity="CRITICAL" />
                 <SeverityChip severity="HIGH" />
@@ -405,7 +747,10 @@ export function UiKitGalleryClient({ business }) {
             </div>
 
             <div>
-              <p className="form-label">KPI Tiles</p>
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Executive KPI Tiles</span>
+                <span className="text-caption text-muted">Sleek trend badges with tabular figures</span>
+              </div>
               <div className="metric-grid">
                 <KpiTile
                   title="Gross Sales"
@@ -431,13 +776,23 @@ export function UiKitGalleryClient({ business }) {
               </div>
             </div>
 
-            <div>
-              <p className="form-label">Ephemeral Toast Notifications</p>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Ephemeral Toast Notifications</span>
+                <span className="text-caption text-muted">
+                  Top-right floating portal stack with auto-dismiss
+                </span>
+              </div>
               <ToastDemos />
             </div>
 
             <div>
-              <p className="form-label">Calm Unavailable State (Normal Data, Never Red or Zero)</p>
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Calm Unavailable State</span>
+                <span className="text-caption text-muted">
+                  Normal authoritative data, never error red or zero
+                </span>
+              </div>
               <UnavailableState
                 title="Context Graph Engine"
                 owner="Business Graph (BG-1)"
@@ -447,13 +802,13 @@ export function UiKitGalleryClient({ business }) {
                     Inspect Logs
                   </Button>
                 }
-              />
+              ></UnavailableState>
             </div>
           </div>
         </section>
 
         {/* Section 3: Overlays & Navigation */}
-        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-overlays" className="surface" style={{ marginTop: 'var(--space-6)' }}>
           <div className="section-header">
             <div>
               <h2>Overlays & Navigation (T3-3)</h2>
@@ -463,7 +818,12 @@ export function UiKitGalleryClient({ business }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <div>
-              <p className="form-label">Tab Navigation with Count Chips</p>
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Tab Navigation with Count Chips</span>
+                <span className="text-caption text-muted">
+                  Segmented tab switching with active indicator line
+                </span>
+              </div>
               <Tabs
                 items={[
                   { id: 'orders', label: 'Orders', count: 128 },
@@ -476,8 +836,11 @@ export function UiKitGalleryClient({ business }) {
               />
             </div>
 
-            <div>
-              <p className="form-label">Overlay Triggers (Focus Trap & Escape Handlers)</p>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Overlay Triggers (Focus Trap & Escape Handlers)</span>
+                <span className="text-caption text-muted">Dialogs & drawers render into Portal root</span>
+              </div>
               <div className="button-row">
                 <Button variant="secondary" onClick={() => setIsDrawerOpen(true)}>
                   Open Detail Drawer
@@ -492,7 +855,10 @@ export function UiKitGalleryClient({ business }) {
             </div>
 
             <div>
-              <p className="form-label">Filter Bar & Active Filter Pills</p>
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Filter Bar & Active Filter Pills</span>
+                <span className="text-caption text-muted">Removable filter tags with clear all action</span>
+              </div>
               <FilterBar
                 searchValue={sampleSearch}
                 onSearchChange={setSampleSearch}
@@ -513,15 +879,18 @@ export function UiKitGalleryClient({ business }) {
               </FilterBar>
             </div>
 
-            <div>
-              <p className="form-label">Pagination Component</p>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Pagination Footer</span>
+                <span className="text-caption text-muted">Exact record range display (1–25 of 1,284)</span>
+              </div>
               <Pagination page={page} pageSize={25} total={1284} onPageChange={(p) => setPage(p)} />
             </div>
           </div>
         </section>
 
         {/* Section 4: Data Table */}
-        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-tables" className="surface" style={{ marginTop: 'var(--space-6)' }}>
           <div className="section-header">
             <div>
               <h2>Data Presentation (T3-4)</h2>
@@ -546,7 +915,7 @@ export function UiKitGalleryClient({ business }) {
         </section>
 
         {/* Section 5: Evidence & Time */}
-        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-evidence" className="surface" style={{ marginTop: 'var(--space-6)' }}>
           <div className="section-header">
             <div>
               <h2>Evidence & Chronological Threads (T3-5)</h2>
@@ -562,13 +931,19 @@ export function UiKitGalleryClient({ business }) {
             }}
           >
             <div>
-              <p className="form-label">Timeline (The Evidence Thread)</p>
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">The Evidence Thread</span>
+                <span className="text-caption text-muted">Continuous vertical spine joining events</span>
+              </div>
               <Timeline events={timelineEvents} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <div>
-                <p className="form-label">Grounding Evidence Panel</p>
+                <div className="ui-kit-demo-label">
+                  <span className="ui-kit-demo-title">Grounding Evidence Panel</span>
+                  <span className="text-caption text-muted">Transparent provenance citations</span>
+                </div>
                 <EvidencePanel
                   title="Decision Grounding"
                   confidence={0.94}
@@ -591,8 +966,11 @@ export function UiKitGalleryClient({ business }) {
                 />
               </div>
 
-              <div>
-                <p className="form-label">Copyable Identifiers & Codes</p>
+              <div className="ui-kit-demo-box">
+                <div className="ui-kit-demo-label">
+                  <span className="ui-kit-demo-title">Copyable Identifiers & Codes</span>
+                  <span className="text-caption text-muted">Monospace with quick copy tooltip</span>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   <div>
                     <span className="text-caption text-muted" style={{ marginRight: 'var(--space-2)' }}>
@@ -613,7 +991,7 @@ export function UiKitGalleryClient({ business }) {
         </section>
 
         {/* Section 6: Charts & Visualizations (T3-7) */}
-        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-charts" className="surface" style={{ marginTop: 'var(--space-6)' }}>
           <div className="section-header">
             <div>
               <h2>Charts & Visualizations (T3-7)</h2>
