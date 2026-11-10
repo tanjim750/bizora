@@ -5,9 +5,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { getSession } from '@/lib/serverApi'
 import { businessApiPath } from '@/lib/catalog'
 import { serverApi } from '@/lib/serverApi'
-import ResourceList from '@/components/ResourceList'
-import CreateRecord from '@/components/CreateRecord'
-import { WRITER_ROLES } from '@/lib/catalog'
+import Customers from '@/components/Customers'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,12 +26,36 @@ export default async function CustomersWorkspacePage({ params, searchParams }) {
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'list'
 
   const customerTabs = [
-    { key: 'list', label: 'All Customers', href: `/business/${businessId}/customers/list` },
+    { key: 'list', label: 'All Customers', href: `/business/${businessId}/customers` },
     { key: '360', label: 'Customer 360', href: `/business/${businessId}/customers/360` },
   ]
 
-  // Fetch customers list
-  const listResult = await serverApi(businessApiPath(businessId, `customers/?page_size=25`))
+  // Determine if a specific customer is requested via query or 360 tab
+  let targetCustomerId = null
+  if (query?.open && typeof query.open === 'string' && query.open.startsWith('customers:')) {
+    targetCustomerId = query.open.split(':')[1]
+  } else if (query?.id) {
+    targetCustomerId = query.id
+  } else if (currentTab === '360') {
+    // Default to first customer if on 360 tab
+    targetCustomerId = '1'
+  }
+
+  // Fetch customers list, issues, and optionally customer 360 pre-fetch
+  const fetches = [
+    serverApi(businessApiPath(businessId, 'customers/?page_size=25')),
+    serverApi(businessApiPath(businessId, 'issues/')),
+  ]
+
+  if (targetCustomerId) {
+    fetches.push(serverApi(businessApiPath(businessId, `customers/${targetCustomerId}/360/`)))
+    fetches.push(serverApi(businessApiPath(businessId, `graph-context/customer/${targetCustomerId}/`)))
+  }
+
+  const [listResult, issuesResult, initial360Res, initialGraphRes] = await Promise.all(fetches)
+
+  const initialCustomer360 = initial360Res?.ok && initial360Res?.data ? initial360Res.data : null
+  const initialGraphContext = initialGraphRes?.ok && initialGraphRes?.data ? initialGraphRes.data : null
 
   return (
     <div className="workspace-page">
@@ -51,17 +73,15 @@ export default async function CustomersWorkspacePage({ params, searchParams }) {
       <Tabs tabs={customerTabs} activeKey={currentTab} className="workspace-tabs" />
 
       <div className="workspace-tab-content">
-        <ResourceList
-          title="Customers"
+        <Customers
+          business={business}
           businessId={businessId}
-          resource="customers"
-          data={listResult.data}
-          query={query}
-          path={`/business/${businessId}/customers/${currentTab}`}
-          hideHeading={true}
-        >
-          {WRITER_ROLES.has(business.role) && <CreateRecord businessId={businessId} resource="customers" />}
-        </ResourceList>
+          activeTab={currentTab}
+          customersData={listResult.data}
+          initialCustomer360={initialCustomer360}
+          initialGraphContext={initialGraphContext}
+          issues={issuesResult.ok && Array.isArray(issuesResult.data) ? issuesResult.data : []}
+        />
       </div>
     </div>
   )
