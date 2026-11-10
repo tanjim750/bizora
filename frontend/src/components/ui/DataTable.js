@@ -49,6 +49,7 @@ export function DataTable({
   density: explicitDensity,
   showDensityToggle = true,
   className = '',
+  keyField, // destructure so it does not leak to DOM div
   ...props
 }) {
   const router = useRouter()
@@ -204,7 +205,7 @@ export function DataTable({
                   <th
                     key={col.key}
                     scope="col"
-                    className={`${isNumeric ? 'text-right' : ''} ${isSortable ? 'is-sortable' : ''} ${col.priority === 'low' ? 'table-col-priority-low' : ''}`.trim()}
+                    className={`${isNumeric ? 'text-right' : ''} ${isSortable ? 'is-sortable' : ''} ${col.priority === 'low' ? 'table-col-priority-low' : ''} ${col.className || ''}`.trim()}
                     aria-sort={
                       isCurrentSort ? (sortDirection === 'desc' ? 'descending' : 'ascending') : undefined
                     }
@@ -236,7 +237,10 @@ export function DataTable({
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={`skeleton-${rIdx}`}>
                   {columns.map((col, cIdx) => (
-                    <td key={`sk-${cIdx}`} className={col.priority === 'low' ? 'table-col-priority-low' : ''}>
+                    <td
+                      key={`sk-${cIdx}`}
+                      className={`${col.priority === 'low' ? 'table-col-priority-low' : ''} ${col.className || ''}`.trim()}
+                    >
                       <Skeleton variant="text" width={cIdx === 0 ? '70%' : '50%'} height={14} />
                     </td>
                   ))}
@@ -256,7 +260,7 @@ export function DataTable({
                       return (
                         <td
                           key={col.key}
-                          className={`${isNumeric ? 'text-right' : ''} ${col.priority === 'low' ? 'table-col-priority-low' : ''}`.trim()}
+                          className={`${isNumeric ? 'text-right' : ''} ${col.priority === 'low' ? 'table-col-priority-low' : ''} ${col.className || ''}`.trim()}
                         >
                           {renderCell(row, col)}
                         </td>

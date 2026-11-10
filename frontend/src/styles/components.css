@@ -3051,6 +3051,8 @@ td small {
 
 .timeline-segmented {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   background: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -3108,8 +3110,16 @@ td small {
     grid-template-columns: 1fr;
   }
 
+  .timeline-segmented {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .timeline-segmented-btn {
     min-height: 40px;
+    justify-content: center;
+    text-align: center;
   }
 }
 
@@ -3530,4 +3540,60 @@ td small {
 
 .graph-legend-symbol.hexagon {
   border-radius: 4px;
+}
+
+/* ==========================================================================
+   GROWTH & MARKETING WORKSPACE
+   ========================================================================== */
+.growth-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.growth-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .growth-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.growth-detail-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.growth-detail-section h4 {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.explain-campaign-box {
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.journey-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  margin-top: var(--space-1);
 }
