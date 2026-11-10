@@ -1,19 +1,15 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Tabs } from '@/components/ui/Tabs'
-import { getSession } from '@/lib/serverApi'
+import { getSession, serverApi } from '@/lib/serverApi'
 import { businessApiPath } from '@/lib/catalog'
-import { serverApi } from '@/lib/serverApi'
-import ResourceList from '@/components/ResourceList'
-import CreateRecord from '@/components/CreateRecord'
-import { WRITER_ROLES } from '@/lib/catalog'
+import Growth from '@/components/Growth'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Growth',
-  description: 'Marketing campaigns, ad performance, visitor traffic, and web telemetry.',
+  title: 'Growth & Marketing',
+  description:
+    'Omnichannel marketing campaign telemetry, ad spend attribution, and website visitor sessions.',
 }
 
 export default async function GrowthWorkspacePage({ params, searchParams }) {
@@ -27,51 +23,20 @@ export default async function GrowthWorkspacePage({ params, searchParams }) {
 
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'campaigns'
 
-  const growthTabs = [
-    { key: 'campaigns', label: 'Campaigns & Ads', href: `/business/${businessId}/growth/campaigns` },
-    { key: 'website', label: 'Website & Visitors', href: `/business/${businessId}/growth/website` },
-  ]
-
-  const tabResourceMap = {
-    campaigns: 'campaigns',
-    website: 'visitors',
-  }
-
-  const primaryResource = tabResourceMap[currentTab] || 'campaigns'
-
-  // Fetch list data
-  const listResult = await serverApi(businessApiPath(businessId, `${primaryResource}/?page_size=25`))
+  // Prefetch campaigns and website-performance in parallel
+  const [campaignsResult, websiteResult] = await Promise.all([
+    serverApi(businessApiPath(businessId, 'campaigns/?page_size=50')),
+    serverApi(businessApiPath(businessId, 'website-performance/')),
+  ])
 
   return (
-    <div className="workspace-page">
-      <PageHeader
-        breadcrumbs={[
-          { label: 'Workspaces', href: '/workspace' },
-          { label: business.name, href: `/business/${businessId}/overview` },
-          { label: 'Growth' },
-        ]}
-        title="Growth & Marketing"
-        description="Omnichannel marketing campaign telemetry, ad spend attribution, and website visitor sessions."
-        badge="Platform-reported"
-      />
-
-      <Tabs tabs={growthTabs} activeKey={currentTab} className="workspace-tabs" />
-
-      <div className="workspace-tab-content">
-        <ResourceList
-          title={growthTabs.find((t) => t.key === currentTab)?.label || 'Growth'}
-          businessId={businessId}
-          resource={primaryResource}
-          data={listResult.data}
-          query={query}
-          path={`/business/${businessId}/growth/${currentTab}`}
-          hideHeading={true}
-        >
-          {WRITER_ROLES.has(business.role) && (
-            <CreateRecord businessId={businessId} resource={primaryResource} />
-          )}
-        </ResourceList>
-      </div>
-    </div>
+    <Growth
+      businessId={businessId}
+      business={business}
+      currentTab={currentTab}
+      initialCampaigns={campaignsResult?.data?.results || []}
+      initialWebsite={websiteResult?.data || null}
+      query={query}
+    />
   )
 }
