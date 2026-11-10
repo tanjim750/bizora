@@ -142,6 +142,21 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
   - Clear run, verify, and demo login instructions for the owner.
 - Overhaul 100% complete across all phases (T0-1 through T7-1). No git push executed. All changes committed locally on `frontend-overhaul`.
 
+### Post-Wrap Visual Craft Refactoring: UI Kit Gallery (`/business/[id]/ui-kit` - 2026-11-10 22:15)
+- Conducted full visual audit of `/business/[id]/ui-kit` (enterprise component gallery & test harness).
+- Eliminated flat, muddy, generic aesthetics and elevated components to modern SaaS craftsmanship (Linear/Vercel/Stripe aesthetic):
+  - **Surface Elevation & Specular Highlights:** Introduced `--color-surface-elevated` and `--color-surface-recessed`, hairline borders with inset specular top highlights (`--shadow-card`, `--shadow-button-primary`), eliminating flat card appearances in dark mode.
+  - **Translucent Pill Badges & Banners:** Replaced harsh 100% solid saturated borders with low-opacity tinted surfaces and `color-mix(in srgb, var(--tone) 24%, transparent)` hairline outlines. Added 28x28 rounded icon badges for alert banners and subtle hover micro-interactions.
+  - **Form Controls & Inputs:** Shifted inputs, selects, and textareas to recessed wells with subtle inner shadows, hairline borders, and glowing multi-ring focus outlines.
+  - **KPI Trends & Unavailable States:** Refined trend pills with soft background fills, tabular numerals, and transformed unavailable states into calm authoritative gradient panels with frosted circular icon pods.
+  - **Interactive Token System Showcase:** Added live color swatch cards (surfaces, semantic tones, and 8-series dataviz charts) with quick-copy tooltips, sticky navigation pill bar with backdrop blur, and typography hierarchy specimens.
+- Verified:
+  - 70/70 unit tests green (`npm test`).
+  - Prettier 100% clean (`npm run format:check`).
+  - Production build exit 0 (`npm run build`).
+  - 14/14 responsive matrix page checks clean (0 issues across all 7 breakpoints at light and dark themes).
+  - Zero backend or logic changes, zero regressions.
+
 ## Decisions I took
 - Hoisted `AppShell` to `frontend/src/app/business/[businessId]/layout.js` (ARCH-01) so `AppShell` stays mounted during workspace navigation, error boundaries and loading skeletons render cleanly inside `<main>`, and redundant wrappers were removed from all 9 workspace pages.
 - Wrapped `AppShell` in `TooltipProvider delayDuration={150}` and wrapped collapsed rail icons in Radix `Tooltip side="right"`.

@@ -5,9 +5,13 @@
   color-scheme: light;
   --color-canvas: #f5f6f8;
   --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
   --color-surface-subtle: #edf0f4;
+  --color-surface-recessed: #edf0f4;
   --color-border: #d8dee6;
+  --color-border-subtle: rgba(18, 28, 43, 0.08);
   --color-border-input: #7a8696;
+  --color-border-strong: #9aa8ba;
   --color-text: #121c2b;
   --color-text-secondary: #364252;
   --color-text-muted: #556173;
@@ -51,9 +55,13 @@
     color-scheme: dark;
     --color-canvas: #0f141a;
     --color-surface: #151b23;
+    --color-surface-elevated: #1b2330;
     --color-surface-subtle: #1c242e;
+    --color-surface-recessed: #0a0e14;
     --color-border: #2b3542;
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
     --color-border-input: #7b8798;
+    --color-border-strong: #424f60;
     --color-text: #e6ebf1;
     --color-text-secondary: #bfc8d4;
     --color-text-muted: #98a3b1;
@@ -97,9 +105,13 @@
   color-scheme: dark;
   --color-canvas: #0f141a;
   --color-surface: #151b23;
+  --color-surface-elevated: #1b2330;
   --color-surface-subtle: #1c242e;
+  --color-surface-recessed: #0a0e14;
   --color-border: #2b3542;
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
   --color-border-input: #7b8798;
+  --color-border-strong: #424f60;
   --color-text: #e6ebf1;
   --color-text-secondary: #bfc8d4;
   --color-text-muted: #98a3b1;
@@ -183,9 +195,11 @@
   --radius-xl: 16px;
   --radius-full: 999px;
 
-  --shadow-e1: 0 1px 2px rgba(18, 28, 43, 0.06);
-  --shadow-e2: 0 4px 12px rgba(18, 28, 43, 0.1);
-  --shadow-e3: 0 12px 32px rgba(18, 28, 43, 0.18);
+  --shadow-e1: 0 1px 2px rgba(18, 28, 43, 0.05);
+  --shadow-e2: 0 4px 12px rgba(18, 28, 43, 0.08);
+  --shadow-e3: 0 12px 32px rgba(18, 28, 43, 0.16);
+  --shadow-card: 0 1px 3px 0 rgba(18, 28, 43, 0.04), 0 1px 2px -1px rgba(18, 28, 43, 0.02);
+  --shadow-button-primary: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(18, 28, 43, 0.14);
   --color-scrim: rgba(18, 28, 43, 0.48);
   --color-disabled-bg: var(--color-surface-subtle);
   --color-disabled-text: var(--color-text-muted);
@@ -206,16 +220,20 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --shadow-e1: none;
-    --shadow-e2: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-e3: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --shadow-e2: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --shadow-e3: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    --shadow-button-primary: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.25);
     --color-scrim: rgba(5, 8, 12, 0.64);
   }
 }
 :root[data-theme='dark'] {
-  --shadow-e1: none;
-  --shadow-e2: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-e3: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-e2: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-e3: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --shadow-button-primary: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.25);
   --color-scrim: rgba(5, 8, 12, 0.64);
 }
 @media (pointer: coarse) {
