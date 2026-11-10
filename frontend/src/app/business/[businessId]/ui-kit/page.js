@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/serverApi'
-import AppShell from '@/components/AppShell'
 import UiKitGalleryClient from './UiKitGalleryClient'
 
 export const dynamic = 'force-dynamic'
@@ -27,8 +26,8 @@ export default async function UiKitPage({ params }) {
     }
 
   return (
-    <AppShell session={session} business={business}>
+    <div suppressHydrationWarning>
       <UiKitGalleryClient business={business} />
-    </AppShell>
+    </div>
   )
 }

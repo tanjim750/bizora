@@ -41,7 +41,7 @@ export function ThemeToggle({ className = '' }) {
     }
   }
 
-  const isDark = theme === 'dark'
+  const isDark = mounted && theme === 'dark'
   const label = isDark ? 'Switch to light theme' : 'Switch to dark theme'
 
   return (
@@ -52,7 +52,7 @@ export function ThemeToggle({ className = '' }) {
       title={label}
       className={`theme-toggle button button-ghost ${className}`.trim()}
     >
-      {mounted && isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+      {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
     </button>
   )
 }

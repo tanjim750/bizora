@@ -22,8 +22,20 @@ import {
   Building2,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
+  Moon,
+  ChevronDown,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { Tooltip, TooltipProvider } from '@/components/ui/Tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/DropdownMenu'
 import { QuickSearchDialog } from '@/components/shell/QuickSearchDialog'
 import { clientApi } from '@/lib/clientApi'
 import { MANAGER_ROLES } from '@/lib/catalog'
@@ -212,6 +224,8 @@ export default function AppShell({ session, business, children }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  const [theme, setTheme] = useState('light')
+  const [mounted, setMounted] = useState(false)
 
   // Refs
   const menuButton = useRef(null)
@@ -220,15 +234,33 @@ export default function AppShell({ session, business, children }) {
   const isManager = MANAGER_ROLES.has(business?.role)
   const isDev = process.env.NODE_ENV !== 'production'
 
-  // Hydrate collapsed rail preference from localStorage
+  // Initialize rail collapse based on viewport and saved preference
   useEffect(() => {
     try {
       const saved = localStorage.getItem('bizora_rail_collapsed')
-      if (saved === 'true') {
-        setRailCollapsed(true)
+      if (saved !== null) {
+        setRailCollapsed(saved === 'true')
+      } else if (typeof window !== 'undefined') {
+        const width = window.innerWidth
+        if (width >= 1024 && width < 1280) {
+          setRailCollapsed(true)
+        } else if (width >= 1280) {
+          setRailCollapsed(false)
+        }
       }
     } catch {
       // Ignore localStorage restrictions
+    }
+  }, [])
+
+  // Track theme changes
+  useEffect(() => {
+    setMounted(true)
+    const active = document.documentElement.getAttribute('data-theme')
+    if (active === 'dark' || active === 'light') {
+      setTheme(active)
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark')
     }
   }, [])
 
@@ -244,6 +276,17 @@ export default function AppShell({ session, business, children }) {
     })
   }
 
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    document.documentElement.setAttribute('data-theme', next)
+    try {
+      localStorage.setItem('bizora_theme', next)
+    } catch {
+      // Ignore
+    }
+  }
+
   // Global keyboard shortcut for search dialog (Ctrl+K / Cmd+K)
   useEffect(() => {
     function onKeyDown(e) {
@@ -256,9 +299,21 @@ export default function AppShell({ session, business, children }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Mobile drawer focus trap, escape listener, and body scroll lock
+  // Close mobile drawer on route change
   useEffect(() => {
-    if (!mobileOpen) return
+    setMobileOpen(false)
+  }, [pathname])
+
+  // Mobile drawer focus trap, escape listener, inert, and body scroll lock
+  useEffect(() => {
+    const mainEl = document.getElementById('main')
+    if (!mobileOpen) {
+      mainEl?.removeAttribute('inert')
+      return
+    }
+
+    // Mark content behind drawer as inert
+    mainEl?.setAttribute('inert', '')
 
     // Lock body scroll
     const origOverflow = document.body.style.overflow
@@ -293,6 +348,7 @@ export default function AppShell({ session, business, children }) {
     return () => {
       document.body.style.overflow = origOverflow
       document.removeEventListener('keydown', onKeyDown)
+      mainEl?.removeAttribute('inert')
     }
   }, [mobileOpen])
 
@@ -310,8 +366,11 @@ export default function AppShell({ session, business, children }) {
     }
   }
 
+  const userInitial = (session?.username || 'U').charAt(0).toUpperCase()
+  const businessInitial = (business?.name || 'B').charAt(0).toUpperCase()
+
   return (
-    <>
+    <TooltipProvider delayDuration={150}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -325,13 +384,13 @@ export default function AppShell({ session, business, children }) {
           aria-label="Navigation drawer"
           aria-modal={mobileOpen ? 'true' : undefined}
         >
-          {/* Brand header */}
+          {/* Brand header: exactly 56px high aligning with topbar */}
           <div className="sidebar-brand">
             <Link href="/workspace" aria-label="Bizora Home - Workspace switcher">
               <span className="brand-mark" aria-hidden="true">
                 B
               </span>
-              <span>
+              <span className="brand-text">
                 bizora<span className="brand-dot">.</span>
               </span>
             </Link>
@@ -349,19 +408,34 @@ export default function AppShell({ session, business, children }) {
             </button>
           </div>
 
-          {/* Current workspace context badge */}
+          {/* Current workspace context card (informational, not a switcher) */}
           {business && (
             <div className="sidebar-context">
-              <span>Current workspace</span>
-              <strong>{business.name}</strong>
-              <small>
-                {business.role?.toLowerCase()} access · {business.currency}
-              </small>
+              {railCollapsed ? (
+                <Tooltip
+                  side="right"
+                  content={`${business.name} (${business.role?.toLowerCase()}) · ${business.currency}`}
+                >
+                  <div className="workspace-collapsed-avatar" aria-hidden="true">
+                    {businessInitial}
+                  </div>
+                </Tooltip>
+              ) : (
+                <>
+                  <span className="sidebar-context-label">Current workspace</span>
+                  <Tooltip content={business.name} side="bottom" align="start">
+                    <strong className="sidebar-context-name">{business.name}</strong>
+                  </Tooltip>
+                  <small className="sidebar-context-meta">
+                    {business.role?.toLowerCase()} access · {business.currency}
+                  </small>
+                </>
+              )}
             </div>
           )}
 
-          {/* Navigation groups */}
-          <nav aria-label="Business operations">
+          {/* Navigation groups (independent scroll container) */}
+          <nav className="sidebar-nav" aria-label="Business operations">
             {NAVIGATION_GROUPS.map((group) => {
               // Filter items based on manager role and devOnly flag
               const visibleItems = group.items.filter((item) => {
@@ -374,26 +448,37 @@ export default function AppShell({ session, business, children }) {
 
               return (
                 <div key={group.key} className="nav-group">
-                  <p>{group.label}</p>
+                  <div className="nav-group-header">
+                    <p>{group.label}</p>
+                    <div className="nav-group-divider" aria-hidden="true" />
+                  </div>
                   {visibleItems.map((item) => {
                     const Icon = item.icon
                     const href = item.getPath(business?.id || '1')
                     const active = isItemActive(item.key, pathname, business?.id || '1')
+                    const tooltipText = item.badge ? `${item.label} (${item.badge})` : item.label
 
-                    return (
+                    const navLink = (
                       <Link
                         key={item.key}
                         href={href}
                         onClick={() => setMobileOpen(false)}
                         aria-current={active ? 'page' : undefined}
-                        title={railCollapsed ? item.label : undefined}
                         aria-label={item.label}
                         className={`nav-link ${active ? 'nav-active' : ''}`}
                       >
-                        <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
-                        <span>{item.label}</span>
+                        <Icon size={18} strokeWidth={1.75} aria-hidden="true" className="nav-icon" />
+                        <span className="nav-label">{item.label}</span>
                         {item.badge && <span className="nav-badge">{item.badge}</span>}
                       </Link>
+                    )
+
+                    return railCollapsed ? (
+                      <Tooltip key={item.key} side="right" content={tooltipText}>
+                        {navLink}
+                      </Tooltip>
+                    ) : (
+                      navLink
                     )
                   })}
                 </div>
@@ -401,26 +486,116 @@ export default function AppShell({ session, business, children }) {
             })}
           </nav>
 
-          {/* Rail collapse button (desktop only) */}
-          <button
-            type="button"
-            className={`rail-toggle-btn ${railCollapsed ? 'collapsed' : ''}`}
-            onClick={toggleRail}
-            aria-label={railCollapsed ? 'Expand navigation rail' : 'Collapse navigation rail'}
-            title={railCollapsed ? 'Expand navigation rail' : 'Collapse navigation rail'}
-          >
+          {/* Pinned Footer */}
+          <div className="sidebar-footer">
+            {/* Rail collapse button (desktop only) */}
             {railCollapsed ? (
-              <PanelLeftOpen size={18} aria-hidden="true" />
+              <Tooltip side="right" content="Expand navigation rail">
+                <button
+                  type="button"
+                  className="rail-toggle-btn collapsed"
+                  onClick={toggleRail}
+                  aria-label="Expand navigation rail"
+                >
+                  <PanelLeftOpen size={18} aria-hidden="true" />
+                </button>
+              </Tooltip>
             ) : (
-              <>
+              <button
+                type="button"
+                className="rail-toggle-btn"
+                onClick={toggleRail}
+                aria-label="Collapse navigation rail"
+              >
                 <PanelLeftClose size={16} aria-hidden="true" />
                 <span>Collapse rail</span>
-              </>
+              </button>
             )}
-          </button>
 
-          {/* Footer note */}
-          <div className="sidebar-foot">Internal operations · {business?.currency || 'BDT'}</div>
+            {/* User card with Radix DropdownMenu */}
+            {session && (
+              <div className="sidebar-user-card">
+                <DropdownMenu>
+                  {railCollapsed ? (
+                    <Tooltip
+                      side="right"
+                      content={`Signed in as ${session.username || 'User'} (${business?.role?.toLowerCase() || 'member'})`}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="sidebar-user-btn collapsed"
+                          aria-label="User account and settings menu"
+                        >
+                          <div className="sidebar-user-avatar" aria-hidden="true">
+                            {userInitial}
+                          </div>
+                        </button>
+                      </DropdownMenuTrigger>
+                    </Tooltip>
+                  ) : (
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="sidebar-user-btn"
+                        aria-label="User account and settings menu"
+                      >
+                        <div className="sidebar-user-avatar" aria-hidden="true">
+                          {userInitial}
+                        </div>
+                        <div className="sidebar-user-info">
+                          <span className="sidebar-user-name">{session.username || 'User'}</span>
+                          <span className="sidebar-user-role">
+                            {business?.role?.toLowerCase() || 'member'}
+                          </span>
+                        </div>
+                        <ChevronDown size={14} className="sidebar-user-chevron" aria-hidden="true" />
+                      </button>
+                    </DropdownMenuTrigger>
+                  )}
+
+                  <DropdownMenuContent
+                    side={railCollapsed ? 'right' : 'top'}
+                    align="start"
+                    sideOffset={8}
+                    className="sidebar-user-dropdown"
+                  >
+                    <DropdownMenuLabel>
+                      <div className="sidebar-dropdown-header">
+                        <strong className="sidebar-dropdown-name">{session.username || 'User'}</strong>
+                        <span className="sidebar-dropdown-meta">
+                          {business?.role?.toLowerCase()} · {business?.name}
+                        </span>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={toggleTheme}>
+                      {mounted && theme === 'dark' ? (
+                        <Sun size={15} aria-hidden="true" />
+                      ) : (
+                        <Moon size={15} aria-hidden="true" />
+                      )}
+                      <span>
+                        {mounted && theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={signOut}
+                      disabled={loggingOut}
+                      className="dropdown-item-danger"
+                    >
+                      <LogOut size={15} aria-hidden="true" />
+                      <span>{loggingOut ? 'Signing out...' : 'Sign out'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
+            {/* Development badge */}
+            {isDev && <div className="sidebar-dev-badge">Development</div>}
+          </div>
         </aside>
 
         {/* Mobile backdrop scrim */}
@@ -440,7 +615,7 @@ export default function AppShell({ session, business, children }) {
           {/* Sticky Topbar */}
           <header className="topbar">
             <div className="topbar-left">
-              {/* Mobile hamburger menu button */}
+              {/* Mobile hamburger menu button (44px target) */}
               <button
                 ref={menuButton}
                 className="menu-button"
@@ -452,7 +627,7 @@ export default function AppShell({ session, business, children }) {
                 <Menu size={20} aria-hidden="true" />
               </button>
 
-              {/* Business Switcher */}
+              {/* Business Switcher: the sole business switcher */}
               {business && session?.businesses && (
                 <div className="business-switcher">
                   <label htmlFor="business-switch" className="sr-only">
@@ -493,7 +668,7 @@ export default function AppShell({ session, business, children }) {
               <kbd className="topbar-kbd">Ctrl K</kbd>
             </button>
 
-            {/* Operational Context tag */}
+            {/* Operational Context tag (responsive: hidden on mobile) */}
             {business && (
               <div
                 className="topbar-context-tag"
@@ -508,7 +683,7 @@ export default function AppShell({ session, business, children }) {
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* User Profile and Sign Out */}
+            {/* Topbar User Profile */}
             {session && (
               <div className="user-profile-menu">
                 <div
@@ -516,7 +691,7 @@ export default function AppShell({ session, business, children }) {
                   title={`Signed in as ${session.username || 'User'}`}
                   aria-hidden="true"
                 >
-                  {(session.username || 'U').charAt(0).toUpperCase()}
+                  {userInitial}
                 </div>
                 <div className="user-info">
                   <span className="user-name">{session.username}</span>
@@ -557,6 +732,6 @@ export default function AppShell({ session, business, children }) {
 
       {/* Quick Search Command Dialog */}
       <QuickSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} businessId={business?.id} />
-    </>
+    </TooltipProvider>
   )
 }

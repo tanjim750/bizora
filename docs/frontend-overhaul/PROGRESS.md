@@ -28,7 +28,7 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T4-1 Shared layout and shell | done | 27df4a5 | Overhauled AppShell with collapsible 256px rail (72px collapsed with localStorage preference and bottom toggle), 6 enterprise nav groups (Overview, Operations, Intelligence, Data & identity, Integrations, Settings), active route matching for 9 workspaces and legacy routes, mobile drawer with focus trap, Esc dismiss, and scroll lock, sticky 56px topbar with business switcher, role chip, global search Ctrl+K trigger and QuickSearchDialog, context indicator, theme toggle, and user sign-out menu. Verified across 12 page checks (0 issues, verify-pages clean). |
 | T4-2 Boundaries and metadata | done | b694377 | Added root global-error.js (html/body compliant, safe fatal boundary), root not-found.js (clear 404 message, illustration-free enterprise design, return to workspaces/login), business-level error.js (inline Banner variant=danger with server detail, retry button, links to Overview and workspace), business-level loading.js (skeleton shaped like final page with header, KPIs, filter bar, and table rows; zero white flash), business-level not-found.js, and route metadata template in root layout.js (%s · Bizora). Verified 404 response on /does-not-exist and gates clean. |
 | T4-3 Route skeleton and redirects | done | ac1a5f4 | Created nine-workspace route skeleton (P2 Overview, P3 Customers, P4 Commerce, P5 Support, P6 Growth, P7 Intelligence, P8 AI, P9 Admin) with optional catch-all [[...tab]] segments, tab metadata, and backward-compatible redirects from legacy /records/[resource]/[id] (to tab + ?open=res:id), /resources/[resource] (to tab), and /[section] (to target workspace). 43/43 tests pass, build 5.3s, verify-pages 40/40 checks clean (0 issues). |
-| T4-4 Sidebar redesign | todo | | |
+| T4-4 Sidebar redesign | done | [PENDING_COMMIT] | Redesigned sidebar rail per UX_POLISH_SPEC.md §2: 264px rail / 72px collapsed rail, 56px brand block aligned with topbar, 32px mark (--color-nav-indicator bg), informational workspace card with Radix Tooltip and circular initial when collapsed, group headers (11px uppercase / 1px divider in collapsed), 40px nav items with 3px left indicator bar, count pills, Radix Tooltip on collapsed rail, independent scrolling nav area, pinned footer with collapse toggle and user card opening Radix DropdownMenu (theme switcher + sign out), neutral dev badge, off-canvas mobile drawer (<1024px) with focus trap, inert background, and scrim. Hoisted AppShell to business/[businessId]/layout.js (ARCH-01), removed redundant AppShell wrappers across 9 workspace pages, installed approved Radix packages (@radix-ui/react-tooltip, @radix-ui/react-dropdown-menu, @radix-ui/react-popover) and clsx. Gates: npm test 43/43, format:check clean, build 1.4s, verify-pages 44/44 clean (0 issues, IBM Plex Sans, light/dark, 1440 & 390). |
 | T4-5 Responsive foundation and layout primitives | todo | | |
 | T5-P1 Sign-in and business choice | todo | | |
 | T5-P2 Overview | todo | | |
@@ -109,6 +109,9 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 - Next: Phase 5 (Workspaces and screens: T5-P1 to T5-P9).
 
 ## Decisions I took
+- Hoisted `AppShell` to `frontend/src/app/business/[businessId]/layout.js` (ARCH-01) so `AppShell` stays mounted during workspace navigation, error boundaries and loading skeletons render cleanly inside `<main>`, and redundant wrappers were removed from all 9 workspace pages.
+- Wrapped `AppShell` in `TooltipProvider delayDuration={150}` and wrapped collapsed rail icons in Radix `Tooltip side="right"`.
+- Added user menu trigger to rail footer with Radix `DropdownMenu` containing theme switch and sign-out actions, and guarded theme rendering with `mounted` state to prevent SSR/CSR hydration divergence.
 - Used optional catch-all segments `[[...tab]]` in Next.js 16 App Router for clean handling of both base workspace URLs (`/business/[id]/commerce`) and tab segments (`/business/[id]/commerce/orders`) with query fallback.
 - Added `hideHeading` prop to `ResourceList`, `Overview`, `ReviewForms`, `ModuleExplorer`, and `AdvisoryTools` to avoid duplicate `h1` headings when wrapped in modern `PageHeader`.
 - Hardened `Button` to support both component classes/functions and pre-rendered React elements for the `icon` prop.
@@ -131,4 +134,7 @@ Old UI, measured by Claude on 2026-11-09 before any overhaul work: `~/bizora-sho
 
 
 ## Dependencies added
-(name, exact version, why, `npm audit --omit=dev` result; none yet)
+- `@radix-ui/react-tooltip@1.4.1`: Collapsed-rail labels, reasons on disabled controls, full text of truncated names. `npm audit --omit=dev`: 0 vulnerabilities.
+- `@radix-ui/react-dropdown-menu@2.2.1`: User menu in rail footer and topbar, row action menus. `npm audit --omit=dev`: 0 vulnerabilities.
+- `@radix-ui/react-popover@1.3.1`: Filter popovers, date range selection. `npm audit --omit=dev`: 0 vulnerabilities.
+- `clsx@2.1.1`: Conditional class name composition for UI kit wrappers. `npm audit --omit=dev`: 0 vulnerabilities.

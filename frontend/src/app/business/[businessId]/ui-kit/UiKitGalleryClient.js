@@ -211,6 +211,7 @@ export function UiKitGalleryClient({ business }) {
     <ToastProvider>
       <div
         className="ui-kit-gallery"
+        suppressHydrationWarning
         style={{ maxWidth: '1280px', margin: '0 auto', paddingBottom: 'var(--space-12)' }}
       >
         <PageHeader

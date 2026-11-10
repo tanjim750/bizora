@@ -37,3 +37,16 @@ export { DataTable } from './DataTable.js'
 export { Timeline } from './Timeline.js'
 export { EvidencePanel } from './EvidencePanel.js'
 export { CopyableCode } from './CopyableCode.js'
+
+// Radix Primitives Wrappers (T4-4 / UX Polish)
+export { Tooltip, TooltipProvider } from './Tooltip.js'
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+} from './DropdownMenu.js'
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from './Popover.js'

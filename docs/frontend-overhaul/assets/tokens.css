@@ -195,7 +195,7 @@
   --duration-base: 200ms;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 
-  --rail-width: 256px;
+  --rail-width: 264px;
   --rail-width-collapsed: 72px;
   --drawer-width: 480px;
   --topbar-height: 56px;
