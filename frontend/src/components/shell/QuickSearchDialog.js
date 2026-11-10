@@ -24,6 +24,8 @@ import {
   ExternalLink,
   ArrowRight,
   SunMoon,
+  Building2,
+  Palette,
 } from 'lucide-react'
 import { Dialog } from '../ui/Dialog.js'
 import { Input } from '../ui/Input.js'
@@ -94,6 +96,22 @@ export function QuickSearchDialog({ isOpen, onClose, businessId, onToggleTheme }
         subtitle: 'Grounded assistant, advisory proposals, and audit logs',
         href: `/business/${bId}/ai`,
         icon: Sparkles,
+      },
+      {
+        id: 'ws-switch',
+        category: 'Workspaces',
+        title: 'Switch Workspace',
+        subtitle: 'Select another business organization or multi-tenant workspace',
+        href: '/workspace',
+        icon: Building2,
+      },
+      {
+        id: 'ws-uikit',
+        category: 'Workspaces',
+        title: 'UI Kit & Component Gallery',
+        subtitle: 'Enterprise design system primitives, forms, tables, and charts',
+        href: `/business/${bId}/ui-kit`,
+        icon: Palette,
       },
       {
         id: 'ws-identity',
