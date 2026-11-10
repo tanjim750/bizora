@@ -1,14 +1,10 @@
 import React from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Tabs } from '@/components/ui/Tabs'
-import { Banner } from '@/components/ui/Banner'
-import { UnavailableState } from '@/components/ui/UnavailableState'
 import { getSession } from '@/lib/serverApi'
-import { AssistantWorkspace } from '@/components/AdvisoryTools'
-import { ActionReview } from '@/components/ReviewForms'
 import { businessApiPath } from '@/lib/catalog'
 import { serverApi } from '@/lib/serverApi'
+import AiStudio from '@/components/AiStudio'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,20 +24,18 @@ export default async function AiWorkspacePage({ params, searchParams }) {
 
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'assistant'
 
-  const aiTabs = [
-    { key: 'assistant', label: 'AI Assistant', href: `/business/${businessId}/ai/assistant` },
-    { key: 'actions', label: 'Action Proposals', href: `/business/${businessId}/ai/actions` },
-    { key: 'audit', label: 'Audit Trail', href: `/business/${businessId}/ai/audit` },
-  ]
-
-  // Recommendations and actions
-  const [recommendationsResult, actionsResult] = await Promise.all([
-    serverApi(businessApiPath(businessId, 'ai/recommendations/')),
-    serverApi(businessApiPath(businessId, 'ai/actions/')),
+  // Pre-fetch recommendations and actions in parallel
+  const [recommendationsRes, actionsRes] = await Promise.all([
+    serverApi(businessApiPath(businessId, 'ai/recommendations/')).catch(() => ({
+      data: [],
+    })),
+    serverApi(businessApiPath(businessId, 'ai/actions/')).catch(() => ({
+      data: [],
+    })),
   ])
 
   return (
-    <div className="workspace-page">
+    <div className="workspace-page stack-lg">
       <PageHeader
         breadcrumbs={[
           { label: 'Workspaces', href: '/workspace' },
@@ -53,40 +47,13 @@ export default async function AiWorkspacePage({ params, searchParams }) {
         badge="Execution is simulated"
       />
 
-      <Tabs tabs={aiTabs} activeKey={currentTab} className="workspace-tabs" />
-
-      <div className="workspace-tab-content">
-        {currentTab === 'assistant' && (
-          <div className="ai-assistant-tab">
-            <Banner variant="info" style={{ marginBottom: 'var(--space-4)' }}>
-              Answers are advisory and synthesized from recorded business facts and customer evidence.
-            </Banner>
-            <AssistantWorkspace
-              business={business}
-              recommendations={recommendationsResult.data}
-              hideHeading={true}
-            />
-          </div>
-        )}
-
-        {currentTab === 'actions' && (
-          <div className="ai-actions-tab">
-            <Banner variant="warning" style={{ marginBottom: 'var(--space-4)' }}>
-              <strong>Execution is simulated.</strong> Action approvals record an audit entry but do not
-              trigger automated external mutation.
-            </Banner>
-            <ActionReview business={business} actions={actionsResult.data} hideHeading={true} />
-          </div>
-        )}
-
-        {currentTab === 'audit' && (
-          <UnavailableState
-            title="Autonomous Action Execution Audit"
-            owner="AI Intelligence"
-            reason="Direct read endpoint for AI execution history is not exposed on this backend."
-          />
-        )}
-      </div>
+      <AiStudio
+        business={business}
+        businessId={businessId}
+        activeTab={currentTab}
+        recommendations={recommendationsRes.data}
+        actions={actionsRes.data}
+      />
     </div>
   )
 }

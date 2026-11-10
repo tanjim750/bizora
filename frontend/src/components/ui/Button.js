@@ -14,6 +14,7 @@ export function Button({
   variant = 'secondary',
   size = 'md',
   isLoading = false,
+  loading = false,
   disabled = false,
   type = 'button',
   icon: Icon = null,
@@ -30,7 +31,7 @@ export function Button({
     }[variant] || 'button-secondary'
 
   const sizeClass = size === 'sm' ? 'button-sm' : ''
-  const isActionDisabled = disabled || isLoading
+  const isActionDisabled = disabled || isLoading || loading
 
   const renderIcon = (iconItem, posClass) => {
     if (!iconItem) return null
@@ -41,15 +42,17 @@ export function Button({
     return <IconComponent className={posClass} size={size === 'sm' ? 14 : 16} aria-hidden="true" />
   }
 
+  const isSpinning = isLoading || loading
+
   return (
     <button
       type={type}
       disabled={isActionDisabled}
-      aria-busy={isLoading ? 'true' : undefined}
-      className={`button ${variantClass} ${sizeClass} ${isLoading ? 'button-loading' : ''} ${className}`.trim()}
+      aria-busy={isSpinning ? 'true' : undefined}
+      className={`button ${variantClass} ${sizeClass} ${isSpinning ? 'button-loading' : ''} ${className}`.trim()}
       {...props}
     >
-      {isLoading ? (
+      {isSpinning ? (
         <>
           <Loader2
             className="button-spinner animate-spin"
