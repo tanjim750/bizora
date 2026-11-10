@@ -195,8 +195,21 @@ export function QuickSearchDialog({ isOpen, onClose, businessId, onToggleTheme }
         href: `/business/${bId}/ui-kit`,
         icon: Boxes,
       },
+      // Actions
+      ...(onToggleTheme
+        ? [
+            {
+              id: 'act-theme',
+              category: 'Actions',
+              title: 'Toggle Theme',
+              subtitle: 'Switch between light and dark visual appearance',
+              action: onToggleTheme,
+              icon: SunMoon,
+            },
+          ]
+        : []),
     ]
-  }, [businessId])
+  }, [businessId, onToggleTheme])
 
   // Filter items based on query
   const filteredItems = useMemo(() => {
@@ -244,7 +257,11 @@ export function QuickSearchDialog({ isOpen, onClose, businessId, onToggleTheme }
 
   function selectItem(item) {
     onClose()
-    router.push(item.href)
+    if (item.action) {
+      item.action()
+    } else if (item.href) {
+      router.push(item.href)
+    }
   }
 
   return (
