@@ -13,15 +13,12 @@ import {
   ShoppingBag,
   CreditCard,
   Truck,
-  Palette,
   CheckSquare,
   Bell,
   Sliders,
   Table as TableIcon,
   GitCommit,
   BarChart3,
-  Check,
-  Copy,
 } from 'lucide-react'
 import {
   Button,
@@ -119,285 +116,6 @@ function ToastDemos() {
         Danger Toast
       </Button>
     </div>
-  )
-}
-
-function TokensShowcase() {
-  const [copiedToken, setCopiedToken] = useState(null)
-
-  const copyToClipboard = (tokenName, text) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text)
-      setCopiedToken(tokenName)
-      setTimeout(() => setCopiedToken(null), 1800)
-    }
-  }
-
-  const surfaceTokens = [
-    { name: 'Canvas', cssVar: '--color-canvas', bg: 'var(--color-canvas)' },
-    { name: 'Surface (Card)', cssVar: '--color-surface', bg: 'var(--color-surface)' },
-    { name: 'Elevated Surface', cssVar: '--color-surface-elevated', bg: 'var(--color-surface-elevated)' },
-    { name: 'Recessed Surface', cssVar: '--color-surface-recessed', bg: 'var(--color-surface-recessed)' },
-    { name: 'Subtle Surface', cssVar: '--color-surface-subtle', bg: 'var(--color-surface-subtle)' },
-    { name: 'Border Hairline', cssVar: '--color-border', bg: 'var(--color-border)' },
-  ]
-
-  const semanticTokens = [
-    { name: 'Primary Cobalt', cssVar: '--color-primary', bg: 'var(--color-primary)' },
-    { name: 'Primary Subtle', cssVar: '--color-primary-subtle', bg: 'var(--color-primary-subtle)' },
-    { name: 'Success Emerald', cssVar: '--color-success', bg: 'var(--color-success)' },
-    { name: 'Success Subtle', cssVar: '--color-success-subtle', bg: 'var(--color-success-subtle)' },
-    { name: 'Warning Amber', cssVar: '--color-warning', bg: 'var(--color-warning)' },
-    { name: 'Warning Subtle', cssVar: '--color-warning-subtle', bg: 'var(--color-warning-subtle)' },
-    { name: 'Danger Crimson', cssVar: '--color-danger', bg: 'var(--color-danger)' },
-    { name: 'Danger Subtle', cssVar: '--color-danger-subtle', bg: 'var(--color-danger-subtle)' },
-    { name: 'Info Steel', cssVar: '--color-info', bg: 'var(--color-info)' },
-    { name: 'Info Subtle', cssVar: '--color-info-subtle', bg: 'var(--color-info-subtle)' },
-  ]
-
-  const chartTokens = [
-    { name: 'Series 1 (Blue)', cssVar: '--chart-1', bg: 'var(--chart-1)' },
-    { name: 'Series 2 (Orange)', cssVar: '--chart-2', bg: 'var(--chart-2)' },
-    { name: 'Series 3 (Teal)', cssVar: '--chart-3', bg: 'var(--chart-3)' },
-    { name: 'Series 4 (Gold)', cssVar: '--chart-4', bg: 'var(--chart-4)' },
-    { name: 'Series 5 (Rose)', cssVar: '--chart-5', bg: 'var(--chart-5)' },
-    { name: 'Series 6 (Green)', cssVar: '--chart-6', bg: 'var(--chart-6)' },
-    { name: 'Series 7 (Violet)', cssVar: '--chart-7', bg: 'var(--chart-7)' },
-    { name: 'Series 8 (Coral)', cssVar: '--chart-8', bg: 'var(--chart-8)' },
-  ]
-
-  const typeSpecimens = [
-    { level: 'Page Title', size: '26px / 34px', weight: '600', sample: 'Executive Business Overview' },
-    {
-      level: 'Section Title',
-      size: '18px / 26px',
-      weight: '600',
-      sample: 'Customer Accounts & Ledger Summary',
-    },
-    { level: 'Card Title', size: '16px / 24px', weight: '600', sample: 'Payment Gateway Configuration' },
-    { level: 'Subsection', size: '15px / 22px', weight: '500', sample: 'Reconciled transaction volume' },
-    {
-      level: 'Body Regular',
-      size: '14px / 21px',
-      weight: '400',
-      sample: 'Standard copy for table content, labels, and notices.',
-    },
-    {
-      level: 'Table / Compact',
-      size: '13px / 20px',
-      weight: '400',
-      sample: 'Dense tabular records and timeline descriptions.',
-    },
-    {
-      level: 'Caption',
-      size: '12px / 16px',
-      weight: '400',
-      sample: 'Monospace metadata, timestamps, and secondary status context.',
-    },
-    { level: 'Overline', size: '11px / 16px', weight: '600', sample: 'STATUS · SPEC T3-1 · ENTERPRISE' },
-  ]
-
-  return (
-    <section id="section-tokens" className="surface" style={{ marginTop: 'var(--space-6)' }}>
-      <div className="section-header">
-        <div>
-          <h2>Design Tokens & High-Craft Foundations</h2>
-          <p>
-            WCAG 2.2 AA calibrated formal color palette, layered surface elevations, and typographic scale.
-          </p>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        {/* Surface & Depth Architecture */}
-        <div>
-          <div className="ui-kit-demo-label">
-            <span className="ui-kit-demo-title">Surface Elevation & Recessed Wells</span>
-            <span className="text-caption text-muted">Hairline borders with subtle specular highlights</span>
-          </div>
-          <div className="token-swatch-grid">
-            {surfaceTokens.map((item) => (
-              <button
-                key={item.cssVar}
-                type="button"
-                className="token-swatch-card"
-                onClick={() => copyToClipboard(item.cssVar, `var(${item.cssVar})`)}
-                title={`Click to copy var(${item.cssVar})`}
-                style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--color-border)' }}
-              >
-                <div className="token-swatch-color" style={{ background: item.bg }} />
-                <div className="token-swatch-info">
-                  <span className="token-swatch-name">{item.name}</span>
-                  <span className="token-swatch-var">
-                    {copiedToken === item.cssVar ? 'Copied!' : item.cssVar}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Semantic Tones */}
-        <div>
-          <div className="ui-kit-demo-label">
-            <span className="ui-kit-demo-title">Semantic Tones & Translucent Tint Fills</span>
-            <span className="text-caption text-muted">WCAG 4.5:1 text contrast on subtles</span>
-          </div>
-          <div className="token-swatch-grid">
-            {semanticTokens.map((item) => (
-              <button
-                key={item.cssVar}
-                type="button"
-                className="token-swatch-card"
-                onClick={() => copyToClipboard(item.cssVar, `var(${item.cssVar})`)}
-                title={`Click to copy var(${item.cssVar})`}
-                style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--color-border)' }}
-              >
-                <div className="token-swatch-color" style={{ background: item.bg }} />
-                <div className="token-swatch-info">
-                  <span className="token-swatch-name">{item.name}</span>
-                  <span className="token-swatch-var">
-                    {copiedToken === item.cssVar ? 'Copied!' : item.cssVar}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Chart Series Tokens */}
-        <div>
-          <div className="ui-kit-demo-label">
-            <span className="ui-kit-demo-title">Data Visualization Spectrum (T3-7)</span>
-            <span className="text-caption text-muted">8 distinct accessible dataviz categorical hues</span>
-          </div>
-          <div className="token-swatch-grid">
-            {chartTokens.map((item) => (
-              <button
-                key={item.cssVar}
-                type="button"
-                className="token-swatch-card"
-                onClick={() => copyToClipboard(item.cssVar, `var(${item.cssVar})`)}
-                title={`Click to copy var(${item.cssVar})`}
-                style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--color-border)' }}
-              >
-                <div className="token-swatch-color" style={{ background: item.bg }} />
-                <div className="token-swatch-info">
-                  <span className="token-swatch-name">{item.name}</span>
-                  <span className="token-swatch-var">
-                    {copiedToken === item.cssVar ? 'Copied!' : item.cssVar}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Typography Hierarchy */}
-        <div>
-          <div className="ui-kit-demo-label">
-            <span className="ui-kit-demo-title">Typography Hierarchy (IBM Plex Sans & Mono)</span>
-            <span className="text-caption text-muted">Strict vertical rhythm with tabular numerals</span>
-          </div>
-          <div className="ui-kit-demo-box" style={{ overflowX: 'auto' }}>
-            <table className="type-specimen-table">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 8px',
-                      fontSize: '12px',
-                      color: 'var(--color-text-muted)',
-                    }}
-                  >
-                    LEVEL
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 8px',
-                      fontSize: '12px',
-                      color: 'var(--color-text-muted)',
-                    }}
-                  >
-                    SPEC
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 8px',
-                      fontSize: '12px',
-                      color: 'var(--color-text-muted)',
-                    }}
-                  >
-                    WEIGHT
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 8px',
-                      fontSize: '12px',
-                      color: 'var(--color-text-muted)',
-                    }}
-                  >
-                    SAMPLE RENDERING
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {typeSpecimens.map((spec) => (
-                  <tr key={spec.level}>
-                    <td style={{ fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>{spec.level}</td>
-                    <td
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '12px',
-                        color: 'var(--color-text-muted)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {spec.size}
-                    </td>
-                    <td
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '12px',
-                        color: 'var(--color-text-muted)',
-                      }}
-                    >
-                      {spec.weight}
-                    </td>
-                    <td style={{ color: 'var(--color-text)' }}>
-                      {spec.level === 'Overline' ? (
-                        <span
-                          style={{
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {spec.sample}
-                        </span>
-                      ) : spec.level === 'Page Title' ? (
-                        <span style={{ fontSize: '20px', fontWeight: 600 }}>{spec.sample}</span>
-                      ) : spec.level === 'Section Title' ? (
-                        <span style={{ fontSize: '16px', fontWeight: 600 }}>{spec.sample}</span>
-                      ) : (
-                        <span style={{ fontSize: '14px', fontWeight: spec.weight === '600' ? 600 : 400 }}>
-                          {spec.sample}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
   )
 }
 
@@ -508,7 +226,7 @@ export function UiKitGalleryClient({ business }) {
       >
         <PageHeader
           title="UI Kit Component Gallery"
-          description="Enterprise design system token catalog, native inputs, status primitives, overlays, and tables."
+          description="Enterprise UI component gallery, accessible form controls, status indicators, data presentation, and interactive overlays."
           breadcrumbs={[
             { label: 'Overview', href: `/business/${business.id}/overview` },
             { label: 'UI Kit Gallery' },
@@ -525,41 +243,34 @@ export function UiKitGalleryClient({ business }) {
 
         {/* Sticky Section Quick-Jump Nav Bar */}
         <nav aria-label="UI Kit sections" className="ui-kit-nav-bar">
-          <a href="#section-tokens" className="ui-kit-nav-pill">
-            <Palette size={13} aria-hidden="true" />
-            <span>00 Tokens</span>
-          </a>
           <a href="#section-forms" className="ui-kit-nav-pill">
             <CheckSquare size={13} aria-hidden="true" />
-            <span>01 Forms</span>
+            <span>Forms</span>
           </a>
           <a href="#section-feedback" className="ui-kit-nav-pill">
             <Bell size={13} aria-hidden="true" />
-            <span>02 Feedback</span>
+            <span>Feedback</span>
           </a>
           <a href="#section-overlays" className="ui-kit-nav-pill">
             <Sliders size={13} aria-hidden="true" />
-            <span>03 Overlays</span>
+            <span>Overlays</span>
           </a>
           <a href="#section-tables" className="ui-kit-nav-pill">
             <TableIcon size={13} aria-hidden="true" />
-            <span>04 Tables</span>
+            <span>Tables</span>
           </a>
           <a href="#section-evidence" className="ui-kit-nav-pill">
             <GitCommit size={13} aria-hidden="true" />
-            <span>05 Evidence</span>
+            <span>Evidence</span>
           </a>
           <a href="#section-charts" className="ui-kit-nav-pill">
             <BarChart3 size={13} aria-hidden="true" />
-            <span>06 Charts</span>
+            <span>Charts</span>
           </a>
         </nav>
 
-        {/* Section 0: Design Tokens & Foundations */}
-        <TokensShowcase />
-
         {/* Section 1: Form Basics */}
-        <section id="section-forms" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-forms" className="surface">
           <div className="section-header">
             <div>
               <h2>Form Controls & Actions (T3-1)</h2>
@@ -567,7 +278,7 @@ export function UiKitGalleryClient({ business }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <div className="ui-kit-demo-box">
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">Button Hierarchy & Micro-States</span>
@@ -597,60 +308,74 @@ export function UiKitGalleryClient({ business }) {
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: 'var(--space-4)',
-              }}
-            >
-              <Field
-                label="Customer full name"
-                id="demo-name"
-                hint="Legal name matching identity card"
-                required
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Text & Numerical Inputs</span>
+                <span className="text-caption text-muted">
+                  Validated fields with explicit hints and error states
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: 'var(--space-4)',
+                }}
               >
-                <Input placeholder="Enter name..." />
-              </Field>
+                <Field
+                  label="Customer full name"
+                  id="demo-name"
+                  hint="Legal name matching identity card"
+                  required
+                >
+                  <Input placeholder="Enter name..." />
+                </Field>
 
-              <Field label="Email address" id="demo-email" error="Please enter a valid business email">
-                <Input type="email" placeholder="user@company.com" defaultValue="invalid-email" />
-              </Field>
+                <Field label="Email address" id="demo-email" error="Please enter a valid business email">
+                  <Input type="email" placeholder="user@company.com" defaultValue="invalid-email" />
+                </Field>
 
-              <Field
-                label="Order transaction total"
-                id="demo-money"
-                hint="Strict 2 decimal numeric validation"
-                required
-              >
-                <MoneyField value={sampleMoney} onChange={(e) => setSampleMoney(e.target.value)} />
-              </Field>
+                <Field
+                  label="Order transaction total"
+                  id="demo-money"
+                  hint="Strict 2 decimal numeric validation"
+                  required
+                >
+                  <MoneyField value={sampleMoney} onChange={(e) => setSampleMoney(e.target.value)} />
+                </Field>
 
-              <Field label="Recorded date and time" id="demo-date" hint="Stored in business timezone">
-                <DateTimeField defaultValue="2026-11-09T14:30" />
-              </Field>
+                <Field label="Recorded date and time" id="demo-date" hint="Stored in business timezone">
+                  <DateTimeField defaultValue="2026-11-09T14:30" />
+                </Field>
+              </div>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: 'var(--space-4)',
-              }}
-            >
-              <Field label="Account status" id="demo-select">
-                <Select
-                  options={[
-                    { value: 'ACTIVE', label: 'Active business account' },
-                    { value: 'SUSPENDED', label: 'Suspended by admin' },
-                    { value: 'PENDING', label: 'Pending manual review' },
-                  ]}
-                />
-              </Field>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">Selections & Multi-line Notes</span>
+                <span className="text-caption text-muted">Native select menu and flexible textarea</span>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: 'var(--space-4)',
+                }}
+              >
+                <Field label="Account status" id="demo-select">
+                  <Select
+                    options={[
+                      { value: 'ACTIVE', label: 'Active business account' },
+                      { value: 'SUSPENDED', label: 'Suspended by admin' },
+                      { value: 'PENDING', label: 'Pending manual review' },
+                    ]}
+                  />
+                </Field>
 
-              <Field label="Delivery instructions" id="demo-textarea">
-                <Textarea placeholder="Special handling notes..." rows={2} />
-              </Field>
+                <Field label="Delivery instructions" id="demo-textarea">
+                  <Textarea placeholder="Special handling notes..." rows={2} />
+                </Field>
+              </div>
             </div>
 
             <div className="ui-kit-demo-box">
@@ -675,7 +400,7 @@ export function UiKitGalleryClient({ business }) {
         </section>
 
         {/* Section 2: Feedback & Status */}
-        <section id="section-feedback" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-feedback" className="surface">
           <div className="section-header">
             <div>
               <h2>Feedback & Status Indicators (T3-2)</h2>
@@ -683,28 +408,35 @@ export function UiKitGalleryClient({ business }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <Banner variant="info" title="Scheduled Platform Maintenance">
-                Database indexing scheduled tonight at 02:00 Asia/Dhaka. Read operations remain uninterrupted.
-              </Banner>
-              <Banner variant="success" title="Payment Succeeded" onClose={() => {}}>
-                Receipt generated and recorded. Accounting ledger entries updated.
-              </Banner>
-              <Banner variant="warning" title="Stale Record State Detected">
-                Someone else updated this configuration record. Reloading with authoritative server state.
-              </Banner>
-              <Banner
-                variant="danger"
-                title="Payment Gateway Unavailable"
-                action={
-                  <Button variant="secondary" size="sm">
-                    Retry Connection
-                  </Button>
-                }
-              >
-                The payment processor did not respond within the 15-second timeout window.
-              </Banner>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-label">
+                <span className="ui-kit-demo-title">System Alert Banners (WCAG AA Contrast)</span>
+                <span className="text-caption text-muted">Info, Success, Warning, and Danger states</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <Banner variant="info" title="Scheduled Platform Maintenance">
+                  Database indexing scheduled tonight at 02:00 Asia/Dhaka. Read operations remain
+                  uninterrupted.
+                </Banner>
+                <Banner variant="success" title="Payment Succeeded" onClose={() => {}}>
+                  Receipt generated and recorded. Accounting ledger entries updated.
+                </Banner>
+                <Banner variant="warning" title="Stale Record State Detected">
+                  Someone else updated this configuration record. Reloading with authoritative server state.
+                </Banner>
+                <Banner
+                  variant="danger"
+                  title="Payment Gateway Unavailable"
+                  action={
+                    <Button variant="secondary" size="sm">
+                      Retry Connection
+                    </Button>
+                  }
+                >
+                  The payment processor did not respond within the 15-second timeout window.
+                </Banner>
+              </div>
             </div>
 
             <div className="ui-kit-demo-box">
@@ -746,12 +478,12 @@ export function UiKitGalleryClient({ business }) {
               </div>
             </div>
 
-            <div>
+            <div className="ui-kit-demo-box">
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">Executive KPI Tiles</span>
                 <span className="text-caption text-muted">Sleek trend badges with tabular figures</span>
               </div>
-              <div className="metric-grid">
+              <div className="metric-grid" style={{ marginBottom: 0 }}>
                 <KpiTile
                   title="Gross Sales"
                   value="BDT 124,500.00"
@@ -780,13 +512,13 @@ export function UiKitGalleryClient({ business }) {
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">Ephemeral Toast Notifications</span>
                 <span className="text-caption text-muted">
-                  Top-right floating portal stack with auto-dismiss
+                  Floating stack with contextual status tones and auto-dismiss
                 </span>
               </div>
               <ToastDemos />
             </div>
 
-            <div>
+            <div className="ui-kit-demo-box">
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">Calm Unavailable State</span>
                 <span className="text-caption text-muted">
@@ -802,13 +534,13 @@ export function UiKitGalleryClient({ business }) {
                     Inspect Logs
                   </Button>
                 }
-              ></UnavailableState>
+              />
             </div>
           </div>
         </section>
 
         {/* Section 3: Overlays & Navigation */}
-        <section id="section-overlays" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-overlays" className="surface">
           <div className="section-header">
             <div>
               <h2>Overlays & Navigation (T3-3)</h2>
@@ -816,8 +548,8 @@ export function UiKitGalleryClient({ business }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-            <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div className="ui-kit-demo-box">
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">Tab Navigation with Count Chips</span>
                 <span className="text-caption text-muted">
@@ -841,7 +573,7 @@ export function UiKitGalleryClient({ business }) {
                 <span className="ui-kit-demo-title">Overlay Triggers (Focus Trap & Escape Handlers)</span>
                 <span className="text-caption text-muted">Dialogs & drawers render into Portal root</span>
               </div>
-              <div className="button-row">
+              <div className="button-row" style={{ flexWrap: 'wrap' }}>
                 <Button variant="secondary" onClick={() => setIsDrawerOpen(true)}>
                   Open Detail Drawer
                 </Button>
@@ -854,7 +586,7 @@ export function UiKitGalleryClient({ business }) {
               </div>
             </div>
 
-            <div>
+            <div className="ui-kit-demo-box">
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">Filter Bar & Active Filter Pills</span>
                 <span className="text-caption text-muted">Removable filter tags with clear all action</span>
@@ -890,7 +622,7 @@ export function UiKitGalleryClient({ business }) {
         </section>
 
         {/* Section 4: Data Table */}
-        <section id="section-tables" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-tables" className="surface">
           <div className="section-header">
             <div>
               <h2>Data Presentation (T3-4)</h2>
@@ -915,7 +647,7 @@ export function UiKitGalleryClient({ business }) {
         </section>
 
         {/* Section 5: Evidence & Time */}
-        <section id="section-evidence" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-evidence" className="surface">
           <div className="section-header">
             <div>
               <h2>Evidence & Chronological Threads (T3-5)</h2>
@@ -927,10 +659,10 @@ export function UiKitGalleryClient({ business }) {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: 'var(--space-6)',
+              gap: 'var(--space-5)',
             }}
           >
-            <div>
+            <div className="ui-kit-demo-box" style={{ marginTop: 0 }}>
               <div className="ui-kit-demo-label">
                 <span className="ui-kit-demo-title">The Evidence Thread</span>
                 <span className="text-caption text-muted">Continuous vertical spine joining events</span>
@@ -939,7 +671,7 @@ export function UiKitGalleryClient({ business }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              <div>
+              <div className="ui-kit-demo-box" style={{ marginTop: 0 }}>
                 <div className="ui-kit-demo-label">
                   <span className="ui-kit-demo-title">Grounding Evidence Panel</span>
                   <span className="text-caption text-muted">Transparent provenance citations</span>
@@ -966,7 +698,7 @@ export function UiKitGalleryClient({ business }) {
                 />
               </div>
 
-              <div className="ui-kit-demo-box">
+              <div className="ui-kit-demo-box" style={{ marginTop: 0 }}>
                 <div className="ui-kit-demo-label">
                   <span className="ui-kit-demo-title">Copyable Identifiers & Codes</span>
                   <span className="text-caption text-muted">Monospace with quick copy tooltip</span>
@@ -991,7 +723,7 @@ export function UiKitGalleryClient({ business }) {
         </section>
 
         {/* Section 6: Charts & Visualizations (T3-7) */}
-        <section id="section-charts" className="surface" style={{ marginTop: 'var(--space-6)' }}>
+        <section id="section-charts" className="surface">
           <div className="section-header">
             <div>
               <h2>Charts & Visualizations (T3-7)</h2>

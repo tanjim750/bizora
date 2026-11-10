@@ -99,7 +99,7 @@ export function BarCompare({
             tickLine={false}
             tick={{
               fill: 'var(--color-text-muted)',
-              fontSize: 11,
+              fontSize: 12,
               fontFamily: 'var(--font-mono)',
             }}
             interval={isMobile ? 'preserveStartEnd' : 0}
@@ -113,7 +113,7 @@ export function BarCompare({
             tickCount={isMobile ? 4 : 5}
             tick={{
               fill: 'var(--color-text-muted)',
-              fontSize: 11,
+              fontSize: 12,
               fontFamily: 'var(--font-mono)',
             }}
             tickFormatter={valueFormatter}
