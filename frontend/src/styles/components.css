@@ -2016,6 +2016,16 @@ td small {
   color: var(--color-primary);
 }
 
+.sidebar .bizora-brand-text,
+.sidebar-brand .bizora-brand-text {
+  color: var(--color-nav-text-active, #ffffff);
+}
+
+.sidebar .bizora-brand-dot,
+.sidebar-brand .bizora-brand-dot {
+  color: var(--color-nav-indicator, #7fb0e8);
+}
+
 .workspace-top-actions {
   display: flex;
   align-items: center;
@@ -4213,16 +4223,18 @@ td small {
 .ui-kit-demo-box {
   background: var(--color-surface-recessed, var(--color-surface-subtle));
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  margin-top: var(--space-2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-top: var(--space-3);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .ui-kit-demo-label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-3);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--color-border);
 }
@@ -4234,69 +4246,4 @@ td small {
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin: 0;
-}
-
-.token-swatch-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: var(--space-3);
-}
-
-.token-swatch-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-e1);
-  min-height: 44px;
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-.token-swatch-card:hover {
-  transform: translateY(-1px);
-}
-
-.token-swatch-color {
-  height: 48px;
-  width: 100%;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.token-swatch-info {
-  padding: 8px 10px;
-}
-
-.token-swatch-name {
-  font-size: var(--text-caption);
-  font-weight: 600;
-  color: var(--color-text);
-  display: block;
-}
-
-.token-swatch-var {
-  font-size: var(--text-caption);
-  font-family: var(--font-mono);
-  color: var(--color-text-muted);
-  display: block;
-  margin-top: 2px;
-}
-
-.type-specimen-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.type-specimen-table tr {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.type-specimen-table tr:last-child {
-  border-bottom: none;
-}
-
-.type-specimen-table td {
-  padding: var(--space-3) var(--space-2);
-  vertical-align: middle;
 }

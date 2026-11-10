@@ -120,7 +120,7 @@ export function TrendLine({
             tickLine={false}
             tick={{
               fill: 'var(--color-text-muted)',
-              fontSize: 11,
+              fontSize: 12,
               fontFamily: 'var(--font-mono)',
             }}
             interval={isMobile ? 'preserveStartEnd' : 'equidistantPreserveStart'}
@@ -134,7 +134,7 @@ export function TrendLine({
             tickCount={isMobile ? 4 : 5}
             tick={{
               fill: 'var(--color-text-muted)',
-              fontSize: 11,
+              fontSize: 12,
               fontFamily: 'var(--font-mono)',
             }}
             tickFormatter={valueFormatter}
