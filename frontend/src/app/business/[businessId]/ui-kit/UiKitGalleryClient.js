@@ -46,6 +46,10 @@ import {
   Timeline,
   EvidencePanel,
   CopyableCode,
+  ChartCard,
+  TrendLine,
+  BarCompare,
+  Sparkline,
 } from '@/components/ui'
 
 function ToastDemos() {
@@ -605,6 +609,108 @@ export function UiKitGalleryClient({ business }) {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Section 6: Charts & Visualizations (T3-7) */}
+        <section className="surface" style={{ marginTop: 'var(--space-6)' }}>
+          <div className="section-header">
+            <div>
+              <h2>Charts & Visualizations (T3-7)</h2>
+              <p>
+                Recharts wrappers driven by formal theme tokens (--chart-*), with accessible data table
+                toggle, calm empty/unavailable states, and responsive aspect ratio.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid-2" style={{ marginBottom: 'var(--space-6)' }}>
+            <ChartCard
+              title="Gross Revenue & Volume"
+              subtitle="7-day rolling revenue trend (BDT)"
+              badge={<SimulatedBadge />}
+              tableData={[
+                { id: '1', date: '04 Nov', revenue: 24500, orders: 18 },
+                { id: '2', date: '05 Nov', revenue: 31200, orders: 24 },
+                { id: '3', date: '06 Nov', revenue: 19800, orders: 15 },
+                { id: '4', date: '07 Nov', revenue: 42100, orders: 32 },
+                { id: '5', date: '08 Nov', revenue: 38400, orders: 29 },
+                { id: '6', date: '09 Nov', revenue: 51200, orders: 41 },
+                { id: '7', date: '10 Nov', revenue: 46800, orders: 36 },
+              ]}
+              tableColumns={[
+                { key: 'date', label: 'Date' },
+                { key: 'revenue', label: 'Revenue (BDT)', type: 'money' },
+                { key: 'orders', label: 'Orders', align: 'right' },
+              ]}
+              ariaLabel="Gross revenue 7-day trend showing growth from BDT 24,500 to BDT 46,800"
+            >
+              <TrendLine
+                data={[
+                  { date: '04 Nov', revenue: 24500 },
+                  { date: '05 Nov', revenue: 31200 },
+                  { date: '06 Nov', revenue: 19800 },
+                  { date: '07 Nov', revenue: 42100 },
+                  { date: '08 Nov', revenue: 38400 },
+                  { date: '09 Nov', revenue: 51200 },
+                  { date: '10 Nov', revenue: 46800 },
+                ]}
+                xKey="date"
+                yKey="revenue"
+                series={[{ key: 'revenue', name: 'Revenue', color: 'var(--chart-1)' }]}
+                valueFormatter={(v) => `BDT ${(v / 1000).toFixed(0)}k`}
+              />
+            </ChartCard>
+
+            <ChartCard
+              title="Channel Distribution"
+              subtitle="Direct vs referral sales by channel"
+              badge={<SimulatedBadge />}
+              tableData={[
+                { id: '1', category: 'Online Store', direct: 34000, referral: 12000 },
+                { id: '2', category: 'Marketplace', direct: 22000, referral: 8500 },
+                { id: '3', category: 'Social Shop', direct: 18000, referral: 14000 },
+                { id: '4', category: 'B2B Wholesale', direct: 45000, referral: 5000 },
+              ]}
+              tableColumns={[
+                { key: 'category', label: 'Sales Channel' },
+                { key: 'direct', label: 'Direct (BDT)', type: 'money' },
+                { key: 'referral', label: 'Referral (BDT)', type: 'money' },
+              ]}
+              ariaLabel="Sales by channel comparison chart"
+            >
+              <BarCompare
+                data={[
+                  { category: 'Online', direct: 34000, referral: 12000 },
+                  { category: 'Market', direct: 22000, referral: 8500 },
+                  { category: 'Social', direct: 18000, referral: 14000 },
+                  { category: 'B2B', direct: 45000, referral: 5000 },
+                ]}
+                xKey="category"
+                series={[
+                  { key: 'direct', name: 'Direct', color: 'var(--chart-1)' },
+                  { key: 'referral', name: 'Referral', color: 'var(--chart-2)' },
+                ]}
+                valueFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              />
+            </ChartCard>
+          </div>
+
+          <div className="grid-2">
+            <ChartCard
+              title="Telemetry Status"
+              subtitle="Empty state demonstration"
+              empty
+              emptyTitle="No time series points recorded"
+              emptyDescription="No orders were placed during the selected comparison window."
+            />
+
+            <ChartCard
+              title="Warehouse Sensor Feed"
+              subtitle="Simulated telemetry from external integration"
+              unavailable
+              unavailableReason="Cold chain IoT sensor telemetry service is currently offline"
+            />
           </div>
         </section>
 

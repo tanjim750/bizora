@@ -50,3 +50,14 @@ export {
   DropdownMenuGroup,
 } from './DropdownMenu.js'
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from './Popover.js'
+
+// Chart components (T3-7 / UX Polish)
+export {
+  ChartCard,
+  TrendLine,
+  BarCompare,
+  Sparkline,
+  AreaChart,
+  LineChart,
+  BarChart,
+} from './charts/index.js'

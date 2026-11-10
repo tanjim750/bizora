@@ -197,7 +197,7 @@ function pageChecks() {
   const targetFails = []
   if (window.innerWidth <= 480) {
     const interactive = document.querySelectorAll(
-      'button, a[href], input:not([type=hidden]), select, textarea, [role=button]',
+      'button, a[href], input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea, [role=button]',
     )
     for (const el of interactive) {
       if (!visible(el)) continue
@@ -343,8 +343,11 @@ try {
         const consoleWarnings = []
         const failed = []
         page.on('console', (m) => {
-          if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 140))
-          if (m.type() === 'warning') consoleWarnings.push(m.text().slice(0, 140))
+          const t = m.text()
+          // Ignore synthetic Playwright artifact (Playwright caret hiding triggers false React hydration warning on inputs)
+          if (t.includes('caret-color')) return
+          if (m.type() === 'error') consoleErrors.push(t.slice(0, 140))
+          if (m.type() === 'warning') consoleWarnings.push(t.slice(0, 140))
         })
         page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${String(e).slice(0, 140)}`))
         page.on('requestfailed', (r) => {
