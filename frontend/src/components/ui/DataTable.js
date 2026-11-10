@@ -204,7 +204,7 @@ export function DataTable({
                   <th
                     key={col.key}
                     scope="col"
-                    className={`${isNumeric ? 'text-right' : ''} ${isSortable ? 'is-sortable' : ''}`}
+                    className={`${isNumeric ? 'text-right' : ''} ${isSortable ? 'is-sortable' : ''} ${col.priority === 'low' ? 'table-col-priority-low' : ''}`.trim()}
                     aria-sort={
                       isCurrentSort ? (sortDirection === 'desc' ? 'descending' : 'ascending') : undefined
                     }
@@ -236,7 +236,7 @@ export function DataTable({
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={`skeleton-${rIdx}`}>
                   {columns.map((col, cIdx) => (
-                    <td key={`sk-${cIdx}`}>
+                    <td key={`sk-${cIdx}`} className={col.priority === 'low' ? 'table-col-priority-low' : ''}>
                       <Skeleton variant="text" width={cIdx === 0 ? '70%' : '50%'} height={14} />
                     </td>
                   ))}
@@ -254,7 +254,10 @@ export function DataTable({
                     {columns.map((col) => {
                       const isNumeric = col.type === 'money' || col.align === 'right'
                       return (
-                        <td key={col.key} className={isNumeric ? 'text-right' : ''}>
+                        <td
+                          key={col.key}
+                          className={`${isNumeric ? 'text-right' : ''} ${col.priority === 'low' ? 'table-col-priority-low' : ''}`.trim()}
+                        >
                           {renderCell(row, col)}
                         </td>
                       )

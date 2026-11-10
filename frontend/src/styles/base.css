@@ -43,6 +43,10 @@ a:hover {
   text-underline-offset: 3px;
 }
 
+small {
+  font-size: var(--text-caption);
+}
+
 ::selection {
   background: var(--color-primary-subtle);
   color: var(--color-primary-text);
