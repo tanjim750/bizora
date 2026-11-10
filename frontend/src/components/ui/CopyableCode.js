@@ -9,6 +9,7 @@ import { Copy, Check } from 'lucide-react'
  */
 export function CopyableCode({
   value,
+  code,
   label = 'code snippet',
   inline = true,
   truncate = false,
@@ -17,8 +18,11 @@ export function CopyableCode({
 }) {
   const [copied, setCopied] = useState(false)
 
+  const effectiveValue = value !== undefined ? value : code
   const stringValue =
-    typeof value === 'object' && value !== null ? JSON.stringify(value, null, 2) : String(value ?? '')
+    typeof effectiveValue === 'object' && effectiveValue !== null
+      ? JSON.stringify(effectiveValue, null, 2)
+      : String(effectiveValue ?? '')
 
   const handleCopy = async (e) => {
     e.stopPropagation()

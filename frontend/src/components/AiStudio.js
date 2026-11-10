@@ -81,10 +81,10 @@ export default function AiStudio({
     try {
       const data = await clientApi(`businesses/${businessId}/ai/assistant/query`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           query: queryText.trim(),
           conversation_id: null,
-        }),
+        },
       })
       setQueryResult(data)
     } catch (err) {
@@ -128,7 +128,7 @@ export default function AiStudio({
       const endpoint = decision === 'APPROVED' ? `actions/${actionId}/approve` : `actions/${actionId}/reject`
       const res = await clientApi(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ note: reviewNote.trim() }),
+        body: { note: reviewNote.trim() },
       })
 
       setReviewSuccess(`Action marked as ${decision}. Note recorded. Execution is simulated.`)

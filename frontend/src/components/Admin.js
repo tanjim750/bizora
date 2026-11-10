@@ -144,7 +144,7 @@ export default function Admin({
 
     try {
       const res = await clientApi(
-        `/api/backend/businesses/${businessId}/identity/merge-candidates/${candidateId}/dry-run`,
+        `businesses/${businessId}/identity/merge-candidates/${candidateId}/dry-run`,
         {
           method: 'POST',
           body: {},
@@ -186,16 +186,13 @@ export default function Admin({
     setIsReviewingConflict(true)
 
     try {
-      await clientApi(
-        `/api/backend/businesses/${businessId}/identity/conflicts/${selectedConflict.id}/review`,
-        {
-          method: 'POST',
-          body: {
-            status: conflictReviewStatus,
-            reason: conflictReviewReason,
-          },
+      await clientApi(`businesses/${businessId}/identity/conflicts/${selectedConflict.id}/review`, {
+        method: 'POST',
+        body: {
+          status: conflictReviewStatus,
+          reason: conflictReviewReason,
         },
-      )
+      })
       setSelectedConflict(null)
       router.refresh()
     } catch (err) {
@@ -212,7 +209,7 @@ export default function Admin({
 
     try {
       await clientApi(
-        `/api/backend/businesses/${businessId}/identity/merge-candidates/${selectedMergeCandidate.id}/review`,
+        `businesses/${businessId}/identity/merge-candidates/${selectedMergeCandidate.id}/review`,
         {
           method: 'POST',
           body: {
@@ -236,13 +233,10 @@ export default function Admin({
     setOperationResult(null)
 
     try {
-      const res = await clientApi(
-        `/api/backend/businesses/${businessId}/observability/connections/${connId}/test`,
-        {
-          method: 'POST',
-          body: {},
-        },
-      )
+      const res = await clientApi(`businesses/${businessId}/observability/connections/${connId}/test`, {
+        method: 'POST',
+        body: {},
+      })
       setOperationResult({
         connId,
         status: res?.status === 'SUCCESS' ? 'Attempt recorded — Succeeded' : 'Attempt recorded — Succeeded',
@@ -265,7 +259,7 @@ export default function Admin({
     setIsRetryingSync(true)
 
     try {
-      await clientApi(`/api/backend/businesses/${businessId}/observability/syncs/${selectedSyncId}/retry`, {
+      await clientApi(`businesses/${businessId}/observability/syncs/${selectedSyncId}/retry`, {
         method: 'POST',
         body: {},
       })
@@ -1164,6 +1158,7 @@ export default function Admin({
                 rows={3}
               />
             </Field>
+            <button type="submit" style={{ display: 'none' }} aria-hidden="true" />
           </form>
         </Dialog>
       )}
@@ -1204,6 +1199,7 @@ export default function Admin({
                 rows={3}
               />
             </Field>
+            <button type="submit" style={{ display: 'none' }} aria-hidden="true" />
           </form>
         </Dialog>
       )}

@@ -39,12 +39,12 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T5-P7 Intelligence | done | 25b4be8 | Overhauled Intelligence workspace (`/business/[id]/intelligence/[[...tab]]` and `src/components/Intelligence.js`) with all 4 tabs (`facts`, `graph`, `metrics`, `pipeline`): Facts & Issues tab (live Open Business Issues table from E12, empty state, sample data toggle with clearly badged demo facts with SimulatedBadge, Evidence Drawer with EvidencePanel showing grounding facts, citations, rule keys and timestamps); Context Graph tab (D22 one-hop context graph explorer for Customer, Order, Product, Shipment, Conversation; entity selector with accessible labels; graph legend with explicit shape and icon differentiation per entity type [circle for customer, diamond for order, square for product, hexagon for identity] strictly avoiding color alone; separate calm UnavailableState for multi-hop graph traversal); Metrics & Analysis tab (calm UnavailableState naming Business Intelligence); Data Pipeline tab (calm UnavailableState naming Platform Operations). Unit test `tests/intelligence.test.js`. Gates: npm test 60/60 passed, format:check clean, build green, matrix 56/56 checks clean across 7 viewports in light and dark (0 issues). |
 | T5-P6 Growth | done | cb9d972 | Overhauled Growth workspace (`/business/[id]/growth/[[...tab]]` and `src/components/Growth.js`) with all tabs and sub-views: Campaigns tab with platform-reported spend, clicks and conversions; status and platform filter controls; campaign detail drawer with two separate small charts (Daily Spend Trend and Daily Clicks Trend, strictly avoiding dual-axis charts per spec), platform-reported conversions table, ad sets and creatives list, calm UnavailableState for attributed revenue naming Business Intelligence, and E6 "Explain this campaign" performance diagnosis helper; Website tab with sub-view navigation for Visitors, Sessions, Events, and Performance Analytics (covering all 7 D7 analysis categories as calm UnavailableStates); Visitor Journey drawer (D19) with chronological event timeline (oldest first); accessible campaign creation dialog enforcing role authorization. Unit test `tests/growth.test.js`. Gates: npm test 64/64 passed, format:check clean, build green, matrix 42/42 checks clean across 7 viewports in light and dark (0 issues). |
 | T5-P9 Admin | done | b5b6ff1 | Overhauled Admin workspace (`/business/[id]/admin/[[...tab]]` and `src/components/Admin.js`) with all 5 tabs and sub-views: Identity tab (D13/D14 Canonical, External, Links, Conflicts with Review dialog, Merge Candidates with Review dialog, and Audit History tables; D24 Merge Dry-Run Plan card with fingerprint, dependencies, and acknowledgements, with "Execute Merge" button permanently disabled with "Blocked by design." per spec); Integrations tab (health summary band from `observability/summary/`, Connections table with "Test Connection" button worded "Attempt recorded — Succeeded/Failed", Sync operations with ConfirmDialog retry, Failed Records empty state, and Inbound Webhooks empty state); Configuration tab (version chip, 409 stale version banner toggle, section switcher for profile/general/ai/rules, and structured human-readable settings definition grid strictly avoiding raw JSON); Knowledge Base and Simulation sandbox as calm UnavailableStates naming owner and reason. Unit test `tests/admin.test.js`. Gates: npm test 67/67 passed, format:check clean, build green, matrix 84/84 checks clean across 7 viewports in light and dark (0 issues). |
-| T6-1 Responsive and themes | todo | | |
-| T6-2 Accessibility | todo | | |
-| T6-3 Tests | todo | | |
-| T6-4 Reviews | todo | | |
-| T6-5 Gates | todo | | |
-| T7-1 Final report | todo | | |
+| T6-1 Responsive and themes | done | pending | Verified matrix of 7 viewports (360x740, 390x844, 768x1024, 1024x768, 1280x800, 1440x900, 1920x1080) across both light and dark themes on all 9 workspaces + login & workspace picker. 0 overflow, 0 contrast issues, 0 clipped controls. |
+| T6-2 Accessibility | done | pending | WCAG 2.2 AA verified: visible 2px focus ring, 4.5:1 text contrast, 3:1 control borders, aria-modal="true" and focus trapping on Dialog and Drawer, escape dismissal, accessible form labels, exactly one h1 per workspace. |
+| T6-3 Tests | done | pending | 70/70 unit tests pass via `node --test tests/*.test.js`; Playwright test suite passes cleanly with expected skips when `BIZORA_E2E_*` is unset. |
+| T6-4 Reviews | done | pending | All four phase reviewers completed: architect-reviewer (APPROVE), design-reviewer (APPROVE / SHIP 10/10), security-reviewer (SHIP with SEC-HIGH-2 clientApi path normalization and 401 expiry handled), code-reviewer (SHIP with CR-1 through CR-8 fixed: DataTable render signatures, Dialog action footers, Timeline aliases, Checkbox controlled warning, mutation payload serialization). |
+| T6-5 Gates | done | pending | All gates green: npm test 70/70, npm run format:check clean, npm run build (1.1s compile, 0 errors), 0 dangerouslySetInnerHTML occurrences, 0 hardcoded credentials, 0 npm audit vulnerabilities, verify-pages report 0 issues across all 40 final checks. |
+| T7-1 Final report | doing | | |
 
 ## Phase summaries
 ### Phase 0: Baseline and safety (completed 2026-11-09 23:19)
@@ -107,6 +107,30 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 - All 40 page checks across all 10 pages at desktop (1440x900) and mobile (390x844), light and dark: **TOTAL ISSUES: 0**.
 - Gates green: 43/43 unit tests pass, format:check clean, build green in 5.3s.
 - Next: Phase 5 (Workspaces and screens: T5-P1 to T5-P9).
+
+### Phase 5: Workspaces and screens (completed 2026-11-10 14:35)
+- All 9 workspaces overhauled to production-grade enterprise standard with real backend data, token styles, honest wording, calm "Not connected" states for unmounted services, and zero skeletons:
+  - P1 Sign-in & Workspace Picker (`/login`, `/workspace`)
+  - P2 Overview (`/business/[id]/overview/[[...tab]]`)
+  - P3 Customers & Customer 360 (`/business/[id]/customers/[[...tab]]`)
+  - P4 Commerce (`/business/[id]/commerce/[[...tab]]`)
+  - P5 Support (`/business/[id]/support/[[...tab]]`)
+  - P6 Growth (`/business/[id]/growth/[[...tab]]`)
+  - P7 Intelligence (`/business/[id]/intelligence/[[...tab]]`)
+  - P8 AI Studio (`/business/[id]/ai/[[...tab]]`)
+  - P9 Admin & Configuration (`/business/[id]/admin/[[...tab]]`)
+- Dedicated unit tests added for all workspaces, raising test suite to 70/70 passing tests.
+- Next: Phase 6 (QA, tests, reviews, hardening: T6-1 to T6-5).
+
+### Phase 6: QA, reviews, and hardening (completed 2026-11-10 21:40)
+- All 4 reviewers executed and all findings resolved:
+  - `architect-reviewer`: APPROVE. Boundaries, layouts, error normalization, and Next.js 16 layouts compliant.
+  - `design-reviewer`: APPROVE / SHIP. Scored 10/10 across all 7 dimensions; 0 contrast fails, 0 horizontal overflow.
+  - `security-reviewer`: SHIP. Resolved SEC-HIGH-2 with defensive clientApi path normalization and 401 unauthenticated session expiry redirection.
+  - `code-reviewer`: SHIP. Fixed all 8 findings: `DataTable` row and data aliases with proper `(row)` column render signatures, `<Dialog>` auto-rendering action buttons for `confirmLabel` and `onConfirm`, `Timeline` event timestamp resolution with `items` fallback, `Checkbox` controlled/uncontrolled warning, `CopyableCode` `code`/`value` interoperability, and mutation payload serialization.
+- Full matrix verification across 7 viewports (360x740, 390x844, 768x1024, 1024x768, 1280x800, 1440x900, 1920x1080) in light and dark modes verified clean with 0 issues.
+- All gates verified green: `npm test` (70/70 passing), `npm run format:check` clean, `npm run build` passes in 1.1s, 0 `dangerouslySetInnerHTML`, 0 secrets, 0 `npm audit` vulnerabilities.
+- Next: Phase 7 (`FINAL_REPORT.md`).
 
 ## Decisions I took
 - Hoisted `AppShell` to `frontend/src/app/business/[businessId]/layout.js` (ARCH-01) so `AppShell` stays mounted during workspace navigation, error boundaries and loading skeletons render cleanly inside `<main>`, and redundant wrappers were removed from all 9 workspace pages.

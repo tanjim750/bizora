@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useId } from 'react'
 import { X } from 'lucide-react'
 import { IconButton } from './IconButton.js'
+import { Button } from './Button.js'
 
 /**
  * Enterprise modal dialog.
@@ -15,6 +16,11 @@ export function Dialog({
   subtitle,
   children,
   footer,
+  confirmLabel,
+  cancelLabel = 'Cancel',
+  onConfirm,
+  confirmVariant = 'primary',
+  isLoading = false,
   maxWidth = '540px',
   ariaLabel,
   className = '',
@@ -121,7 +127,21 @@ export function Dialog({
 
         <div className="dialog-body">{children}</div>
 
-        {footer && <div className="dialog-footer">{footer}</div>}
+        {footer ? (
+          <div className="dialog-footer">{footer}</div>
+        ) : confirmLabel && onConfirm ? (
+          <div
+            className="dialog-footer"
+            style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)' }}
+          >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
+              {cancelLabel}
+            </Button>
+            <Button type="button" variant={confirmVariant} onClick={onConfirm} loading={isLoading}>
+              {confirmLabel}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   )

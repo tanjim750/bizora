@@ -32,7 +32,10 @@ export async function clientApi(
   path,
   { method = 'GET', body, headers = {}, timeoutMs = 15000, _retried = false } = {},
 ) {
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path
+  let cleanPath = path.startsWith('/') ? path.slice(1) : path
+  if (cleanPath.startsWith('api/backend/')) {
+    cleanPath = cleanPath.slice('api/backend/'.length)
+  }
   const url = `/api/backend/${cleanPath}`
 
   const controller = new AbortController()
@@ -49,7 +52,7 @@ export async function clientApi(
         ...(method === 'GET' ? {} : { 'X-CSRFToken': csrfToken() }),
         ...headers,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
       cache: 'no-store',
     })
 
@@ -70,12 +73,13 @@ export async function clientApi(
         })
       }
 
-      // Handle session expiry (403 Authentication credentials were not provided)
+      // Handle session expiry (401 or 403 Authentication credentials were not provided)
       if (
-        response.status === 403 &&
-        (normalized.detail.includes('credentials were not provided') ||
-          normalized.code === 'UNAUTHENTICATED' ||
-          normalized.code === 'SESSION_EXPIRED')
+        response.status === 401 ||
+        (response.status === 403 &&
+          (normalized.detail.includes('credentials were not provided') ||
+            normalized.code === 'UNAUTHENTICATED' ||
+            normalized.code === 'SESSION_EXPIRED'))
       ) {
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
           const currentPath = window.location.pathname + window.location.search

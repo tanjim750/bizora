@@ -28,7 +28,8 @@ import { IconButton } from './IconButton.js'
  */
 export function DataTable({
   columns: explicitColumns,
-  rows = [],
+  rows: propRows,
+  data,
   resource,
   businessId,
   title,
@@ -57,6 +58,7 @@ export function DataTable({
   const searchParams = useSearchParams()
 
   const [density, setDensity] = useState(explicitDensity || 'default')
+  const rows = propRows || data || []
 
   // Resolve columns from resource config if not explicitly provided
   const config = resource ? RESOURCE_CONFIGS[resource] : null

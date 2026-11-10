@@ -448,7 +448,7 @@ export default function Commerce({
       label: 'Tracking Number',
       render: (row) =>
         row.tracking_number ? (
-          <CopyableCode code={row.tracking_number} />
+          <CopyableCode value={row.tracking_number} />
         ) : (
           <span className="text-muted">—</span>
         ),
@@ -488,7 +488,7 @@ export default function Commerce({
     {
       key: 'sku',
       label: 'SKU',
-      render: (row) => (row.sku ? <CopyableCode code={row.sku} /> : <span className="text-muted">—</span>),
+      render: (row) => (row.sku ? <CopyableCode value={row.sku} /> : <span className="text-muted">—</span>),
     },
     {
       key: 'category',
@@ -958,7 +958,7 @@ export default function Commerce({
                       <dt>Tracking Number</dt>
                       <dd>
                         {currentRecord.tracking_number ? (
-                          <CopyableCode code={currentRecord.tracking_number} />
+                          <CopyableCode value={currentRecord.tracking_number} />
                         ) : (
                           '—'
                         )}
@@ -1005,7 +1005,7 @@ export default function Commerce({
                   <dl className="drawer-prop-list">
                     <div className="drawer-prop-item">
                       <dt>SKU</dt>
-                      <dd>{currentRecord.sku ? <CopyableCode code={currentRecord.sku} /> : '—'}</dd>
+                      <dd>{currentRecord.sku ? <CopyableCode value={currentRecord.sku} /> : '—'}</dd>
                     </div>
                     <div className="drawer-prop-item">
                       <dt>Base Price</dt>
