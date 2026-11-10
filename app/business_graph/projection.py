@@ -42,6 +42,10 @@ class GraphValidationError(ValueError):
     """A graph parameter, scope, entity, or relationship is invalid."""
 
 
+class GraphNotFoundError(GraphValidationError):
+    """A requested entity, node or snapshot does not exist in the requested business."""
+
+
 class GraphScopeError(GraphValidationError):
     """An entity does not belong to the requested business."""
 

@@ -86,15 +86,14 @@ from .api import (
     BaseIntelligenceAPIView,
     FactDetailView,
     FactListCreateView,
-    HasAuthorizedBusiness,
     IssueDetailView,
     IssueListCreateView,
     MetricListView,
     MetricSnapshotListView,
     PipelineOrchestrationView,
     reconcile_relationships_with_quarantine,
-    resolve_authorized_business,
 )
+from app.business_scope import HasAuthorizedBusiness
 from . import urls
 from . import support
 from .support import (
@@ -601,5 +600,4 @@ __all__ = [
     "MetricSnapshotListView",
     "PipelineOrchestrationView",
     "reconcile_relationships_with_quarantine",
-    "resolve_authorized_business",
 ]

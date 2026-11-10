@@ -22,6 +22,7 @@ import datetime
 from app import models
 from app.business_graph.projection import (
     GraphScopeError,
+    GraphNotFoundError,
     GraphValidationError,
 )
 from app.business_graph.traversal import (
@@ -189,7 +190,7 @@ def build_customer_journey(
 
     cust = models.Customer.objects.filter(pk=customer_id).first()
     if cust is None:
-        raise GraphValidationError(f"Customer #{customer_id} does not exist.")
+        raise GraphNotFoundError(f"Customer #{customer_id} does not exist.")
     if cust.business_id != business_id:
         raise GraphScopeError(f"Customer #{customer_id} belongs to business {cust.business_id}, not {business_id}.")
 
@@ -269,7 +270,7 @@ def build_order_journey(
 
     order = models.Order.objects.filter(pk=order_id).first()
     if order is None:
-        raise GraphValidationError(f"Order #{order_id} does not exist.")
+        raise GraphNotFoundError(f"Order #{order_id} does not exist.")
     if order.business_id != business_id:
         raise GraphScopeError(f"Order #{order_id} belongs to business {order.business_id}, not {business_id}.")
 
@@ -365,7 +366,7 @@ def build_product_journey(
 
     product = models.Product.objects.filter(pk=product_id).first()
     if product is None:
-        raise GraphValidationError(f"Product #{product_id} does not exist.")
+        raise GraphNotFoundError(f"Product #{product_id} does not exist.")
     if product.business_id != business_id:
         raise GraphScopeError(f"Product #{product_id} belongs to business {product.business_id}, not {business_id}.")
 
@@ -468,7 +469,7 @@ def build_campaign_journey(
 
     camp = models.Campaign.objects.filter(pk=campaign_id).first()
     if camp is None:
-        raise GraphValidationError(f"Campaign #{campaign_id} does not exist.")
+        raise GraphNotFoundError(f"Campaign #{campaign_id} does not exist.")
     if camp.business_id != business_id:
         raise GraphScopeError(f"Campaign #{campaign_id} belongs to business {camp.business_id}, not {business_id}.")
 

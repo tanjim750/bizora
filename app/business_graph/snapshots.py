@@ -32,6 +32,7 @@ from app.business_graph.journeys import (
 )
 from app.business_graph.projection import (
     GraphScopeError,
+    GraphNotFoundError,
     GraphValidationError,
 )
 from app.business_graph.traversal import (
@@ -255,7 +256,7 @@ def get_graph_snapshot(
 
     snapshot = models.GraphSnapshot.objects.filter(pk=snapshot_id).first()
     if snapshot is None:
-        raise GraphValidationError(f"GraphSnapshot #{snapshot_id} does not exist.")
+        raise GraphNotFoundError(f"GraphSnapshot #{snapshot_id} does not exist.")
 
     if snapshot.business_id != business_id:
         raise GraphScopeError(

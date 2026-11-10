@@ -33,6 +33,7 @@ from django.db.models import Q
 from app import models
 from app.business_graph.projection import (
     GraphScopeError,
+    GraphNotFoundError,
     GraphValidationError,
 )
 
@@ -197,7 +198,7 @@ def get_neighbors(
 
     node = models.GraphNode.objects.filter(pk=node_id).first()
     if node is None:
-        raise GraphValidationError(f"GraphNode #{node_id} does not exist.")
+        raise GraphNotFoundError(f"GraphNode #{node_id} does not exist.")
     if node.business_id != business_id:
         raise GraphScopeError(f"GraphNode #{node_id} belongs to business {node.business_id}, not {business_id}.")
 
@@ -285,7 +286,7 @@ def traverse_graph(
             raise GraphScopeError(
                 f"Root entity {root_entity_type} #{root_entity_id} belongs to business {other_node.business_id}, not {business_id}."
             )
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Root entity {root_entity_type} #{root_entity_id} not found in business {business_id} graph."
         )
 
@@ -376,7 +377,7 @@ def find_paths(
         entity_id=start_entity_id,
     ).first()
     if start_node is None:
-        raise GraphValidationError(f"Start node {start_entity_type} #{start_entity_id} does not exist.")
+        raise GraphNotFoundError(f"Start node {start_entity_type} #{start_entity_id} does not exist.")
 
     end_node = models.GraphNode.objects.filter(
         business_id=business_id,
@@ -384,7 +385,7 @@ def find_paths(
         entity_id=end_entity_id,
     ).first()
     if end_node is None:
-        raise GraphValidationError(f"End node {end_entity_type} #{end_entity_id} does not exist.")
+        raise GraphNotFoundError(f"End node {end_entity_type} #{end_entity_id} does not exist.")
 
     if start_node.pk == end_node.pk:
         # Same node path of length 0

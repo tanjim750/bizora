@@ -1,5 +1,7 @@
 """Business Graph domain: canonical graph nodes, relationship edges, traversal, journeys, snapshots, and API."""
 
+from app.business_scope import HasAuthorizedBusiness
+
 from . import api, journeys, projection, snapshots, sync, traversal, urls
 from .api import (
     BaseGraphAPIView,
@@ -11,10 +13,8 @@ from .api import (
     GraphSnapshotDetailAPIView,
     GraphSnapshotListCreateAPIView,
     GraphTraversalAPIView,
-    HasAuthorizedBusiness,
     OrderJourneyAPIView,
     ProductJourneyAPIView,
-    resolve_authorized_business,
 )
 from .journeys import (
     CampaignJourney,
@@ -30,6 +30,7 @@ from .journeys import (
 )
 from .projection import (
     GraphCrossBusinessError,
+    GraphNotFoundError,
     GraphScopeError,
     GraphValidationError,
     ProjectionSummary,
@@ -81,6 +82,7 @@ __all__ = [
     "GraphPathSearchAPIView",
     "GraphQueryAPIView",
     "GraphRebuildAPIView",
+    "GraphNotFoundError",
     "GraphScopeError",
     "GraphSnapshotDetailAPIView",
     "GraphSnapshotListCreateAPIView",
@@ -122,7 +124,6 @@ __all__ = [
     "prune_stale_projections",
     "query_subgraph",
     "rebuild_business_graph",
-    "resolve_authorized_business",
     "snapshots",
     "sync",
     "sync_entity_node",
