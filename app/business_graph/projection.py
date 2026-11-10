@@ -100,6 +100,26 @@ SUPPORTED_RELATIONSHIP_RULES: dict[str, tuple[str, str, str]] = {
     "campaign_session": ("CAMPAIGN", "REPORTED_SESSION", "WEBSITE_SESSION"),
 }
 
+# Business Intelligence persists every rule as "bi.relationship.<name>.v1" (BG-03); the bare
+# "<name>" form is what the Graph rule table and its fixtures use. Both resolve to the same
+# rule through canonical_rule_name(), which is the single place the two spellings are aligned.
+BI_RELATIONSHIP_KEY_PREFIX = "bi.relationship."
+BI_RELATIONSHIP_KEY_SUFFIX = ".v1"
+
+
+def canonical_rule_name(rule_key: str | None) -> str:
+    """Return the bare rule name for a bare or Business Intelligence-versioned rule key."""
+    key = rule_key or ""
+    if key.startswith(BI_RELATIONSHIP_KEY_PREFIX) and key.endswith(BI_RELATIONSHIP_KEY_SUFFIX):
+        return key[len(BI_RELATIONSHIP_KEY_PREFIX) : -len(BI_RELATIONSHIP_KEY_SUFFIX)]
+    return key
+
+
+# Every persisted rule_key the Graph is allowed to project (use in rule_key__in filters).
+PROJECTABLE_RULE_KEYS = frozenset(SUPPORTED_RELATIONSHIP_RULES) | frozenset(
+    f"{BI_RELATIONSHIP_KEY_PREFIX}{name}{BI_RELATIONSHIP_KEY_SUFFIX}" for name in SUPPORTED_RELATIONSHIP_RULES
+)
+
 VALID_RELATIONSHIP_SOURCES = frozenset({"DETERMINISTIC", "REPORTED", "DIRECT", "PLATFORM_REPORTED"})
 
 
@@ -264,12 +284,13 @@ def project_relationship_edge(
 
     # 1. Authority validation via rule_key & relationship_source (SEC-MED-2)
     rule_key = relationship.rule_key or ""
-    if rule_key not in SUPPORTED_RELATIONSHIP_RULES:
+    rule_name = canonical_rule_name(rule_key)
+    if rule_name not in SUPPORTED_RELATIONSHIP_RULES:
         raise GraphValidationError(
             f"Relationship #{relationship.pk} has unsupported rule_key {rule_key!r}."
         )
 
-    expected_triplet = SUPPORTED_RELATIONSHIP_RULES[rule_key]
+    expected_triplet = SUPPORTED_RELATIONSHIP_RULES[rule_name]
     actual_triplet = (
         relationship.source_entity_type,
         relationship.relationship_type,
@@ -393,7 +414,7 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
         # 2. Project edges for all active relationships
         rels = models.BusinessRelationship.objects.filter(
             business_id=business_id,
-            rule_key__in=SUPPORTED_RELATIONSHIP_RULES.keys(),
+            rule_key__in=PROJECTABLE_RULE_KEYS,
         ).order_by("pk")
 
         for rel in rels:
@@ -425,13 +446,18 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
 
 
 __all__ = [
+    "BI_RELATIONSHIP_KEY_PREFIX",
+    "BI_RELATIONSHIP_KEY_SUFFIX",
     "GraphCrossBusinessError",
+    "GraphNotFoundError",
     "GraphScopeError",
     "GraphValidationError",
     "ProjectionSummary",
     "SUPPORTED_ENTITY_MODELS",
+    "PROJECTABLE_RULE_KEYS",
     "SUPPORTED_RELATIONSHIP_RULES",
     "VALID_RELATIONSHIP_SOURCES",
+    "canonical_rule_name",
     "project_business_graph",
     "project_entity_node",
     "project_relationship_edge",

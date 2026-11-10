@@ -34,7 +34,7 @@ from app.business_graph.projection import (
     GraphScopeError,
     GraphValidationError,
     SUPPORTED_ENTITY_MODELS,
-    SUPPORTED_RELATIONSHIP_RULES,
+    PROJECTABLE_RULE_KEYS,
     project_business_graph,
     project_entity_node,
     project_relationship_edge,
@@ -124,7 +124,7 @@ def prune_stale_projections(*, business_id: int) -> PruneSummary:
                 models.BusinessRelationship.objects.filter(
                     business_id=business_id,
                     pk__in=all_edge_rel_ids,
-                    rule_key__in=SUPPORTED_RELATIONSHIP_RULES.keys(),
+                    rule_key__in=PROJECTABLE_RULE_KEYS,
                 ).values_list("pk", flat=True)
             )
             orphan_rel_ids = all_edge_rel_ids - active_rel_ids
@@ -238,7 +238,7 @@ def sync_entity_node(
         # Refresh connected relationships for this entity if any exist
         connected_rels = models.BusinessRelationship.objects.filter(
             business_id=business_id,
-            rule_key__in=SUPPORTED_RELATIONSHIP_RULES.keys(),
+            rule_key__in=PROJECTABLE_RULE_KEYS,
         ).filter(
             Q(source_entity_type=entity_type, source_entity_id=entity_id)
             | Q(target_entity_type=entity_type, target_entity_id=entity_id)
