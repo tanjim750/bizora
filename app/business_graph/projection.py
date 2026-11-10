@@ -32,6 +32,7 @@ from typing import Any
 import datetime
 
 from django.db import transaction
+from django.db.models import Model
 from django.utils import timezone
 
 from app import models
@@ -50,7 +51,7 @@ class GraphCrossBusinessError(GraphValidationError):
 
 
 # Supported canonical entity models and their business resolution paths
-SUPPORTED_ENTITY_MODELS: dict[str, type[models.Model]] = {
+SUPPORTED_ENTITY_MODELS: dict[str, type[Model]] = {
     "CUSTOMER": models.Customer,
     "PRODUCT": models.Product,
     "PRODUCT_VARIANT": models.ProductVariant,
@@ -110,7 +111,7 @@ class ProjectionSummary:
     total_edges: int
 
 
-def _resolve_entity_business_id(entity_type: str, entity: models.Model) -> int:
+def _resolve_entity_business_id(entity_type: str, entity: Model) -> int:
     """Resolve the authoritative business ID for a canonical entity."""
     if hasattr(entity, "business_id"):
         return entity.business_id
@@ -125,7 +126,7 @@ def _resolve_entity_business_id(entity_type: str, entity: models.Model) -> int:
     raise GraphValidationError(f"Cannot resolve business_id for entity type {entity_type}")
 
 
-def _build_node_label(entity_type: str, entity: models.Model) -> str:
+def _build_node_label(entity_type: str, entity: Model) -> str:
     """Construct human-readable node label (BG §1 Node Labels)."""
     if entity_type == "CUSTOMER":
         return entity.display_name or f"Customer #{entity.pk}"
@@ -158,7 +159,7 @@ def _build_node_label(entity_type: str, entity: models.Model) -> str:
     return f"{entity_type} #{entity.pk}"
 
 
-def _build_node_properties(entity_type: str, entity: models.Model) -> dict[str, Any]:
+def _build_node_properties(entity_type: str, entity: Model) -> dict[str, Any]:
     """Selective graph properties (BG §1 Node Properties / BG §4 Selective Properties)."""
     props: dict[str, Any] = {}
     for attr in ("status", "channel", "priority", "currency", "provider", "event_type", "direction", "total_amount"):
@@ -170,7 +171,7 @@ def _build_node_properties(entity_type: str, entity: models.Model) -> dict[str, 
     return props
 
 
-def _get_entity_timestamps(entity: models.Model) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+def _get_entity_timestamps(entity: Model) -> tuple[datetime.datetime | None, datetime.datetime | None]:
     """Extract first_seen_at and last_seen_at for graph nodes (BG §1 Node Activity Tracking)."""
     created = getattr(entity, "created_at", None)
     started = getattr(entity, "started_at", None)
