@@ -294,6 +294,14 @@ async function focusCheck(page) {
       const s = getComputedStyle(el)
       const outline = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) >= 1
       const shadow = s.boxShadow && s.boxShadow !== 'none'
+
+      // Check composite container (e.g. .input-group:focus-within)
+      const group = el.closest('.input-group')
+      const gs = group ? getComputedStyle(group) : null
+      const groupOutline = gs && gs.outlineStyle !== 'none' && parseFloat(gs.outlineWidth) >= 1
+      const groupShadow = gs && gs.boxShadow && gs.boxShadow !== 'none'
+
+      const hasVisibleFocus = outline || shadow || groupOutline || groupShadow
       return {
         el:
           el.tagName.toLowerCase() +
@@ -301,7 +309,7 @@ async function focusCheck(page) {
           ' "' +
           (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 24) +
           '"',
-        ok: outline || shadow,
+        ok: hasVisibleFocus,
       }
     })
     if (r && !r.ok) fails.push(r.el)

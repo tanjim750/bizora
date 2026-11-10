@@ -6,9 +6,18 @@ import React, { useId } from 'react'
  * Enterprise form field container.
  * Associates label, control, hint, and error messages via WCAG AA attributes.
  */
-export function Field({ label, id: explicitId, hint, error, required = false, children, className = '' }) {
+export function Field({
+  label,
+  id: explicitId,
+  htmlFor,
+  hint,
+  error,
+  required = false,
+  children,
+  className = '',
+}) {
   const autoId = useId()
-  const id = explicitId || autoId
+  const id = explicitId || htmlFor || autoId
   const hintId = hint ? `${id}-hint` : undefined
   const errorId = error ? `${id}-error` : undefined
 
