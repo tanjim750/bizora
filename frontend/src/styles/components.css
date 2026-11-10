@@ -3196,3 +3196,203 @@ td small {
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
 }
+
+/* Support Workspace (P5) */
+.inbox-workspace {
+  display: grid;
+  grid-template-columns: 320px 1fr 300px;
+  height: calc(100vh - 190px);
+  min-height: 560px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .inbox-workspace {
+    grid-template-columns: 300px 1fr;
+  }
+  .inbox-context {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .inbox-workspace {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 480px;
+  }
+  .inbox-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .inbox-workspace .inbox-sidebar {
+    display: flex;
+  }
+  .inbox-workspace .inbox-thread {
+    display: none;
+  }
+  .inbox-workspace.mobile-thread-open .inbox-sidebar {
+    display: none;
+  }
+  .inbox-workspace.mobile-thread-open .inbox-thread {
+    display: flex;
+  }
+}
+
+.inbox-sidebar {
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.inbox-search-header {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.inbox-channel-tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.inbox-channel-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.inbox-conv-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.inbox-conv-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  background: transparent;
+  text-align: left;
+  border-left: 3px solid transparent;
+  transition: background var(--motion-fast);
+}
+
+.inbox-conv-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.inbox-conv-item.is-selected {
+  background: var(--color-surface-subtle);
+  border-left-color: var(--color-primary);
+}
+
+.inbox-conv-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.inbox-thread {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.inbox-thread-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--color-surface);
+}
+
+.inbox-thread-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-surface-subtle);
+}
+
+.inbox-msg-bubble {
+  max-width: 80%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  word-break: break-word;
+}
+
+.inbox-msg-bubble.customer {
+  align-self: flex-start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top-left-radius: 2px;
+}
+
+.inbox-msg-bubble.agent {
+  align-self: flex-end;
+  background: var(--color-primary-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-top-right-radius: 2px;
+}
+
+.inbox-note-card {
+  align-self: stretch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+
+.inbox-composer-box {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.inbox-context {
+  border-left: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.queue-capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.call-transcript-bubble {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-body);
+}
