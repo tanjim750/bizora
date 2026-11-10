@@ -1,146 +1,171 @@
-/* Bizora design tokens. Colours are generated and contrast-checked (WCAG 2.2 AA; see docs/frontend.md 2.1.4).
-   The non-colour tokens at the bottom were added on 2026-11-09 after the CSS audit found they were missing.
-   RULES: no raw colour values outside this file; sidebar focus rings use --color-focus-on-nav (the normal focus colour is only 2.66:1 on the rail). */
+/* Bizora design tokens, FORMAL theme (v2, 2026-11-10). Replaces the first palette. One typeface (IBM Plex Sans), calm neutral greys, one deep steel-blue primary,
+   muted semantic colours. Every colour pair below was computed against WCAG 2.2 AA (48 pairs per theme, 0 failures; see docs/frontend-overhaul/assets/PALETTE_FORMAL.md).
+   RULES: no raw colour values outside this file; sidebar focus rings use --color-focus-on-nav; headings never use negative letter-spacing. */
 :root {
   color-scheme: light;
-  --color-canvas: #F8FAFC;
-  --color-surface: #FFFFFF;
-  --color-surface-subtle: #F1F5F9;
-  --color-border: #E2E8F0;
-  --color-border-input: #76859B;
-  --color-text: #0F172A;
-  --color-text-secondary: #334155;
-  --color-text-muted: #526278;
-  --color-primary: #1D4ED8;
-  --color-primary-hover: #1E40AF;
-  --color-primary-subtle: #EFF6FF;
-  --color-primary-text: #1E40AF;
-  --color-on-primary: #FFFFFF;
-  --color-success: #15803D;
-  --color-success-subtle: #F0FDF4;
-  --color-success-text: #166534;
-  --color-warning: #B45309;
-  --color-warning-subtle: #FFFBEB;
-  --color-warning-text: #92400E;
-  --color-danger: #B91C1C;
-  --color-danger-subtle: #FEF2F2;
-  --color-danger-text: #991B1B;
-  --color-info: #0369A1;
-  --color-info-subtle: #F0F9FF;
-  --color-info-text: #075985;
-  --color-focus: #1D4ED8;
-  --chart-1: #2A78D6;
-  --chart-2: #EB6834;
-  --chart-3: #1BAF7A;
-  --chart-4: #EDA100;
-  --chart-5: #E87BA4;
+  --color-canvas: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #edf0f4;
+  --color-border: #d8dee6;
+  --color-border-input: #7a8696;
+  --color-text: #121c2b;
+  --color-text-secondary: #364252;
+  --color-text-muted: #556173;
+  --color-primary: #1b4b8f;
+  --color-primary-hover: #143a72;
+  --color-primary-subtle: #eaf0f8;
+  --color-primary-text: #17407d;
+  --color-on-primary: #ffffff;
+  --color-success: #1e6b45;
+  --color-success-subtle: #edf6f1;
+  --color-success-text: #17583a;
+  --color-warning: #8a5300;
+  --color-warning-subtle: #fbf3e4;
+  --color-warning-text: #6f4300;
+  --color-danger: #a12b2b;
+  --color-danger-subtle: #fbeeee;
+  --color-danger-text: #8a2323;
+  --color-info: #1d5f8e;
+  --color-info-subtle: #ebf3f9;
+  --color-info-text: #194f76;
+  --color-focus: #1b4b8f;
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
   --chart-6: #008300;
-  --chart-7: #6250D6;
-  --chart-8: #E34948;
-  --color-nav-bg: #0F172A;
-  --color-nav-text: #CBD5E1;
-  --color-nav-text-active: #FFFFFF;
-  --color-nav-active-bg: #1E293B;
-  --color-nav-indicator: #60A5FA;
-  --color-nav-muted: #94A3B8;
+  --chart-7: #6250d6;
+  --chart-8: #e34948;
+  --color-nav-bg: #101c2c;
+  --color-nav-text: #c9d2de;
+  --color-nav-text-active: #ffffff;
+  --color-nav-active-bg: #1b2a3f;
+  --color-nav-indicator: #7fb0e8;
+  --color-nav-muted: #93a1b3;
   --color-focus-on-nav: var(--color-nav-indicator);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --color-canvas: #0B1220;
-    --color-surface: #111A2B;
-    --color-surface-subtle: #18233A;
-    --color-border: #243049;
-    --color-border-input: #6B7C98;
-    --color-text: #F1F5F9;
-    --color-text-secondary: #CBD5E1;
-    --color-text-muted: #94A3B8;
-    --color-primary: #60A5FA;
-    --color-primary-hover: #93C5FD;
-    --color-primary-subtle: #14264D;
-    --color-primary-text: #BFDBFE;
-    --color-on-primary: #0B1220;
-    --color-success: #4ADE80;
-    --color-success-subtle: #0F2B1C;
-    --color-success-text: #86EFAC;
-    --color-warning: #FBBF24;
-    --color-warning-subtle: #33270B;
-    --color-warning-text: #FCD34D;
-    --color-danger: #F87171;
-    --color-danger-subtle: #3A1416;
-    --color-danger-text: #FCA5A5;
-    --color-info: #38BDF8;
-    --color-info-subtle: #0C2A3D;
-    --color-info-text: #7DD3FC;
-    --color-focus: #93C5FD;
-    --chart-1: #3987E5;
-    --chart-2: #D95926;
-    --chart-3: #199E70;
-    --chart-4: #C98500;
-    --chart-5: #D55181;
+    --color-canvas: #0f141a;
+    --color-surface: #151b23;
+    --color-surface-subtle: #1c242e;
+    --color-border: #2b3542;
+    --color-border-input: #7b8798;
+    --color-text: #e6ebf1;
+    --color-text-secondary: #bfc8d4;
+    --color-text-muted: #98a3b1;
+    --color-primary: #7faee8;
+    --color-primary-hover: #a3c4ef;
+    --color-primary-subtle: #16263a;
+    --color-primary-text: #b7d0f2;
+    --color-on-primary: #0f141a;
+    --color-success: #5cc38a;
+    --color-success-subtle: #12261c;
+    --color-success-text: #8ad9ae;
+    --color-warning: #e0a93a;
+    --color-warning-subtle: #2b2310;
+    --color-warning-text: #ebc468;
+    --color-danger: #ee7b7b;
+    --color-danger-subtle: #301616;
+    --color-danger-text: #f4a3a3;
+    --color-info: #5fb0e4;
+    --color-info-subtle: #10263a;
+    --color-info-text: #8cc9ee;
+    --color-focus: #a3c4ef;
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
     --chart-6: #008300;
-    --chart-7: #9085E9;
-    --chart-8: #E66767;
+    --chart-7: #9085e9;
+    --chart-8: #e66767;
+    --color-nav-bg: #0a0f15;
+    --color-nav-text: #c9d2de;
+    --color-nav-text-active: #ffffff;
+    --color-nav-active-bg: #17202b;
+    --color-nav-indicator: #7fb0e8;
+    --color-nav-muted: #93a1b3;
+    --color-focus-on-nav: var(--color-nav-indicator);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-canvas: #0B1220;
-  --color-surface: #111A2B;
-  --color-surface-subtle: #18233A;
-  --color-border: #243049;
-  --color-border-input: #6B7C98;
-  --color-text: #F1F5F9;
-  --color-text-secondary: #CBD5E1;
-  --color-text-muted: #94A3B8;
-  --color-primary: #60A5FA;
-  --color-primary-hover: #93C5FD;
-  --color-primary-subtle: #14264D;
-  --color-primary-text: #BFDBFE;
-  --color-on-primary: #0B1220;
-  --color-success: #4ADE80;
-  --color-success-subtle: #0F2B1C;
-  --color-success-text: #86EFAC;
-  --color-warning: #FBBF24;
-  --color-warning-subtle: #33270B;
-  --color-warning-text: #FCD34D;
-  --color-danger: #F87171;
-  --color-danger-subtle: #3A1416;
-  --color-danger-text: #FCA5A5;
-  --color-info: #38BDF8;
-  --color-info-subtle: #0C2A3D;
-  --color-info-text: #7DD3FC;
-  --color-focus: #93C5FD;
-  --chart-1: #3987E5;
-  --chart-2: #D95926;
-  --chart-3: #199E70;
-  --chart-4: #C98500;
-  --chart-5: #D55181;
+  --color-canvas: #0f141a;
+  --color-surface: #151b23;
+  --color-surface-subtle: #1c242e;
+  --color-border: #2b3542;
+  --color-border-input: #7b8798;
+  --color-text: #e6ebf1;
+  --color-text-secondary: #bfc8d4;
+  --color-text-muted: #98a3b1;
+  --color-primary: #7faee8;
+  --color-primary-hover: #a3c4ef;
+  --color-primary-subtle: #16263a;
+  --color-primary-text: #b7d0f2;
+  --color-on-primary: #0f141a;
+  --color-success: #5cc38a;
+  --color-success-subtle: #12261c;
+  --color-success-text: #8ad9ae;
+  --color-warning: #e0a93a;
+  --color-warning-subtle: #2b2310;
+  --color-warning-text: #ebc468;
+  --color-danger: #ee7b7b;
+  --color-danger-subtle: #301616;
+  --color-danger-text: #f4a3a3;
+  --color-info: #5fb0e4;
+  --color-info-subtle: #10263a;
+  --color-info-text: #8cc9ee;
+  --color-focus: #a3c4ef;
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
   --chart-6: #008300;
-  --chart-7: #9085E9;
-  --chart-8: #E66767;
+  --chart-7: #9085e9;
+  --chart-8: #e66767;
+  --color-nav-bg: #0a0f15;
+  --color-nav-text: #c9d2de;
+  --color-nav-text-active: #ffffff;
+  --color-nav-active-bg: #17202b;
+  --color-nav-indicator: #7fb0e8;
+  --color-nav-muted: #93a1b3;
+  --color-focus-on-nav: var(--color-nav-indicator);
 }
 
 /* ---- non-colour tokens (hand-written) ---- */
 :root {
-  --font-heading: var(--font-jakarta), 'Plus Jakarta Sans', var(--font-bengali), system-ui, sans-serif;
-  --font-body: var(--font-inter), Inter, var(--font-bengali), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* Every var() has a literal fallback: an undefined next/font variable must never invalidate the whole stack (it would fall back to a serif font). */
+  --font-body:
+    var(--font-plex, "IBM Plex Sans"), var(--font-bengali, "Noto Sans Bengali"),
+    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-body);
+  --font-mono:
+    var(--font-plex-mono, "IBM Plex Mono"), ui-monospace, "SFMono-Regular",
+    Menlo, Consolas, monospace;
 
   --text-overline: 11px;
   --text-caption: 12px;
   --text-table: 13px;
   --text-body: 14px;
   --text-subsection: 15px;
-  --text-card-title: 18px;
-  --text-section: 22px;
-  --text-page-title: 28px;
-  --text-kpi: 24px;
+  --text-card-title: 16px;
+  --text-section: 18px;
+  --text-page-title: 26px;
+  --text-kpi: 26px;
   --text-kpi-hero: 32px;
-  --leading-body: 1.43;
+  --leading-body: 1.5;
+  --leading-heading: 1.3;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-heading: 600;
+  --tracking-heading: 0;
+  --tracking-overline: 0.06em;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -159,10 +184,10 @@
   --radius-xl: 16px;
   --radius-full: 999px;
 
-  --shadow-e1: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-e2: 0 4px 12px rgba(15, 23, 42, 0.1);
-  --shadow-e3: 0 12px 32px rgba(15, 23, 42, 0.18);
-  --color-scrim: rgba(15, 23, 42, 0.48);
+  --shadow-e1: 0 1px 2px rgba(18, 28, 43, 0.06);
+  --shadow-e2: 0 4px 12px rgba(18, 28, 43, 0.1);
+  --shadow-e3: 0 12px 32px rgba(18, 28, 43, 0.18);
+  --color-scrim: rgba(18, 28, 43, 0.48);
   --color-disabled-bg: var(--color-surface-subtle);
   --color-disabled-text: var(--color-text-muted);
 
@@ -172,6 +197,7 @@
 
   --rail-width: 256px;
   --rail-width-collapsed: 72px;
+  --drawer-width: 480px;
   --topbar-height: 56px;
   --content-max: 1440px;
   --hit-min: 36px;
@@ -184,18 +210,23 @@
     --shadow-e1: none;
     --shadow-e2: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-e3: 0 12px 32px rgba(0, 0, 0, 0.5);
-    --color-scrim: rgba(2, 6, 23, 0.64);
+    --color-scrim: rgba(5, 8, 12, 0.64);
   }
 }
 :root[data-theme="dark"] {
   --shadow-e1: none;
   --shadow-e2: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-e3: 0 12px 32px rgba(0, 0, 0, 0.5);
-  --color-scrim: rgba(2, 6, 23, 0.64);
+  --color-scrim: rgba(5, 8, 12, 0.64);
 }
 @media (pointer: coarse) {
-  :root { --hit-min: var(--hit-touch); }
+  :root {
+    --hit-min: var(--hit-touch);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  :root { --duration-fast: 0ms; --duration-base: 0ms; }
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
 }

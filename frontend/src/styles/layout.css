@@ -63,8 +63,8 @@
   color: var(--color-nav-text-active);
   font-family: var(--font-heading);
   font-size: var(--text-section);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
 }
 
 .sidebar-brand a:hover {
@@ -80,8 +80,8 @@
   background: var(--color-primary);
   color: var(--color-on-primary);
   font-size: var(--text-card-title);
-  font-weight: 700;
-  letter-spacing: -0.04em;
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
   flex-shrink: 0;
 }
 
@@ -111,7 +111,7 @@
   color: var(--color-nav-muted);
   font-size: var(--text-overline);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-overline);
   font-weight: 600;
 }
 
@@ -138,7 +138,7 @@
   font-size: var(--text-overline);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-overline);
 }
 
 .sidebar.rail-collapsed .nav-group p {
@@ -324,7 +324,7 @@
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-overline);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
@@ -343,7 +343,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
-  font-size: var(--text-small);
+  font-size: var(--text-table);
   min-width: 220px;
   max-width: 340px;
   width: 100%;
@@ -426,7 +426,7 @@
 .user-name {
   font-weight: 600;
   color: var(--color-text);
-  font-size: var(--text-small);
+  font-size: var(--text-table);
 }
 
 .user-role-tag {
@@ -546,7 +546,7 @@
   font-weight: 600;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-overline);
   background: var(--color-canvas);
   padding: 1px 6px;
   border-radius: var(--radius-sm);
