@@ -37,6 +37,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/DropdownMenu'
 import { QuickSearchDialog } from '@/components/shell/QuickSearchDialog'
+import { BizoraLogo } from '@/components/ui/BizoraLogo'
 import { clientApi } from '@/lib/clientApi'
 import { MANAGER_ROLES } from '@/lib/catalog'
 
@@ -386,13 +387,12 @@ export default function AppShell({ session, business, children }) {
         >
           {/* Brand header: exactly 56px high aligning with topbar */}
           <div className="sidebar-brand">
-            <Link href="/workspace" aria-label="Bizora Home - Workspace switcher">
-              <span className="brand-mark" aria-hidden="true">
-                B
-              </span>
-              <span className="brand-text">
-                bizora<span className="brand-dot">.</span>
-              </span>
+            <Link
+              href="/workspace"
+              aria-label="Bizora Home - Workspace switcher"
+              style={{ display: 'inline-flex', alignItems: 'center' }}
+            >
+              <BizoraLogo size={28} showText={!railCollapsed} />
             </Link>
 
             <button

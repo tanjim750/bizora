@@ -61,3 +61,6 @@ export {
   LineChart,
   BarChart,
 } from './charts/index.js'
+
+// Brand Assets
+export { BizoraLogo } from './BizoraLogo.js'
