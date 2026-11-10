@@ -9,6 +9,7 @@ import { Field } from '@/components/ui/Field'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { BizoraLogo } from '@/components/ui/BizoraLogo'
 
 function LoginForm() {
   const router = useRouter()
@@ -165,7 +166,7 @@ export default function LoginPage() {
   return (
     <div className="auth-screen">
       <header className="auth-brand">
-        <span className="brand-mark">B</span> bizora<span className="brand-dot">.</span>
+        <BizoraLogo size={36} showText={true} />
       </header>
       <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
