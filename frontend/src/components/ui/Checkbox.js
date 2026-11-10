@@ -31,8 +31,7 @@ export const Checkbox = forwardRef(function Checkbox(
           ref={ref}
           id={id}
           type="checkbox"
-          checked={checked}
-          defaultChecked={defaultChecked}
+          {...(checked !== undefined ? { checked } : { defaultChecked })}
           onChange={onChange}
           disabled={disabled}
           aria-invalid={isInvalid ? 'true' : undefined}

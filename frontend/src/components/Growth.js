@@ -285,7 +285,7 @@ export default function Growth({
     }
 
     try {
-      const res = await clientApi(`/api/backend/businesses/${businessId}/visitors/${visitor.id}/journey`)
+      const res = await clientApi(`businesses/${businessId}/visitors/${visitor.id}/journey`)
       const rows = res?.results || (Array.isArray(res) ? res : [])
       // Sort oldest first per D19 specification
       const sorted = [...rows].sort(
@@ -341,7 +341,7 @@ export default function Growth({
     }
 
     try {
-      const res = await clientApi(`/api/backend/businesses/${businessId}/ai/marketing/explain-campaign`, {
+      const res = await clientApi(`businesses/${businessId}/ai/marketing/explain-campaign`, {
         method: 'POST',
         body: { campaign_id: campaign.id },
       })
@@ -360,7 +360,7 @@ export default function Growth({
     setCreateError(null)
 
     try {
-      await clientApi(`/api/backend/businesses/${businessId}/campaigns`, {
+      await clientApi(`businesses/${businessId}/campaigns`, {
         method: 'POST',
         body: {
           name: createForm.name,
@@ -1282,6 +1282,7 @@ export default function Growth({
               onChange={(e) => setCreateForm({ ...createForm, started_at: e.target.value })}
             />
           </Field>
+          <button type="submit" style={{ display: 'none' }} aria-hidden="true" />
         </form>
       </Dialog>
     </div>

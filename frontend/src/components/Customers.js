@@ -335,8 +335,10 @@ export default function Customers({
     // Direct timeline entries if available from backend
     if (customer360Data.timeline?.results?.length > 0) {
       customer360Data.timeline.results.forEach((ev) => {
+        const ts = ev.event_at || ev.created_at
         events.push({
-          date: ev.event_at || ev.created_at,
+          date: ts,
+          timestamp: ts,
           title: ev.title || ev.kind || 'Activity Event',
           description: ev.description || ev.summary,
           status: ev.status || 'COMPLETED',
@@ -347,6 +349,7 @@ export default function Customers({
       customerOrders.forEach((ord) => {
         events.push({
           date: ord.created_at,
+          timestamp: ord.created_at,
           title: `Order Placed (#${ord.id})`,
           description: `Total amount: ${money(ord.total_amount, currency)} · Status: ${ord.status}`,
           status: ord.status === 'DELIVERED' ? 'COMPLETED' : 'ACTIVE',
@@ -355,8 +358,10 @@ export default function Customers({
 
       if (customer360Data.conversations?.results) {
         customer360Data.conversations.results.forEach((conv) => {
+          const ts = conv.started_at || conv.created_at
           events.push({
-            date: conv.started_at || conv.created_at,
+            date: ts,
+            timestamp: ts,
             title: `Support Conversation (#${conv.id})`,
             description: `Channel: ${conv.channel || 'Messaging'} · Priority: ${conv.priority || 'NORMAL'}`,
             status: conv.status === 'RESOLVED' ? 'COMPLETED' : 'ACTIVE',
@@ -368,6 +373,7 @@ export default function Customers({
         customer360Data.shipments.results.forEach((sh) => {
           events.push({
             date: sh.created_at,
+            timestamp: sh.created_at,
             title: `Shipment Consignment (#${sh.id})`,
             description: `Carrier: ${sh.provider || 'Carrier'} · Tracking: ${sh.tracking_number || 'Pending'}`,
             status: sh.status === 'DELIVERED' ? 'COMPLETED' : 'ACTIVE',
@@ -589,7 +595,7 @@ export default function Customers({
                   </div>
 
                   {timelineEvents.length > 0 ? (
-                    <Timeline items={timelineEvents} />
+                    <Timeline events={timelineEvents} />
                   ) : (
                     <EmptyState
                       title="No timeline events"
@@ -728,7 +734,7 @@ export default function Customers({
                         label: 'Tracking Number',
                         render: (row) =>
                           row.tracking_number ? (
-                            <CopyableCode code={row.tracking_number} />
+                            <CopyableCode value={row.tracking_number} />
                           ) : (
                             <span className="text-muted">—</span>
                           ),
@@ -846,7 +852,7 @@ export default function Customers({
                         <span className="font-semibold text-body">Canonical Identity</span>
                         <StatusChip status="ACTIVE" label="Authoritative" size="sm" />
                       </div>
-                      <CopyableCode code={`CUSTOMER:${selectedCustomer.id}`} />
+                      <CopyableCode value={`CUSTOMER:${selectedCustomer.id}`} />
                       <span className="text-caption text-muted">Primary entity record in PostgreSQL</span>
                     </div>
 
@@ -859,7 +865,7 @@ export default function Customers({
                             Confidence: {ext.confidence != null ? `${ext.confidence}%` : '—'}
                           </span>
                         </div>
-                        <CopyableCode code={ext.identifier || ext.external_id || String(ext.id)} />
+                        <CopyableCode value={ext.identifier || ext.external_id || String(ext.id)} />
                         <span className="text-caption text-muted">
                           Source: {ext.source || 'Deterministic Ingestion'}
                         </span>

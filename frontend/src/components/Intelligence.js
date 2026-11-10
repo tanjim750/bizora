@@ -228,14 +228,14 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
                 {
                   key: 'severity',
                   label: 'Severity',
-                  render: (val) => <SeverityChip severity={val} size="sm" />,
+                  render: (row) => <SeverityChip severity={row.severity} size="sm" />,
                 },
                 {
                   key: 'title',
                   label: 'Issue Summary',
-                  render: (val, row) => (
+                  render: (row) => (
                     <div>
-                      <div className="font-semibold text-body">{val || `Issue #${row.id}`}</div>
+                      <div className="font-semibold text-body">{row.title || `Issue #${row.id}`}</div>
                       {sampleMode && <SimulatedBadge />}
                     </div>
                   ),
@@ -243,35 +243,37 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
                 {
                   key: 'rule_key',
                   label: 'Rule Identifier',
-                  render: (val) => (
-                    <span className="font-mono text-caption text-secondary">{val || 'rule.generic'}</span>
+                  render: (row) => (
+                    <span className="font-mono text-caption text-secondary">
+                      {row.rule_key || 'rule.generic'}
+                    </span>
                   ),
                 },
                 {
                   key: 'detected_at',
                   label: 'Detected',
-                  render: (val) => (
+                  render: (row) => (
                     <span className="font-mono text-caption text-muted">
-                      {val ? dateTime(val, timezone) : '—'}
+                      {row.detected_at ? dateTime(row.detected_at, timezone) : '—'}
                     </span>
                   ),
                 },
                 {
                   key: 'status',
                   label: 'Status',
-                  render: (val) => <StatusChip status={val || 'OPEN'} size="sm" />,
+                  render: (row) => <StatusChip status={row.status || 'OPEN'} size="sm" />,
                 },
                 {
                   key: 'actions',
                   label: 'Audit Thread',
-                  render: (_, row) => (
+                  render: (row) => (
                     <Button variant="secondary" size="sm" icon={Eye} onClick={() => handleOpenEvidence(row)}>
                       View Evidence
                     </Button>
                   ),
                 },
               ]}
-              data={displayedIssues}
+              rows={displayedIssues}
               businessId={businessId}
               emptyTitle="No open integrity issues"
               emptyDescription="All deterministic business rules are passing. No anomalies or fulfillment exceptions are recorded."

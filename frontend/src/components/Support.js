@@ -210,7 +210,7 @@ export default function Support({
       await clientApi(endpoint, {
         method: 'POST',
         headers: { 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify({ data: payload }),
+        body: { data: payload },
       })
 
       setComposerBanner({
@@ -242,11 +242,11 @@ export default function Support({
     try {
       await clientApi(`businesses/${businessId}/conversations/${activeConversation.id}/assign`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           assignee_type: assigneeType,
           assignee_id: assigneeId ? parseInt(assigneeId, 10) : null,
           reason: assignReason || undefined,
-        }),
+        },
       })
       setAssignModalOpen(false)
       setAssignReason('')
@@ -267,13 +267,13 @@ export default function Support({
     try {
       await clientApi(`businesses/${businessId}/conversations/${activeConversation.id}/handover`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           target: handoverTarget,
           assignee_id:
             handoverTarget === 'HUMAN' && handoverAssigneeId ? parseInt(handoverAssigneeId, 10) : null,
           reason: handoverReason,
           summary: handoverSummary || undefined,
-        }),
+        },
       })
       setHandoverModalOpen(false)
       setHandoverReason('')
@@ -294,10 +294,10 @@ export default function Support({
     try {
       await clientApi(`businesses/${businessId}/conversations/${activeConversation.id}/priority`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           priority: selectedPriority,
           reason: priorityReason || 'Manual priority adjustment',
-        }),
+        },
       })
       setPriorityModalOpen(false)
       setPriorityReason('')
@@ -357,9 +357,9 @@ export default function Support({
     try {
       await clientApi(`businesses/${businessId}/callbacks/${selectedCall.id}/schedule`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           scheduled_at: new Date(callbackDateTime).toISOString(),
-        }),
+        },
       })
       setCallbackModalOpen(false)
       setCallbackDateTime('')
@@ -924,28 +924,29 @@ export default function Support({
                 {
                   key: 'priority',
                   label: 'Priority',
-                  render: (val) => (
+                  render: (row) => (
                     <span
                       className="font-mono text-caption font-semibold"
                       style={{
                         color:
-                          val === 'URGENT'
+                          row.priority === 'URGENT'
                             ? 'var(--color-danger)'
-                            : val === 'HIGH'
+                            : row.priority === 'HIGH'
                               ? 'var(--color-warning)'
                               : 'var(--color-text-secondary)',
                       }}
                     >
-                      {val || 'NORMAL'}
+                      {row.priority || 'NORMAL'}
                     </span>
                   ),
                 },
                 {
                   key: 'customer',
                   label: 'Customer',
-                  render: (val, row) => (
+                  render: (row) => (
                     <span className="font-semibold text-body">
-                      {row.customer_display_name || `Customer #${val?.id || val || '—'}`}
+                      {row.customer_display_name ||
+                        (row.customer ? `Customer #${row.customer.id || row.customer}` : '—')}
                     </span>
                   ),
                 },
@@ -953,37 +954,43 @@ export default function Support({
                   key: 'channel',
                   label: 'Channel',
                   className: 'table-col-priority-low',
-                  render: (val) => <span className="badge badge-outline font-mono text-caption">{val}</span>,
+                  render: (row) => (
+                    <span className="badge badge-outline font-mono text-caption">{row.channel}</span>
+                  ),
                 },
                 {
                   key: 'subject',
                   label: 'Subject / Summary',
-                  render: (val) => <span className="text-body">{val || 'Omnichannel support issue'}</span>,
+                  render: (row) => (
+                    <span className="text-body">{row.subject || 'Omnichannel support issue'}</span>
+                  ),
                 },
                 {
                   key: 'started_at',
                   label: 'Started At',
                   className: 'table-col-priority-low',
-                  render: (val) => (
-                    <span className="font-mono text-caption">{val ? dateTime(val, timezone) : '—'}</span>
+                  render: (row) => (
+                    <span className="font-mono text-caption">
+                      {row.started_at ? dateTime(row.started_at, timezone) : '—'}
+                    </span>
                   ),
                 },
                 {
                   key: 'status',
                   label: 'Status',
-                  render: (val) => <StatusChip status={val} size="sm" />,
+                  render: (row) => <StatusChip status={row.status} size="sm" />,
                 },
                 {
                   key: 'actions',
                   label: 'Action',
-                  render: (_, row) => (
+                  render: (row) => (
                     <Link href={`/business/${businessId}/support/inbox`} className="btn btn-secondary btn-sm">
                       Open in Inbox
                     </Link>
                   ),
                 },
               ]}
-              data={filteredQueue}
+              rows={filteredQueue}
               businessId={businessId}
               emptyTitle="Queue is clear"
               emptyDescription="No urgent or pending customer cases currently require attention."
@@ -1036,17 +1043,22 @@ export default function Support({
                 {
                   key: 'direction',
                   label: 'Direction',
-                  render: (val) => (
-                    <span className="badge badge-outline font-mono text-caption">{val || 'INBOUND'}</span>
+                  render: (row) => (
+                    <span className="badge badge-outline font-mono text-caption">
+                      {row.direction || 'INBOUND'}
+                    </span>
                   ),
                 },
                 {
                   key: 'customer',
                   label: 'Customer / Number',
-                  render: (val, row) => (
+                  render: (row) => (
                     <div>
                       <div className="font-semibold text-body">
-                        {row.customer_display_name || `Customer #${val?.id || val || '—'}`}
+                        {row.customer_display_name ||
+                          (row.customer
+                            ? `Customer #${row.customer.id || row.customer}`
+                            : 'Anonymous Caller')}
                       </div>
                       <span className="font-mono text-caption text-muted">
                         {row.caller_number || row.recipient_number || '—'}
@@ -1058,34 +1070,38 @@ export default function Support({
                   key: 'duration_seconds',
                   label: 'Duration',
                   className: 'table-col-priority-low',
-                  render: (val) => (
-                    <span className="font-mono text-caption">{val != null ? duration(val) : '—'}</span>
+                  render: (row) => (
+                    <span className="font-mono text-caption">
+                      {row.duration_seconds != null ? duration(row.duration_seconds) : '—'}
+                    </span>
                   ),
                 },
                 {
                   key: 'started_at',
                   label: 'Date & Time',
                   className: 'table-col-priority-low',
-                  render: (val) => (
-                    <span className="font-mono text-caption">{val ? dateTime(val, timezone) : '—'}</span>
+                  render: (row) => (
+                    <span className="font-mono text-caption">
+                      {row.started_at ? dateTime(row.started_at, timezone) : '—'}
+                    </span>
                   ),
                 },
                 {
                   key: 'status',
                   label: 'Status',
-                  render: (val) => <StatusChip status={val} size="sm" />,
+                  render: (row) => <StatusChip status={row.status} size="sm" />,
                 },
                 {
                   key: 'actions',
                   label: 'Action',
-                  render: (_, row) => (
+                  render: (row) => (
                     <Button variant="secondary" size="sm" onClick={() => handleOpenCall(row)}>
                       View Call
                     </Button>
                   ),
                 },
               ]}
-              data={filteredCalls}
+              rows={filteredCalls}
               businessId={businessId}
               emptyTitle="No call records"
               emptyDescription="Inbound phone calls and scheduled callbacks will appear here."

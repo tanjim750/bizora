@@ -9,7 +9,14 @@ import { StatusChip } from './StatusChip.js'
  * Enterprise Timeline: the evidence thread.
  * Clean, structured vertical timeline with thin continuous guide line and small nodes.
  */
-export function Timeline({ events = [], showRelativeTime = false, className = '', ...props }) {
+export function Timeline({
+  events: explicitEvents,
+  items,
+  showRelativeTime = false,
+  className = '',
+  ...props
+}) {
+  const events = explicitEvents && explicitEvents.length > 0 ? explicitEvents : items || []
   if (events.length === 0) {
     return <div className="timeline-empty text-muted text-caption">No timeline events recorded.</div>
   }
@@ -19,7 +26,12 @@ export function Timeline({ events = [], showRelativeTime = false, className = ''
       {events.map((event, idx) => {
         const isLast = idx === events.length - 1
         const Icon = event.icon || (event.is_ai ? Sparkles : Circle)
-        const timeDisplay = showRelativeTime ? relativeTime(event.timestamp) : dateTime(event.timestamp)
+        const timestamp = event.timestamp || event.date || event.event_at || event.created_at
+        const timeDisplay = timestamp
+          ? showRelativeTime
+            ? relativeTime(timestamp)
+            : dateTime(timestamp)
+          : null
 
         return (
           <li
@@ -34,10 +46,10 @@ export function Timeline({ events = [], showRelativeTime = false, className = ''
               <div className="timeline-header">
                 <span className="timeline-title">{event.title}</span>
                 {event.status && <StatusChip status={event.status} size="sm" className="timeline-status" />}
-                {event.timestamp && (
+                {timestamp && (
                   <time
-                    dateTime={event.timestamp}
-                    title={dateTime(event.timestamp)}
+                    dateTime={timestamp}
+                    title={dateTime(timestamp)}
                     className="timeline-time tabular-nums text-caption"
                   >
                     {timeDisplay}
