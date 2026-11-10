@@ -44,7 +44,7 @@ Branch: `frontend-overhaul` · Started: 2026-11-09 23:11 (Asia/Dhaka) · Status 
 | T6-3 Tests | done | 96a8c54 | 70/70 unit tests pass via `node --test tests/*.test.js`; Playwright test suite passes cleanly with expected skips when `BIZORA_E2E_*` is unset. |
 | T6-4 Reviews | done | 96a8c54 | All four phase reviewers completed: architect-reviewer (APPROVE), design-reviewer (APPROVE / SHIP 10/10), security-reviewer (SHIP with SEC-HIGH-2 clientApi path normalization and 401 expiry handled), code-reviewer (SHIP with CR-1 through CR-8 fixed: DataTable render signatures, Dialog action footers, Timeline aliases, Checkbox controlled warning, mutation payload serialization). |
 | T6-5 Gates | done | 96a8c54 | All gates green: npm test 70/70, npm run format:check clean, npm run build (1.1s compile, 0 errors), 0 dangerouslySetInnerHTML occurrences, 0 hardcoded credentials, 0 npm audit vulnerabilities, verify-pages report 0 issues across all 40 final checks. |
-| T7-1 Final report | done | pending | Authored comprehensive FINAL_REPORT.md detailing scorecard (0 issues), reviewer verdicts, workspace highlights, honesty rules, backend issues summary, and run instructions. |
+| T7-1 Final report | done | 9d9171f | Authored comprehensive FINAL_REPORT.md detailing scorecard (0 issues), reviewer verdicts, workspace highlights, honesty rules, backend issues summary, and run instructions. |
 
 ## Phase summaries
 ### Phase 0: Baseline and safety (completed 2026-11-09 23:19)
