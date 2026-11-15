@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Optional
 
 # Closed sets of normalized event types matching app.business_intelligence.website
-VIEW_EVENT_TYPES = frozenset({"VIEW", "PRODUCT_VIEW", "PAGE_VIEW"})
+VIEW_EVENT_TYPES = frozenset({"VIEW", "PRODUCT_VIEW", "PAGE_VIEW", "VIEW_ITEM"})
 CART_EVENT_TYPES = frozenset({"ADD_TO_CART", "CART"})
 CHECKOUT_EVENT_TYPES = frozenset({"CHECKOUT", "CHECKOUT_START", "BEGIN_CHECKOUT"})
 PURCHASE_EVENT_TYPES = frozenset({"PURCHASE", "ORDER", "CHECKOUT_COMPLETE", "ORDER_COMPLETE"})
@@ -26,6 +26,7 @@ META_EVENT_MAP = {
     "PAGE_VIEW": "PageView",
     "VIEW": "PageView",
     "PRODUCT_VIEW": "ViewContent",
+    "VIEW_ITEM": "ViewContent",
     "ADD_TO_CART": "AddToCart",
     "CART": "AddToCart",
     "CHECKOUT": "InitiateCheckout",
@@ -42,6 +43,7 @@ TIKTOK_EVENT_MAP = {
     "PAGE_VIEW": "PageView",
     "VIEW": "PageView",
     "PRODUCT_VIEW": "ViewContent",
+    "VIEW_ITEM": "ViewContent",
     "ADD_TO_CART": "AddToCart",
     "CART": "AddToCart",
     "CHECKOUT": "InitiateCheckout",
@@ -58,6 +60,7 @@ GA4_EVENT_MAP = {
     "PAGE_VIEW": "page_view",
     "VIEW": "page_view",
     "PRODUCT_VIEW": "view_item",
+    "VIEW_ITEM": "view_item",
     "ADD_TO_CART": "add_to_cart",
     "CART": "add_to_cart",
     "CHECKOUT": "begin_checkout",
