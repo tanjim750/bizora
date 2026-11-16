@@ -21,6 +21,7 @@ import datetime
 
 from app import models
 from app.business_graph.projection import (
+    GraphNotBuiltError,
     GraphScopeError,
     GraphNotFoundError,
     GraphValidationError,
@@ -209,6 +210,9 @@ def build_customer_journey(
     if cust.business_id != business_id:
         raise GraphScopeError(f"Customer #{customer_id} belongs to business {cust.business_id}, not {business_id}.")
 
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
+
     cust_node = models.GraphNode.objects.filter(
         business_id=business_id,
         entity_type="CUSTOMER",
@@ -216,7 +220,7 @@ def build_customer_journey(
     ).first()
 
     if cust_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Customer #{customer_id} has not been projected into business {business_id} graph."
         )
 
@@ -291,6 +295,9 @@ def build_order_journey(
     if order.business_id != business_id:
         raise GraphScopeError(f"Order #{order_id} belongs to business {order.business_id}, not {business_id}.")
 
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
+
     order_node = models.GraphNode.objects.filter(
         business_id=business_id,
         entity_type="ORDER",
@@ -298,7 +305,7 @@ def build_order_journey(
     ).first()
 
     if order_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Order #{order_id} has not been projected into business {business_id} graph."
         )
 
@@ -404,6 +411,9 @@ def build_product_journey(
     if product.business_id != business_id:
         raise GraphScopeError(f"Product #{product_id} belongs to business {product.business_id}, not {business_id}.")
 
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
+
     product_node = models.GraphNode.objects.filter(
         business_id=business_id,
         entity_type="PRODUCT",
@@ -411,7 +421,7 @@ def build_product_journey(
     ).first()
 
     if product_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Product #{product_id} has not been projected into business {business_id} graph."
         )
 
@@ -509,6 +519,9 @@ def build_campaign_journey(
     if camp.business_id != business_id:
         raise GraphScopeError(f"Campaign #{campaign_id} belongs to business {camp.business_id}, not {business_id}.")
 
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
+
     camp_node = models.GraphNode.objects.filter(
         business_id=business_id,
         entity_type="CAMPAIGN",
@@ -516,7 +529,7 @@ def build_campaign_journey(
     ).first()
 
     if camp_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Campaign #{campaign_id} has not been projected into business {business_id} graph."
         )
 

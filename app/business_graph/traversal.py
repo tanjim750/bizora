@@ -32,9 +32,12 @@ from django.db.models import Q
 
 from app import models
 from app.business_graph.projection import (
+    GraphNotBuiltError,
     GraphScopeError,
     GraphNotFoundError,
     GraphValidationError,
+    SUPPORTED_ENTITY_MODELS,
+    _resolve_entity_business_id,
 )
 
 
@@ -288,6 +291,26 @@ def traverse_graph(
             raise GraphScopeError(
                 f"Root entity {root_entity_type} #{root_entity_id} belongs to business {other_node.business_id}, not {business_id}."
             )
+
+        model_cls = SUPPORTED_ENTITY_MODELS.get(root_entity_type)
+        if model_cls is not None:
+            entity = model_cls.objects.filter(pk=root_entity_id).first()
+            if entity is None:
+                raise GraphNotFoundError(
+                    f"Root entity {root_entity_type} #{root_entity_id} not found in business {business_id} graph."
+                )
+            try:
+                entity_biz = _resolve_entity_business_id(root_entity_type, entity)
+            except Exception:
+                entity_biz = None
+            if entity_biz is not None and entity_biz != business_id:
+                raise GraphScopeError(
+                    f"Root entity {root_entity_type} #{root_entity_id} belongs to business {entity_biz}, not {business_id}."
+                )
+
+        if not models.GraphNode.objects.filter(business_id=business_id).exists():
+            raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
+
         raise GraphNotFoundError(
             f"Root entity {root_entity_type} #{root_entity_id} not found in business {business_id} graph."
         )

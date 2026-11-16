@@ -54,6 +54,10 @@ class GraphCrossBusinessError(GraphValidationError):
     """Source and target entities belong to different businesses."""
 
 
+class GraphNotBuiltError(GraphValidationError):
+    """Raised when an operation requires an existing graph but the business graph has not been built yet."""
+
+
 # Supported canonical entity models and their business resolution paths
 SUPPORTED_ENTITY_MODELS: dict[str, type[Model]] = {
     "CUSTOMER": models.Customer,
@@ -512,6 +516,7 @@ __all__ = [
     "BI_RELATIONSHIP_KEY_SUFFIX",
     "ENTITY_BUSINESS_LOOKUPS",
     "GraphCrossBusinessError",
+    "GraphNotBuiltError",
     "GraphNotFoundError",
     "GraphScopeError",
     "GraphValidationError",

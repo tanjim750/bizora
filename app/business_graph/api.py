@@ -35,6 +35,7 @@ from app.business_graph.journeys import (
 )
 from app.business_graph.projection import (
     GraphCrossBusinessError,
+    GraphNotBuiltError,
     GraphNotFoundError,
     GraphScopeError,
     GraphValidationError,
@@ -244,6 +245,12 @@ class BaseGraphAPIView(BusinessScopedAPIView):
                 raise GraphValidationError(f"{param} must be between 1 and {MAX_BIGINT}.")
 
     def handle_exception(self, exc):
+        if isinstance(exc, GraphNotBuiltError):
+            return error_response(
+                "GRAPH_NOT_BUILT",
+                "The business graph has not been built yet. Rebuild it first.",
+                status.HTTP_409_CONFLICT,
+            )
         if isinstance(exc, (GraphNotFoundError, GraphScopeError, GraphCrossBusinessError)):
             # BG-07: missing and foreign entities answer identically, and the service message
             # (which names the owning business) is logged, never returned to the caller.
