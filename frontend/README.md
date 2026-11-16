@@ -29,6 +29,8 @@ BIZORA_E2E_USERNAME=... BIZORA_E2E_PASSWORD=... npm run test:e2e
 
 Use a manager membership in an isolated business. Seed one connected integration source and one product with SKU `TEA`, then set `BIZORA_E2E_CONNECTION_ID` and `BIZORA_E2E_PRODUCT_ID` to their IDs. The operation tests create unique records through the API. Playwright uses one worker because the local SQLite fixture is shared across tests. Do not point these tests at production data.
 
-Playwright uses `/usr/bin/google-chrome` by default. Set `PLAYWRIGHT_CHROME_EXECUTABLE` if Chrome is elsewhere. Set `BIZORA_E2E_URL` when Next.js is not on `http://127.0.0.1:3000`.
+Playwright uses `/usr/bin/google-chrome` by default. Set `PLAYWRIGHT_CHROME_EXECUTABLE` if Chrome is elsewhere. Set `BIZORA_E2E_URL` when Next.js is not on `http://localhost:3000`.
+
+The optional Steadfast browser test needs a signed test connection in the isolated business. Set `BIZORA_E2E_STEADFAST_CONNECTION_ID` and `BIZORA_E2E_STEADFAST_WEBHOOK_SECRET`; the Django process must have the same secret under the connection's configured environment reference. The test creates its own shipment and sends signed webhooks to `http://127.0.0.1:8000` (override with `BIZORA_E2E_DJANGO_URL`).
 
 The current endpoint coverage and remaining work are recorded in [`frontend-progress.md`](../docs/implementations/frontend-progress.md).

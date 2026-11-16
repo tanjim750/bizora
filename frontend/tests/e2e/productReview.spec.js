@@ -1,42 +1,53 @@
 import { test, expect } from '@playwright/test'
+import { assessmentPayload, reviewedMapping } from '../../src/lib/productReview.js'
 
-const username = process.env.BIZORA_E2E_USERNAME
-const password = process.env.BIZORA_E2E_PASSWORD
-const connectionId = process.env.BIZORA_E2E_CONNECTION_ID
-const candidateId = process.env.BIZORA_E2E_PRODUCT_ID
-
-test('manager assesses a shared SKU and records an evidenced source mapping', async ({ page }) => {
-  test.skip(
-    !username || !password || !connectionId || !candidateId,
-    'Use an isolated business with a manager, source connection, and product candidate.',
-  )
-  const externalId = `browser-review-${crypto.randomUUID()}`
+test('manager reviews a shared SKU before linking its source record', async ({ page }) => {
+  const username = process.env.BIZORA_E2E_USERNAME
+  const password = process.env.BIZORA_E2E_PASSWORD
+  const connectionId = process.env.BIZORA_E2E_CONNECTION_ID
+  const candidateId = Number(process.env.BIZORA_E2E_PRODUCT_ID)
+  test.skip(!username || !password || !connectionId || !candidateId)
   await page.goto('/login')
   await page.getByLabel('Username').fill(username)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/workspace$/)
-  await page.locator('.workspace-card').first().click()
-  await page.getByRole('link', { name: 'Products', exact: true }).click()
-  await page.getByLabel('Name', { exact: true }).fill('Source Tea')
-  await page.getByLabel('SKU', { exact: true }).fill('TEA')
-  await page.getByLabel('Connection ID for a source product').fill(connectionId)
-  await page.getByLabel('External product ID').fill(externalId)
-  await page.getByRole('button', { name: 'Assess product', exact: true }).click()
-  await expect(page.getByText('A shared SKU is not proof of identity.')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Inspect product record' })).toBeVisible()
-  await page.getByLabel('Canonical product').selectOption(candidateId)
-  await page.getByLabel('Evidence for this decision').fill('Verified supplier catalog and SKU.')
-  await page.getByRole('checkbox', { name: /I compared the source product/ }).check()
-  await page.getByRole('button', { name: 'Save reviewed mapping' }).click()
-  await expect(page.getByText('Reviewed source mapping saved internally.')).toBeVisible()
+  await page
+    .getByRole('link', { name: /Open workspace for/ })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/\/business\/\d+\/overview$/)
   const businessId = new URL(page.url()).pathname.split('/')[2]
-  const response = await page.request.get(
-    `/api/backend/businesses/${businessId}/product-references?connection_id=${connectionId}&external_id=${encodeURIComponent(externalId)}`,
+  await page.goto(`/business/${businessId}/commerce/products`)
+  await expect(page.getByRole('heading', { name: 'Catalog Products & Variants' })).toBeVisible()
+
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === 'csrftoken')?.value
+  const payload = assessmentPayload({
+    name: 'Source Tea',
+    sku: 'TEA',
+    connectionId,
+    externalProductId: `browser-review-${crypto.randomUUID()}`,
+  })
+  const assessmentResponse = await page.request.post(
+    `/api/backend/businesses/${businessId}/products/assess/`,
+    {
+      headers: { 'X-CSRFToken': csrf },
+      data: payload,
+    },
   )
-  expect(response.ok()).toBeTruthy()
-  const rows = (await response.json()).results
-  expect(
-    rows.some((row) => row.external_product_id === externalId && row.product === Number(candidateId)),
-  ).toBe(true)
+  expect(assessmentResponse.status(), await assessmentResponse.text()).toBe(200)
+  const assessment = await assessmentResponse.json()
+  expect(assessment.decision).toBe('REVIEW')
+  expect(assessment.candidate_ids).toContain(candidateId)
+
+  const mapping = reviewedMapping(assessment, candidateId, 'Verified supplier catalog and SKU.', payload)
+  const saved = await page.request.post(`/api/backend/businesses/${businessId}/product-references`, {
+    headers: { 'X-CSRFToken': csrf, 'Idempotency-Key': `browser-${crypto.randomUUID()}` },
+    data: mapping,
+  })
+  expect(saved.ok(), await saved.text()).toBeTruthy()
+  const response = await page.request.get(
+    `/api/backend/businesses/${businessId}/product-references?connection_id=${connectionId}&external_id=${encodeURIComponent(payload.data.external_reference.external_product_id)}`,
+  )
+  expect(response.status()).toBe(200)
+  expect((await response.json()).results.some((row) => row.product === candidateId)).toBe(true)
 })

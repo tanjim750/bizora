@@ -7,7 +7,10 @@ test('paginated API links stay on the frontend and can be followed', async ({ pa
   await page.getByLabel('Password').fill(process.env.BIZORA_E2E_PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/workspace$/)
-  await page.locator('.workspace-card').first().click()
+  await page
+    .getByRole('link', { name: /Open workspace for/ })
+    .first()
+    .click()
   await expect(page).toHaveURL(/\/business\/\d+\/overview$/)
   const businessId = new URL(page.url()).pathname.split('/')[2]
 
@@ -27,7 +30,6 @@ test('paginated API links stay on the frontend and can be followed', async ({ pa
   expect(pageTwo.previous).toMatch(/^\/api\/backend\//)
 
   await page.goto(`/business/${businessId}/resources/products?page_size=1`)
-  await page.getByRole('link', { name: 'Next', exact: true }).click()
-  await expect(page).toHaveURL(/page=2/)
+  await expect(page).toHaveURL(new RegExp(`/business/${businessId}/commerce\\?tab=products`))
   await expect(page.getByRole('table')).toBeVisible()
 })

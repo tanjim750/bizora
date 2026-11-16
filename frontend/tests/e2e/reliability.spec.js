@@ -7,7 +7,10 @@ test('authenticated read burst stays scoped and returns without server errors', 
   await page.getByLabel('Password').fill(process.env.BIZORA_E2E_PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/workspace$/)
-  await page.locator('.workspace-card').first().click()
+  await page
+    .getByRole('link', { name: /Open workspace for/ })
+    .first()
+    .click()
   await expect(page).toHaveURL(/\/business\/\d+\/overview$/)
   const businessId = new URL(page.url()).pathname.split('/')[2]
   const durations = []
