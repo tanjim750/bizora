@@ -82,7 +82,7 @@ class IntegrationSchema(StrictSerializer):
             required = 'READ_CONVERSATIONS' if entity == 'CUSTOMER' and source.category.upper() in {'COMMUNICATION', 'SUPPORT', 'MESSAGING'} else ENTITY_SCOPES[entity]
             if required not in data['scopes']:
                 raise serializers.ValidationError('Selected entities require their corresponding read scope.')
-        allowed = {'api_key', 'access_token', 'refresh_token', 'client_id', 'client_secret', 'webhook_secret'}
+        allowed = {'api_key', 'secret_key', 'access_token', 'refresh_token', 'client_id', 'client_secret', 'webhook_secret'}
         pattern = rf'env:BIZORA_BUSINESS_{self.context["business_id"]}_[A-Z][A-Z0-9_]{{0,100}}'
         if set(data['credentials'])-allowed or any(not re.fullmatch(pattern, value) for value in data['credentials'].values()):
             raise serializers.ValidationError('Credentials must be business-scoped secret references, never secret values.')
