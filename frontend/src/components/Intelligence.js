@@ -43,6 +43,14 @@ import {
 import { dateTime, relativeTime } from '@/lib/format'
 import { clientApi } from '@/lib/clientApi'
 import { metricsPath, snapshotsPath, normalizeList } from '@/lib/intelligence/metrics'
+import {
+  PIPELINE_RUN_PATH,
+  GRAPH_REBUILD_PATH,
+  rebuildBody,
+  summarizePipelineResult,
+  summarizeRebuildResult,
+  isManager,
+} from '@/lib/intelligence/pipeline'
 
 // Sample data for demo mode (SIMULATED)
 const SAMPLE_FACTS = [
@@ -189,6 +197,51 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
       .finally(() => {
         setLoadingSnapshots(false)
       })
+  }
+
+  // Pipeline Tab State (FE-W2)
+  const canManage = isManager(business?.role)
+  const [runningPipeline, setRunningPipeline] = useState(false)
+  const [pipelineError, setPipelineError] = useState('')
+  const [pipelineResult, setPipelineResult] = useState(null)
+  const [rebuildingGraph, setRebuildingGraph] = useState(false)
+  const [rebuildError, setRebuildError] = useState('')
+  const [rebuildResult, setRebuildResult] = useState(null)
+
+  const handleRunPipeline = async () => {
+    setRunningPipeline(true)
+    setPipelineError('')
+    setPipelineResult(null)
+    try {
+      const data = await clientApi(PIPELINE_RUN_PATH(businessId), {
+        method: 'POST',
+      })
+      setPipelineResult(summarizePipelineResult(data))
+      router.refresh()
+    } catch (err) {
+      setPipelineError(err?.detail || err?.message || 'Pipeline execution failed.')
+    } finally {
+      setRunningPipeline(false)
+    }
+  }
+
+  const handleRebuildGraph = async () => {
+    setRebuildingGraph(true)
+    setRebuildError('')
+    setRebuildResult(null)
+    try {
+      const body = rebuildBody({ clean: false })
+      const data = await clientApi(GRAPH_REBUILD_PATH(businessId), {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
+      setRebuildResult(summarizeRebuildResult(data))
+      router.refresh()
+    } catch (err) {
+      setRebuildError(err?.detail || err?.message || 'Graph rebuild failed.')
+    } finally {
+      setRebuildingGraph(false)
+    }
   }
 
   const handleInspectGraph = async (e) => {
@@ -741,10 +794,148 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
       {/* TAB 4: DATA PIPELINE                                           */}
       {/* ============================================================== */}
       {activeTab === 'pipeline' && (
-        <UnavailableState
-          owner="Platform Operations"
-          reason="Pipeline orchestration and continuous ingestion runners are offline."
-        />
+        <div className="stack-lg">
+          <div aria-live="polite" className="sr-only">
+            {runningPipeline ? 'Running data pipeline...' : ''}
+            {rebuildingGraph ? 'Rebuilding context graph...' : ''}
+          </div>
+
+          <section className="surface card-padding stack-md" aria-labelledby="pipeline-heading">
+            <div>
+              <h2 id="pipeline-heading" className="section-title">
+                Data Pipeline & Graph Orchestration
+              </h2>
+              <p className="text-secondary text-body" style={{ marginTop: 'var(--space-1)' }}>
+                Run the data pipeline first to synchronize the registry, calculate metric snapshots, and
+                reconcile facts; then rebuild the graph.
+              </p>
+            </div>
+
+            {!canManage ? (
+              <div className="empty-state-card text-muted">
+                Only owners and managers can run the pipeline.
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                  gap: 'var(--space-4)',
+                }}
+              >
+                {/* Stage 1: Pipeline */}
+                <div
+                  className="surface stack-sm"
+                  style={{
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-4)',
+                  }}
+                >
+                  <div className="stack-xs">
+                    <h3 className="card-title">1. Business Intelligence Pipeline</h3>
+                    <p className="text-secondary text-caption">
+                      Executes canonical reconciliation, seeds registry metrics, computes default-period
+                      snapshots, and correlates open issues.
+                    </p>
+                  </div>
+
+                  <div style={{ marginTop: 'var(--space-2)' }}>
+                    <Button
+                      variant="primary"
+                      onClick={handleRunPipeline}
+                      disabled={runningPipeline || rebuildingGraph}
+                    >
+                      {runningPipeline ? 'Running pipeline...' : 'Run data pipeline'}
+                    </Button>
+                  </div>
+
+                  {pipelineError && (
+                    <Banner variant="danger">
+                      <strong>Pipeline error:</strong> {pipelineError}
+                    </Banner>
+                  )}
+
+                  {pipelineResult && !pipelineError && (
+                    <div className="stack-xs" style={{ marginTop: 'var(--space-3)' }}>
+                      <h4 className="text-caption font-semibold uppercase text-secondary">Pipeline Result</h4>
+                      <dl
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'auto 1fr',
+                          gap: 'var(--space-1) var(--space-3)',
+                          margin: 0,
+                        }}
+                      >
+                        {pipelineResult.map((item, idx) => (
+                          <React.Fragment key={idx}>
+                            <dt className="text-caption text-secondary">{item.label}:</dt>
+                            <dd className="text-caption font-mono font-semibold">{item.value}</dd>
+                          </React.Fragment>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stage 2: Graph */}
+                <div
+                  className="surface stack-sm"
+                  style={{
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-4)',
+                  }}
+                >
+                  <div className="stack-xs">
+                    <h3 className="card-title">2. Context Graph Rebuild</h3>
+                    <p className="text-secondary text-caption">
+                      Rebuilds knowledge graph nodes and cross-domain entity relationships for contextual
+                      traversals.
+                    </p>
+                  </div>
+
+                  <div style={{ marginTop: 'var(--space-2)' }}>
+                    <Button
+                      variant="secondary"
+                      onClick={handleRebuildGraph}
+                      disabled={runningPipeline || rebuildingGraph}
+                    >
+                      {rebuildingGraph ? 'Rebuilding graph...' : 'Rebuild graph'}
+                    </Button>
+                  </div>
+
+                  {rebuildError && (
+                    <Banner variant="danger">
+                      <strong>Rebuild error:</strong> {rebuildError}
+                    </Banner>
+                  )}
+
+                  {rebuildResult && !rebuildError && (
+                    <div className="stack-xs" style={{ marginTop: 'var(--space-3)' }}>
+                      <h4 className="text-caption font-semibold uppercase text-secondary">Rebuild Result</h4>
+                      <dl
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'auto 1fr',
+                          gap: 'var(--space-1) var(--space-3)',
+                          margin: 0,
+                        }}
+                      >
+                        {rebuildResult.map((item, idx) => (
+                          <React.Fragment key={idx}>
+                            <dt className="text-caption text-secondary">{item.label}:</dt>
+                            <dd className="text-caption font-mono font-semibold">{item.value}</dd>
+                          </React.Fragment>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       )}
 
       {/* ============================================================== */}

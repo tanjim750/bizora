@@ -22,7 +22,7 @@ test('intelligence workspace enforces token styles, zero raw hex, and honest wor
   assert.ok(content.includes('UnavailableState'), 'Calm unavailable state missing')
   assert.ok(content.includes('Business Intelligence'), 'Business Intelligence owner missing')
   assert.ok(content.includes('Business Graph'), 'Business Graph owner missing')
-  assert.ok(content.includes('Platform Operations'), 'Platform Operations owner missing')
+  assert.ok(content.includes('Run data pipeline'), 'Run data pipeline action missing')
 })
 
 test('intelligence graph legend differentiates by shape and icon, not color alone', () => {
