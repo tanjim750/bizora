@@ -52,6 +52,7 @@ import {
 } from './ui'
 import { dateTime, relativeTime } from '../lib/format/index.js'
 import { clientApi } from '../lib/clientApi'
+import DialyraTelephony from './DialyraTelephony'
 
 // Sample identity candidate for testing dry-run plan
 const SAMPLE_MERGE_CANDIDATE = {
@@ -862,6 +863,13 @@ export default function Admin({
             >
               Inbound Webhooks
             </button>
+            <button
+              type="button"
+              className={`admin-subnav-btn ${integrationsSubTab === 'dialyra' ? 'is-active' : ''}`}
+              onClick={() => setIntegrationsSubTab('dialyra')}
+            >
+              Dialyra Telephony & SIP
+            </button>
           </div>
 
           {/* Sub-view: Connections */}
@@ -991,6 +999,9 @@ export default function Admin({
               description="Authoritative webhook listener has not received provider webhook envelopes."
             />
           )}
+
+          {/* Sub-view: Dialyra Telephony & SIP Trunks */}
+          {integrationsSubTab === 'dialyra' && <DialyraTelephony businessId={businessId} />}
         </div>
       )}
 

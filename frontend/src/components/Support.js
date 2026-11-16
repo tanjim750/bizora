@@ -338,6 +338,14 @@ export default function Support({
   const [callbackReason, setCallbackReason] = useState('')
   const [schedulingCallback, setSchedulingCallback] = useState(false)
 
+  // Dialyra Outbound Call state
+  const [dialyraCallOpen, setDialyraCallOpen] = useState(false)
+  const [dialyraPhone, setDialyraPhone] = useState('')
+  const [dialyraCustomerName, setDialyraCustomerName] = useState('')
+  const [dialyraOriginateBusy, setDialyraOriginateBusy] = useState(false)
+  const [dialyraError, setDialyraError] = useState('')
+  const [dialyraSuccess, setDialyraSuccess] = useState('')
+
   const filteredCalls = useMemo(() => {
     return callsResults.filter((call) => {
       if (callStatusFilter !== 'ALL' && call.status !== callStatusFilter) return false
@@ -370,6 +378,31 @@ export default function Support({
       alert(err.detail || err.message || 'Failed to schedule callback.')
     } finally {
       setSchedulingCallback(false)
+    }
+  }
+
+  const handleDialyraOriginate = async (e) => {
+    e.preventDefault()
+    if (!dialyraPhone) return
+    setDialyraOriginateBusy(true)
+    setDialyraError('')
+    setDialyraSuccess('')
+    try {
+      const res = await clientApi(`businesses/${businessId}/dialyra/calls/originate`, {
+        method: 'POST',
+        body: {
+          phone: dialyraPhone.trim(),
+          webhook_variables: dialyraCustomerName ? { customer_name: dialyraCustomerName } : undefined,
+        },
+      })
+      setDialyraSuccess(`Call successfully initiated! Call ID: #${res.call_id}`)
+      setDialyraPhone('')
+      setDialyraCustomerName('')
+      router.refresh()
+    } catch (err) {
+      setDialyraError(err.message || 'Call origination failed.')
+    } finally {
+      setDialyraOriginateBusy(false)
     }
   }
 
@@ -1031,9 +1064,23 @@ export default function Support({
               ))}
             </div>
 
-            <span className="text-caption text-muted">
-              Phone dial gateway: <span className="font-mono">Prepared — not executed</span>
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <span className="text-caption text-muted">
+                Gateway: <span className="font-mono text-success">Dialyra v3</span>
+              </span>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setDialyraError('')
+                  setDialyraSuccess('')
+                  setDialyraCallOpen(true)
+                }}
+              >
+                <PhoneCall size={14} style={{ marginRight: '6px' }} />
+                Start Call (Dialyra)
+              </Button>
+            </div>
           </div>
 
           {/* Calls Table */}
@@ -1433,6 +1480,71 @@ export default function Support({
             </Button>
             <Button variant="primary" type="submit" loading={schedulingCallback}>
               Confirm Callback
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* ============================================================== */}
+      {/* DIALOG 5: DIALYRA OUTBOUND CALL                                */}
+      {/* ============================================================== */}
+      <Dialog
+        open={dialyraCallOpen}
+        onClose={() => setDialyraCallOpen(false)}
+        title="Start Outbound Call (Dialyra v3 Gateway)"
+      >
+        <form onSubmit={handleDialyraOriginate} className="stack">
+          {dialyraError && <Banner tone="danger" title={dialyraError} />}
+          {dialyraSuccess && <Banner tone="success" title={dialyraSuccess} />}
+
+          <Field
+            label="Recipient Phone Number"
+            htmlFor="dialyra-phone"
+            hint="E.164 or national phone format"
+            required
+          >
+            <Input
+              id="dialyra-phone"
+              placeholder="e.g. 01712345678 or +8801712345678"
+              value={dialyraPhone}
+              onChange={(e) => setDialyraPhone(e.target.value)}
+              required
+            />
+          </Field>
+
+          <Field label="Customer Name" htmlFor="dialyra-customer" hint="Passed as webhook template variable">
+            <Input
+              id="dialyra-customer"
+              placeholder="e.g. Rahim Ahmed"
+              value={dialyraCustomerName}
+              onChange={(e) => setDialyraCustomerName(e.target.value)}
+            />
+          </Field>
+
+          <p className="text-caption text-muted">
+            The call will be originated through Dialyra Asterisk softswitch and automatically logged in
+            Bizora.
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 'var(--space-2)',
+              marginTop: 'var(--space-2)',
+            }}
+          >
+            <Button variant="secondary" type="button" onClick={() => setDialyraCallOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={dialyraOriginateBusy}
+              isLoading={dialyraOriginateBusy}
+            >
+              <PhoneCall size={14} style={{ marginRight: '6px' }} />
+              Originate Call
             </Button>
           </div>
         </form>

@@ -127,3 +127,17 @@ urlpatterns += [
 ]
 
 urlpatterns.append(path('businesses/<int:business_id>/contracts/<slug:owner>/<slug:capability>/',domain.DomainContractView.as_view()))
+
+from app import dialyra_views as dialyra
+
+urlpatterns += [
+    path('businesses/<int:business_id>/dialyra/status/', dialyra.DialyraStatusView.as_view(), name='dialyra-status'),
+    path('businesses/<int:business_id>/dialyra/calls/originate/', dialyra.DialyraOriginateCallView.as_view(), name='dialyra-originate-call'),
+    path('businesses/<int:business_id>/dialyra/trunks/', dialyra.DialyraSipTrunkListView.as_view(), name='dialyra-trunks'),
+    path('businesses/<int:business_id>/dialyra/trunks/<int:trunk_id>/status/', dialyra.DialyraSipTrunkStatusView.as_view(), name='dialyra-trunk-status'),
+    path('businesses/<int:business_id>/dialyra/trunks/<int:trunk_id>/test/', dialyra.DialyraSipTrunkTestView.as_view(), name='dialyra-trunk-test'),
+    path('businesses/<int:business_id>/dialyra/trunks/<int:trunk_id>/reload/', dialyra.DialyraSipTrunkReloadView.as_view(), name='dialyra-trunk-reload'),
+    path('businesses/<int:business_id>/dialyra/flows/', dialyra.DialyraFlowListView.as_view(), name='dialyra-flows'),
+    path('dialyra/webhook/', dialyra.DialyraWebhookView.as_view(), name='dialyra-webhook'),
+]
+
