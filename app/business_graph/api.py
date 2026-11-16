@@ -62,6 +62,7 @@ logger = logging.getLogger(__name__)
 MAX_TRAVERSAL_DEPTH = 5
 MAX_TRAVERSAL_NODES = 1000
 MAX_QUERY_LIMIT = 1000
+MAX_BIGINT = 2**63 - 1
 
 
 def _int_param(source: Any, name: str, default: int | None, *, minimum: int, maximum: int | None = None) -> int | None:
@@ -77,9 +78,25 @@ def _int_param(source: Any, name: str, default: int | None, *, minimum: int, max
         raise GraphValidationError(f"{name} must be an integer.")
     if value < minimum:
         raise GraphValidationError(f"{name} must be at least {minimum}.")
-    if maximum is not None and value > maximum:
-        raise GraphValidationError(f"{name} must be at most {maximum}.")
+    effective_max = MAX_BIGINT if maximum is None else maximum
+    if value > effective_max:
+        raise GraphValidationError(f"{name} must be at most {effective_max}.")
     return value
+
+
+def _bool_param(source: Any, name: str, default: bool = False) -> bool:
+    """Read an optional boolean parameter from a strict set ('true', 'false', '1', '0')."""
+    raw = source.get(name) if source is not None else None
+    if raw is None or raw == "":
+        return default
+    if isinstance(raw, bool):
+        return raw
+    val = str(raw).strip().lower()
+    if val in ("true", "1"):
+        return True
+    if val in ("false", "0"):
+        return False
+    raise GraphValidationError(f"{name} must be a boolean.")
 
 
 def _json_object(request) -> Any:
@@ -202,6 +219,12 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
 class BaseGraphAPIView(BusinessScopedAPIView):
     """Base class providing URL-scoped membership checks and error translation."""
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        for param, val in kwargs.items():
+            if isinstance(val, int) and (val < 1 or val > MAX_BIGINT):
+                raise GraphValidationError(f"{param} must be between 1 and {MAX_BIGINT}.")
+
     def handle_exception(self, exc):
         if isinstance(exc, (GraphNotFoundError, GraphScopeError, GraphCrossBusinessError)):
             # BG-07: missing and foreign entities answer identically, and the service message
@@ -211,6 +234,8 @@ class BaseGraphAPIView(BusinessScopedAPIView):
             return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
         if isinstance(exc, GraphValidationError):
             return error_response("INVALID_DATA", str(exc), status.HTTP_400_BAD_REQUEST)
+        if isinstance(exc, OverflowError):
+            return error_response("INVALID_DATA", "Integer parameter exceeds maximum supported size.", status.HTTP_400_BAD_REQUEST)
         return super().handle_exception(exc)
 
 
@@ -228,10 +253,7 @@ class GraphTraversalAPIView(BaseGraphAPIView):
                 status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            root_id_int = int(root_id)
-        except ValueError:
-            return error_response("INVALID_DATA", "root_entity_id must be an integer.", status.HTTP_400_BAD_REQUEST)
+        root_id_int = _int_param(request.query_params, "root_entity_id", None, minimum=1, maximum=MAX_BIGINT)
 
         direction = request.query_params.get("direction", "OUTBOUND")
         max_depth = _int_param(request.query_params, "max_depth", 2, minimum=0, maximum=MAX_TRAVERSAL_DEPTH)
@@ -295,17 +317,12 @@ class GraphPathSearchAPIView(BaseGraphAPIView):
                 status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            s_id = int(start_id)
-            e_id = int(end_id)
-        except ValueError:
-            return error_response(
-                "INVALID_DATA", "start_entity_id and end_entity_id must be integers.", status.HTTP_400_BAD_REQUEST
-            )
+        s_id = _int_param(request.query_params, "start_entity_id", None, minimum=1, maximum=MAX_BIGINT)
+        e_id = _int_param(request.query_params, "end_entity_id", None, minimum=1, maximum=MAX_BIGINT)
 
         max_depth = _int_param(request.query_params, "max_depth", 5, minimum=1, maximum=MAX_TRAVERSAL_DEPTH)
         direction = request.query_params.get("direction", "OUTBOUND")
-        explain = str(request.query_params.get("explain", "false")).lower() in ("true", "1")
+        explain = _bool_param(request.query_params, "explain", default=False)
         filters = _parse_graph_filter(request.query_params)
 
         paths = find_paths(

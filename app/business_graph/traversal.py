@@ -257,6 +257,8 @@ def traverse_graph(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(root_entity_id, int) or root_entity_id <= 0 or root_entity_id > 2**63 - 1:
+        raise GraphValidationError("root_entity_id must be a positive integer at most 9223372036854775807")
 
     if max_depth < 0:
         raise GraphValidationError("max_depth must be non-negative")
@@ -368,6 +370,10 @@ def find_paths(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(start_entity_id, int) or start_entity_id <= 0 or start_entity_id > 2**63 - 1:
+        raise GraphValidationError("start_entity_id must be a positive integer at most 9223372036854775807")
+    if not isinstance(end_entity_id, int) or end_entity_id <= 0 or end_entity_id > 2**63 - 1:
+        raise GraphValidationError("end_entity_id must be a positive integer at most 9223372036854775807")
 
     if max_depth <= 0:
         raise GraphValidationError("max_depth must be positive")
@@ -456,6 +462,8 @@ def query_subgraph(
     """General structured graph query endpoint for entities and relationships."""
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if entity_id is not None and (not isinstance(entity_id, int) or entity_id <= 0 or entity_id > 2**63 - 1):
+        raise GraphValidationError("entity_id must be a positive integer at most 9223372036854775807")
 
     if entity_type and entity_id:
         return traverse_graph(

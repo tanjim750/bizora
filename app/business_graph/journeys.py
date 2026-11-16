@@ -187,6 +187,8 @@ def build_customer_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(customer_id, int) or customer_id <= 0 or customer_id > 2**63 - 1:
+        raise GraphValidationError("customer_id must be a positive integer at most 9223372036854775807")
 
     cust = models.Customer.objects.filter(pk=customer_id).first()
     if cust is None:
@@ -267,6 +269,8 @@ def build_order_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(order_id, int) or order_id <= 0 or order_id > 2**63 - 1:
+        raise GraphValidationError("order_id must be a positive integer at most 9223372036854775807")
 
     order = models.Order.objects.filter(pk=order_id).first()
     if order is None:
@@ -363,6 +367,8 @@ def build_product_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(product_id, int) or product_id <= 0 or product_id > 2**63 - 1:
+        raise GraphValidationError("product_id must be a positive integer at most 9223372036854775807")
 
     product = models.Product.objects.filter(pk=product_id).first()
     if product is None:
@@ -466,6 +472,8 @@ def build_campaign_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(campaign_id, int) or campaign_id <= 0 or campaign_id > 2**63 - 1:
+        raise GraphValidationError("campaign_id must be a positive integer at most 9223372036854775807")
 
     camp = models.Campaign.objects.filter(pk=campaign_id).first()
     if camp is None:
