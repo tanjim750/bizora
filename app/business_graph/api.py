@@ -57,6 +57,65 @@ from app.business_graph.traversal import (
 
 logger = logging.getLogger(__name__)
 
+# BG-05: the documents ask for caps but give no numbers. These are named, reviewable values
+# (to be confirmed by the owner); a request above a cap is rejected with 400, never silently clamped.
+MAX_TRAVERSAL_DEPTH = 5
+MAX_TRAVERSAL_NODES = 1000
+MAX_QUERY_LIMIT = 1000
+
+
+def _int_param(source: Any, name: str, default: int | None, *, minimum: int, maximum: int | None = None) -> int | None:
+    """Read an optional integer parameter; a malformed or out-of-range value is a 400 (BG-06, BG-05)."""
+    raw = source.get(name) if source is not None else None
+    if raw is None or raw == "":
+        return default
+    if isinstance(raw, bool) or (isinstance(raw, float) and not raw.is_integer()):
+        raise GraphValidationError(f"{name} must be an integer.")
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        raise GraphValidationError(f"{name} must be an integer.")
+    if value < minimum:
+        raise GraphValidationError(f"{name} must be at least {minimum}.")
+    if maximum is not None and value > maximum:
+        raise GraphValidationError(f"{name} must be at most {maximum}.")
+    return value
+
+
+def _json_object(request) -> Any:
+    """The request body as a mapping; anything else (array, string) is a 400 instead of a crash."""
+    if not hasattr(request.data, "get"):
+        raise GraphValidationError("The request body must be a JSON object.")
+    return request.data
+
+
+def _text_field(body: Any, name: str) -> str | None:
+    value = body.get(name)
+    if value is not None and not isinstance(value, str):
+        raise GraphValidationError(f"{name} must be a string.")
+    return value
+
+
+def _datetime_param(get_fn, name: str) -> datetime.datetime | None:
+    """Read an optional timezone-aware ISO 8601 datetime; malformed or naive values are a 400 (BG-06)."""
+    raw = get_fn(name)
+    if not raw:
+        return None
+    if isinstance(raw, datetime.datetime):
+        value = raw
+    elif isinstance(raw, str):
+        try:
+            value = parse_datetime(raw)
+        except ValueError:
+            value = None
+        if value is None:
+            raise GraphValidationError(f"{name} must be an ISO 8601 datetime.")
+    else:
+        raise GraphValidationError(f"{name} must be an ISO 8601 datetime.")
+    if value.tzinfo is None:
+        raise GraphValidationError(f"{name} must include a UTC offset.")
+    return value
+
 
 def _parse_graph_filter(params: Any) -> GraphFilter | None:
     """Parse GraphFilter criteria from query_params or dict payload."""
@@ -95,29 +154,9 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
         elif isinstance(rt_raw, str):
             relationship_types = frozenset(x.strip().upper() for x in rt_raw.split(",") if x.strip())
 
-    time_from = None
-    tf_raw = get_fn("time_from")
-    if tf_raw:
-        if isinstance(tf_raw, datetime.datetime):
-            time_from = tf_raw
-        elif isinstance(tf_raw, str):
-            time_from = parse_datetime(tf_raw)
-
-    time_to = None
-    tt_raw = get_fn("time_to")
-    if tt_raw:
-        if isinstance(tt_raw, datetime.datetime):
-            time_to = tt_raw
-        elif isinstance(tt_raw, str):
-            time_to = parse_datetime(tt_raw)
-
-    valid_at = None
-    va_raw = get_fn("valid_at")
-    if va_raw:
-        if isinstance(va_raw, datetime.datetime):
-            valid_at = va_raw
-        elif isinstance(va_raw, str):
-            valid_at = parse_datetime(va_raw)
+    time_from = _datetime_param(get_fn, "time_from")
+    time_to = _datetime_param(get_fn, "time_to")
+    valid_at = _datetime_param(get_fn, "valid_at")
 
     dimensions = None
     dim_raw = get_fn("dimensions")
@@ -190,8 +229,8 @@ class GraphTraversalAPIView(BaseGraphAPIView):
             return error_response("INVALID_DATA", "root_entity_id must be an integer.", status.HTTP_400_BAD_REQUEST)
 
         direction = request.query_params.get("direction", "OUTBOUND")
-        max_depth = int(request.query_params.get("max_depth", 2))
-        max_nodes = int(request.query_params.get("max_nodes", 100))
+        max_depth = _int_param(request.query_params, "max_depth", 2, minimum=0, maximum=MAX_TRAVERSAL_DEPTH)
+        max_nodes = _int_param(request.query_params, "max_nodes", 100, minimum=1, maximum=MAX_TRAVERSAL_NODES)
         filters = _parse_graph_filter(request.query_params)
 
         result = traverse_graph(
@@ -259,7 +298,7 @@ class GraphPathSearchAPIView(BaseGraphAPIView):
                 "INVALID_DATA", "start_entity_id and end_entity_id must be integers.", status.HTTP_400_BAD_REQUEST
             )
 
-        max_depth = int(request.query_params.get("max_depth", 5))
+        max_depth = _int_param(request.query_params, "max_depth", 5, minimum=1, maximum=MAX_TRAVERSAL_DEPTH)
         direction = request.query_params.get("direction", "OUTBOUND")
         explain = str(request.query_params.get("explain", "false")).lower() in ("true", "1")
         filters = _parse_graph_filter(request.query_params)
@@ -299,10 +338,9 @@ class GraphQueryAPIView(BaseGraphAPIView):
     def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         entity_type = request.query_params.get("entity_type")
-        entity_id_raw = request.query_params.get("entity_id")
-        entity_id = int(entity_id_raw) if entity_id_raw is not None else None
+        entity_id = _int_param(request.query_params, "entity_id", None, minimum=1)
         relationship_type = request.query_params.get("relationship_type")
-        limit = int(request.query_params.get("limit", 100))
+        limit = _int_param(request.query_params, "limit", 100, minimum=1, maximum=MAX_QUERY_LIMIT)
         filters = _parse_graph_filter(request.query_params)
 
         result = query_subgraph(
@@ -471,18 +509,18 @@ class GraphSnapshotListCreateAPIView(BaseGraphAPIView):
 
     def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        snapshot_type = request.data.get("snapshot_type", "BUSINESS")
-        name = request.data.get("name")
-        root_type = request.data.get("root_entity_type")
-        root_id = request.data.get("root_entity_id")
-        filters = _parse_graph_filter(request.data.get("filters") or request.data)
+        body = _json_object(request)
+        snapshot_type = _text_field(body, "snapshot_type") or "BUSINESS"
+        name = _text_field(body, "name")
+        root_type = _text_field(body, "root_entity_type")
+        filters = _parse_graph_filter(body.get("filters") or body)
 
         snapshot = create_graph_snapshot(
             business_id=biz.pk,
             snapshot_type=snapshot_type,
             name=name,
             root_entity_type=root_type,
-            root_entity_id=int(root_id) if root_id is not None else None,
+            root_entity_id=_int_param(body, "root_entity_id", None, minimum=1),
             filters=filters,
         )
 
@@ -527,7 +565,7 @@ class GraphRebuildAPIView(BaseGraphAPIView):
 
     def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        clean = bool(request.data.get("clean", False))
+        clean = bool(_json_object(request).get("clean", False))
         summary = rebuild_business_graph(
             business_id=biz.pk,
             clean=clean,

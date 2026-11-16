@@ -1,6 +1,6 @@
 """BG-03: relationships written by Business Intelligence must project into Graph edges."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.test import SimpleTestCase, TestCase
