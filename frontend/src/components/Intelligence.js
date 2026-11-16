@@ -51,6 +51,13 @@ import {
   summarizeRebuildResult,
   isManager,
 } from '@/lib/intelligence/pipeline'
+import {
+  FACTS_PATH,
+  ISSUES_PATH,
+  issuePatchPath,
+  issuePatchBody,
+  confidencePercent,
+} from '@/lib/intelligence/facts'
 
 // Sample data for demo mode (SIMULATED)
 const SAMPLE_FACTS = [
@@ -105,7 +112,14 @@ const SAMPLE_ISSUES = [
   },
 ]
 
-export default function Intelligence({ business = {}, businessId, activeTab = 'facts', issuesData = null }) {
+export default function Intelligence({
+  business = {},
+  businessId,
+  activeTab = 'facts',
+  factsData = null,
+  issuesData = null,
+  loadErrors = {},
+}) {
   const router = useRouter()
   const timezone = business?.timezone || 'Asia/Dhaka'
 
@@ -134,9 +148,33 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
   // Optional Sample Data (SIMULATED) toggle per spec
   const [sampleMode, setSampleMode] = useState(false)
 
-  // Real issues data
+  // Real facts and issues data
+  const realFacts = factsData?.results || (Array.isArray(factsData) ? factsData : [])
+  const displayedFacts = sampleMode ? (realFacts.length > 0 ? realFacts : SAMPLE_FACTS) : realFacts
+
   const realIssues = issuesData?.results || (Array.isArray(issuesData) ? issuesData : [])
   const displayedIssues = sampleMode ? (realIssues.length > 0 ? realIssues : SAMPLE_ISSUES) : realIssues
+
+  // Triage state
+  const [triageLoadingId, setTriageLoadingId] = useState(null)
+  const [triageError, setTriageError] = useState('')
+
+  const handleTriageIssue = async (issueId, newStatus) => {
+    setTriageLoadingId(issueId)
+    setTriageError('')
+    try {
+      const body = issuePatchBody(newStatus)
+      await clientApi(issuePatchPath(businessId, issueId), {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      })
+      router.refresh()
+    } catch (err) {
+      setTriageError(err?.detail || err?.message || 'Failed to update issue status.')
+    } finally {
+      setTriageLoadingId(null)
+    }
+  }
 
   // Evidence Drawer state
   const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState(false)
@@ -324,65 +362,121 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
                   Real-time rule engine detections, fulfillment exceptions, and data integrity anomalies.
                 </p>
               </div>
-              <span className="count-chip font-mono">{displayedIssues.length}</span>
+              <span className="count-chip font-mono">
+                {issuesData?.total_count ?? displayedIssues.length}
+              </span>
             </div>
 
-            <DataTable
-              columns={[
-                {
-                  key: 'severity',
-                  label: 'Severity',
-                  render: (row) => <SeverityChip severity={row.severity} size="sm" />,
-                },
-                {
-                  key: 'title',
-                  label: 'Issue Summary',
-                  render: (row) => (
-                    <div>
-                      <div className="font-semibold text-body">{row.title || `Issue #${row.id}`}</div>
-                      {sampleMode && <SimulatedBadge />}
-                    </div>
-                  ),
-                },
-                {
-                  key: 'rule_key',
-                  label: 'Rule Identifier',
-                  render: (row) => (
-                    <span className="font-mono text-caption text-secondary">
-                      {row.rule_key || 'rule.generic'}
-                    </span>
-                  ),
-                },
-                {
-                  key: 'detected_at',
-                  label: 'Detected',
-                  render: (row) => (
-                    <span className="font-mono text-caption text-muted">
-                      {row.detected_at ? dateTime(row.detected_at, timezone) : '—'}
-                    </span>
-                  ),
-                },
-                {
-                  key: 'status',
-                  label: 'Status',
-                  render: (row) => <StatusChip status={row.status || 'OPEN'} size="sm" />,
-                },
-                {
-                  key: 'actions',
-                  label: 'Audit Thread',
-                  render: (row) => (
-                    <Button variant="secondary" size="sm" icon={Eye} onClick={() => handleOpenEvidence(row)}>
-                      View Evidence
-                    </Button>
-                  ),
-                },
-              ]}
-              rows={displayedIssues}
-              businessId={businessId}
-              emptyTitle="No open integrity issues"
-              emptyDescription="All deterministic business rules are passing. No anomalies or fulfillment exceptions are recorded."
-              openInDrawer={false}
-            />
+            {triageError && (
+              <Banner variant="danger">
+                <strong>Triage error:</strong> {triageError}
+              </Banner>
+            )}
+
+            {loadErrors?.issues ? (
+              <UnavailableState owner="Business Intelligence" reason={loadErrors.issues} />
+            ) : displayedIssues.length === 0 ? (
+              <EmptyState icon={AlertTriangle} title="No open issues" description="No open issues." />
+            ) : (
+              <DataTable
+                columns={[
+                  {
+                    key: 'severity',
+                    label: 'Severity',
+                    render: (row) => <SeverityChip severity={row.severity} size="sm" />,
+                  },
+                  {
+                    key: 'title',
+                    label: 'Issue Summary',
+                    render: (row) => (
+                      <div>
+                        <div className="font-semibold text-body">{row.title || `Issue #${row.id}`}</div>
+                        {sampleMode && !realIssues.length && <SimulatedBadge />}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'issue_type',
+                    label: 'Issue Type',
+                    render: (row) => (
+                      <span className="badge badge-secondary">{row.issue_type || 'GENERAL'}</span>
+                    ),
+                  },
+                  {
+                    key: 'confidence',
+                    label: 'Confidence',
+                    render: (row) => {
+                      const pct = confidencePercent(row.confidence) ?? row.confidence
+                      return (
+                        <span className="font-mono text-caption text-secondary">
+                          {pct != null ? `${pct}%` : '—'}
+                        </span>
+                      )
+                    },
+                  },
+                  {
+                    key: 'detected_at',
+                    label: 'Detected',
+                    render: (row) => (
+                      <span className="font-mono text-caption text-muted">
+                        {row.detected_at ? dateTime(row.detected_at, timezone) : '—'}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: (row) => <StatusChip status={row.status || 'OPEN'} size="sm" />,
+                  },
+                  {
+                    key: 'actions',
+                    label: 'Audit & Actions',
+                    render: (row) => (
+                      <div style={{ display: 'flex', gap: 'var(--space-1)', alignItems: 'center' }}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Eye}
+                          onClick={() => handleOpenEvidence(row)}
+                        >
+                          Evidence
+                        </Button>
+                        {canManage && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={row.status === 'ACKNOWLEDGED' || triageLoadingId === row.id}
+                              onClick={() => handleTriageIssue(row.id, 'ACKNOWLEDGED')}
+                            >
+                              Acknowledge
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={row.status === 'RESOLVED' || triageLoadingId === row.id}
+                              onClick={() => handleTriageIssue(row.id, 'RESOLVED')}
+                            >
+                              Resolve
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={row.status === 'DISMISSED' || triageLoadingId === row.id}
+                              onClick={() => handleTriageIssue(row.id, 'DISMISSED')}
+                            >
+                              Dismiss
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ),
+                  },
+                ]}
+                data={displayedIssues}
+                keyExtractor={(row) => row.id || row.rule_key}
+              />
+            )}
           </section>
 
           {/* Business Facts Section */}
@@ -397,46 +491,87 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
                   ledgers.
                 </p>
               </div>
+              <span className="count-chip font-mono">{factsData?.total_count ?? displayedFacts.length}</span>
             </div>
 
-            {sampleMode ? (
-              <div className="stack-sm">
-                {SAMPLE_FACTS.map((fact) => (
-                  <div
-                    key={fact.id}
-                    className="ai-recommendation-card"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleOpenEvidence(fact)}
-                  >
-                    <div className="stack-sm" style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <span className="badge badge-outline font-mono text-caption">{fact.category}</span>
-                        <SimulatedBadge />
-                        <span className="font-mono text-caption text-muted" style={{ marginLeft: 'auto' }}>
-                          Confidence: {fact.confidence}%
-                        </span>
-                      </div>
-
-                      <p className="text-body" style={{ margin: 0 }}>
-                        {fact.statement}
-                      </p>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                        <span className="text-caption font-mono text-secondary">Source: {fact.source}</span>
-                        <span className="text-caption font-mono text-muted">Key: {fact.rule_key}</span>
-                      </div>
-                    </div>
-
-                    <Button variant="ghost" size="sm" icon={ArrowRight}>
-                      Evidence
-                    </Button>
-                  </div>
-                ))}
-              </div>
+            {loadErrors?.facts ? (
+              <UnavailableState owner="Business Intelligence" reason={loadErrors.facts} />
+            ) : displayedFacts.length === 0 ? (
+              <EmptyState icon={FileText} title="No facts yet" description="No facts yet." />
             ) : (
-              <UnavailableState
-                owner="Business Intelligence"
-                reason="The Business Intelligence fact derivation engine has not generated snapshots for this period."
+              <DataTable
+                columns={[
+                  {
+                    key: 'statement',
+                    label: 'Statement',
+                    render: (row) => (
+                      <div>
+                        <div className="font-semibold text-body">{row.statement || '—'}</div>
+                        {sampleMode && !realFacts.length && <SimulatedBadge />}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'fact_type',
+                    label: 'Fact Type',
+                    render: (row) => (
+                      <span className="badge badge-secondary">
+                        {row.fact_type || row.category || 'GENERAL'}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'value',
+                    label: 'Value',
+                    render: (row) => (
+                      <span className="font-mono text-caption">
+                        {row.value != null
+                          ? `${row.value}${row.value_unit ? ` ${row.value_unit}` : ''}`
+                          : '—'}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'confidence',
+                    label: 'Confidence',
+                    render: (row) => {
+                      const pct = confidencePercent(row.confidence) ?? row.confidence
+                      return (
+                        <span className="font-mono text-caption text-secondary">
+                          {pct != null ? `${pct}%` : '—'}
+                        </span>
+                      )
+                    },
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: (row) => <StatusChip status={row.status || 'VERIFIED'} size="sm" />,
+                  },
+                  {
+                    key: 'rule_key',
+                    label: 'Rule Key',
+                    render: (row) => (
+                      <span className="font-mono text-caption text-muted">{row.rule_key || '—'}</span>
+                    ),
+                  },
+                  {
+                    key: 'actions',
+                    label: 'Evidence',
+                    render: (row) => (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Eye}
+                        onClick={() => handleOpenEvidence(row)}
+                      >
+                        View
+                      </Button>
+                    ),
+                  },
+                ]}
+                data={displayedFacts}
+                keyExtractor={(row) => row.id || row.rule_key}
               />
             )}
           </section>
@@ -953,17 +1088,31 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
         {selectedEvidence && (
           <div className="stack-lg">
             <EvidencePanel
-              title={selectedEvidence.title || 'Grounding Evidence'}
-              confidence={selectedEvidence.confidence || 95}
+              title={selectedEvidence.title || selectedEvidence.statement || 'Grounding Evidence'}
+              confidence={
+                confidencePercent(selectedEvidence.confidence) ??
+                (typeof selectedEvidence.confidence === 'number' ? selectedEvidence.confidence : 95)
+              }
               source={selectedEvidence.source || 'Deterministic Rule Engine'}
-              description={selectedEvidence.statement || selectedEvidence.title}
+              description={
+                selectedEvidence.statement || selectedEvidence.description || selectedEvidence.title
+              }
               items={
-                selectedEvidence.evidence || [
-                  {
-                    text: `Deterministic verification passed for rule ${selectedEvidence.rule_key || 'rule.evaluated'}`,
-                  },
-                  { text: 'Authoritative transaction ledger matches recorded snapshot parameters.' },
-                ]
+                Array.isArray(selectedEvidence.evidence) && selectedEvidence.evidence.length > 0
+                  ? selectedEvidence.evidence.map((ev) =>
+                      typeof ev === 'string'
+                        ? { text: ev }
+                        : { text: ev.text || ev.description || JSON.stringify(ev) },
+                    )
+                  : selectedEvidence.metadata?.evidence &&
+                      Array.isArray(selectedEvidence.metadata.evidence) &&
+                      selectedEvidence.metadata.evidence.length > 0
+                    ? selectedEvidence.metadata.evidence.map((ev) =>
+                        typeof ev === 'string'
+                          ? { text: ev }
+                          : { text: ev.text || ev.description || JSON.stringify(ev) },
+                      )
+                    : [{ text: 'No evidence rows were stored for this item.' }]
               }
             />
 
@@ -976,16 +1125,12 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-caption text-muted">Timestamp</span>
                 <span className="font-mono text-caption">
-                  {selectedEvidence.detected_at
-                    ? dateTime(selectedEvidence.detected_at, timezone)
-                    : 'Verified Present'}
+                  {selectedEvidence.detected_at ? dateTime(selectedEvidence.detected_at, timezone) : '—'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="text-caption text-muted">Verification Level</span>
-                <span className="font-mono text-caption font-semibold text-success">
-                  Deterministic Verified
-                </span>
+                <span className="text-caption text-muted">Status</span>
+                <span className="font-mono text-caption">{selectedEvidence.status || '—'}</span>
               </div>
             </div>
           </div>
