@@ -199,9 +199,12 @@ export default function Commerce({
           'Idempotency-Key': refundIdempotencyKey,
         },
         body: {
-          payment: refundTargetPayment.paymentId,
-          amount: refundAmount,
-          reason: refundReason,
+          data: {
+            payment: refundTargetPayment.paymentId,
+            external_refund_id: `ui-${refundIdempotencyKey}`,
+            amount: refundAmount,
+            reason: refundReason,
+          },
         },
       })
 
