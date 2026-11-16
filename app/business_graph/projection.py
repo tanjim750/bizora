@@ -100,6 +100,10 @@ SUPPORTED_RELATIONSHIP_RULES: dict[str, tuple[str, str, str]] = {
     "campaign_session": ("CAMPAIGN", "REPORTED_SESSION", "WEBSITE_SESSION"),
 }
 
+SUPPORTED_RELATIONSHIP_TYPES: frozenset[str] = frozenset(
+    r[1] for r in SUPPORTED_RELATIONSHIP_RULES.values()
+)
+
 # Business Intelligence persists every rule as "bi.relationship.<name>.v1" (BG-03); the bare
 # "<name>" form is what the Graph rule table and its fixtures use. Both resolve to the same
 # rule through canonical_rule_name(), which is the single place the two spellings are aligned.
@@ -469,6 +473,7 @@ __all__ = [
     "GraphValidationError",
     "ProjectionSummary",
     "SUPPORTED_ENTITY_MODELS",
+    "SUPPORTED_RELATIONSHIP_TYPES",
     "PROJECTABLE_RULE_KEYS",
     "SUPPORTED_RELATIONSHIP_RULES",
     "VALID_RELATIONSHIP_SOURCES",

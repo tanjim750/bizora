@@ -38,6 +38,8 @@ from app.business_graph.projection import (
     GraphNotFoundError,
     GraphScopeError,
     GraphValidationError,
+    SUPPORTED_ENTITY_MODELS,
+    SUPPORTED_RELATIONSHIP_TYPES,
 )
 from app.business_graph.snapshots import (
     create_graph_snapshot,
@@ -134,6 +136,35 @@ def _datetime_param(get_fn, name: str) -> datetime.datetime | None:
     return value
 
 
+def _parse_filter_set(params: Any, get_fn: Any, key: str, valid_set: Any, label: str) -> frozenset[str] | None:
+    if hasattr(params, "getlist"):
+        raw_items = params.getlist(key)
+    else:
+        raw = get_fn(key)
+        raw_items = raw if isinstance(raw, (list, set, tuple)) else ([raw] if raw else [])
+
+    parsed = []
+    for item in raw_items:
+        if isinstance(item, str):
+            for part in item.split(","):
+                p = part.strip()
+                if p:
+                    parsed.append(p)
+        elif item:
+            parsed.append(str(item).strip())
+
+    if not parsed:
+        return None
+
+    validated = []
+    for val in parsed:
+        val_upper = val.upper()
+        if val_upper not in valid_set:
+            raise GraphValidationError(f"Invalid {label} {val!r}; expected one of {sorted(valid_set)}")
+        validated.append(val_upper)
+    return frozenset(validated)
+
+
 def _parse_graph_filter(params: Any) -> GraphFilter | None:
     """Parse GraphFilter criteria from query_params or dict payload."""
     if not params:
@@ -160,21 +191,8 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
     channel_val = get_fn("channel") or None
     provider_val = get_fn("provider") or None
 
-    entity_types = None
-    et_raw = get_fn("entity_types")
-    if et_raw:
-        if isinstance(et_raw, (list, set, tuple)):
-            entity_types = frozenset(str(x).strip().upper() for x in et_raw if str(x).strip())
-        elif isinstance(et_raw, str):
-            entity_types = frozenset(x.strip().upper() for x in et_raw.split(",") if x.strip())
-
-    relationship_types = None
-    rt_raw = get_fn("relationship_types")
-    if rt_raw:
-        if isinstance(rt_raw, (list, set, tuple)):
-            relationship_types = frozenset(str(x).strip().upper() for x in rt_raw if str(x).strip())
-        elif isinstance(rt_raw, str):
-            relationship_types = frozenset(x.strip().upper() for x in rt_raw.split(",") if x.strip())
+    entity_types = _parse_filter_set(params, get_fn, "entity_types", SUPPORTED_ENTITY_MODELS, "entity_type")
+    relationship_types = _parse_filter_set(params, get_fn, "relationship_types", SUPPORTED_RELATIONSHIP_TYPES, "relationship_type")
 
     time_from = _datetime_param(get_fn, "time_from")
     time_to = _datetime_param(get_fn, "time_to")
@@ -362,6 +380,20 @@ class GraphQueryAPIView(BaseGraphAPIView):
         entity_type = request.query_params.get("entity_type")
         entity_id = _int_param(request.query_params, "entity_id", None, minimum=1)
         relationship_type = request.query_params.get("relationship_type")
+
+        if (entity_type and not entity_id) or (entity_id and not entity_type):
+            raise GraphValidationError("entity_type and entity_id must be provided together.")
+
+        if entity_type:
+            entity_type = entity_type.strip().upper()
+            if entity_type not in SUPPORTED_ENTITY_MODELS:
+                raise GraphValidationError(
+                    f"Invalid entity_type {entity_type!r}; expected one of {sorted(SUPPORTED_ENTITY_MODELS)}"
+                )
+
+        if relationship_type:
+            relationship_type = relationship_type.strip().upper()
+
         limit = _int_param(request.query_params, "limit", 100, minimum=1, maximum=MAX_QUERY_LIMIT)
         filters = _parse_graph_filter(request.query_params)
 

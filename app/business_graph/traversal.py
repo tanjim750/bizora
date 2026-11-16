@@ -465,7 +465,29 @@ def query_subgraph(
     if entity_id is not None and (not isinstance(entity_id, int) or entity_id <= 0 or entity_id > 2**63 - 1):
         raise GraphValidationError("entity_id must be a positive integer at most 9223372036854775807")
 
+    if relationship_type:
+        relationship_type = relationship_type.strip().upper()
+
     if entity_type and entity_id:
+        if relationship_type:
+            rel_types = frozenset({relationship_type})
+            if filters is None:
+                filters = GraphFilter(relationship_types=rel_types)
+            elif not filters.relationship_types:
+                filters = GraphFilter(
+                    entity_types=filters.entity_types,
+                    relationship_types=rel_types,
+                    min_confidence=filters.min_confidence,
+                    valid_at=filters.valid_at,
+                    time_from=filters.time_from,
+                    time_to=filters.time_to,
+                    status=filters.status,
+                    channel=filters.channel,
+                    provider=filters.provider,
+                    dimensions=filters.dimensions,
+                    node_properties=filters.node_properties,
+                    edge_properties=filters.edge_properties,
+                )
         return traverse_graph(
             business_id=business_id,
             root_entity_type=entity_type,
