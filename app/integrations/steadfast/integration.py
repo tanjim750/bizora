@@ -2,9 +2,11 @@
 from datetime import timedelta
 from urllib.parse import urlsplit
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 
 from app.configuration.integrations import CredentialUnavailable, resolve_credentials
@@ -141,21 +143,41 @@ def submit_order(connection, order_id, details, *, service=None):
 
 
 @transaction.atomic
-def apply_status(shipment, provider_status, *, event_type='STATUS_UPDATED', metadata=None):
+def apply_status(shipment, provider_status, *, event_type='STATUS_UPDATED', metadata=None,
+                 occurred_at=None, delivery_charge=None):
     shipment = Shipment.objects.select_for_update().get(pk=shipment.pk)
-    new_status = status_name(provider_status)
-    if (shipment.status == new_status or (new_status == 'PENDING' and shipment.status != 'PENDING')
-            or shipment.status in {'DELIVERED', 'RETURNED', 'CANCELLED'}):
+    occurred_at = occurred_at or timezone.now()
+    if timezone.is_naive(occurred_at):
+        # Steadfast sends Bangladesh local timestamps without an offset.
+        occurred_at = timezone.make_aware(occurred_at, ZoneInfo('Asia/Dhaka'))
+    source_metadata = shipment.source_metadata or {}
+    last_status_at = parse_datetime(source_metadata['provider_status_at']) if source_metadata.get('provider_status_at') else None
+    if last_status_at and occurred_at <= last_status_at:
         return shipment, False
-    now = timezone.now()
-    shipment.status = new_status
-    if new_status == 'PICKED_UP' and shipment.picked_up_at is None:
-        shipment.picked_up_at = now
-    if new_status == 'DELIVERED' and shipment.delivered_at is None:
-        shipment.delivered_at = now
-    if new_status == 'RETURNED' and shipment.returned_at is None:
-        shipment.returned_at = now
-    shipment.save(update_fields=['status', 'picked_up_at', 'delivered_at', 'returned_at', 'updated_at'])
-    ShipmentEvent.objects.create(shipment=shipment, event_type=event_type, status=new_status,
-                                 description=provider_status, occurred_at=now, metadata=metadata or {})
-    return shipment, True
+    new_status = status_name(provider_status)
+    status_changed = not (shipment.status == new_status or (new_status == 'PENDING' and shipment.status != 'PENDING')
+                          or shipment.status in {'DELIVERED', 'RETURNED', 'CANCELLED'})
+    charge_changed = delivery_charge is not None and shipment.delivery_charge != delivery_charge
+    source_metadata['provider_status_at'] = occurred_at.isoformat()
+    shipment.source_metadata = source_metadata
+    update_fields = ['source_metadata', 'updated_at']
+    if status_changed:
+        shipment.status = new_status
+        if new_status == 'PICKED_UP' and shipment.picked_up_at is None:
+            shipment.picked_up_at = occurred_at
+        if new_status == 'DELIVERED' and shipment.delivered_at is None:
+            shipment.delivered_at = occurred_at
+        if new_status == 'RETURNED' and shipment.returned_at is None:
+            shipment.returned_at = occurred_at
+        update_fields += ['status', 'picked_up_at', 'delivered_at', 'returned_at']
+    if charge_changed:
+        shipment.delivery_charge = delivery_charge
+        update_fields.append('delivery_charge')
+    shipment.save(update_fields=update_fields)
+    if status_changed or charge_changed:
+        event_metadata = dict(metadata or {})
+        if charge_changed:
+            event_metadata['delivery_charge'] = str(delivery_charge)
+        ShipmentEvent.objects.create(shipment=shipment, event_type=event_type, status=shipment.status,
+                                     description=provider_status, occurred_at=occurred_at, metadata=event_metadata)
+    return shipment, status_changed or charge_changed

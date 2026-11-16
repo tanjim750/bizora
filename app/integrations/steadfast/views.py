@@ -1,8 +1,10 @@
 """Authenticated business operations and signed courier webhook."""
+from decimal import Decimal
+
 from django.http import JsonResponse
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -78,13 +80,30 @@ def webhook(request, business_id, connection_id):
         if external_id is not None:
             shipment = Shipment.objects.filter(business_id=business_id, integration_connection=connection,
                                                external_shipment_id=str(external_id)).first()
-        if shipment is None and tracking_code:
+        if shipment is None and external_id is None and tracking_code:
             shipment = Shipment.objects.filter(business_id=business_id, integration_connection=connection,
                                                tracking_code=tracking_code).first()
+        if tracking_code and external_id is not None and (shipment is None or shipment.tracking_code != tracking_code):
+            return JsonResponse({'detail': 'Conflicting consignment identifiers.'}, status=400)
         provider_status = consignment.get('delivery_status') or consignment.get('status') or event.get('delivery_status')
         if shipment is None or not isinstance(provider_status, str):
             return JsonResponse({'accepted': True, 'updated': False})
-        _, changed = apply_status(shipment, provider_status, event_type='WEBHOOK_STATUS')
+        updated_at = consignment.get('updated_at', event.get('updated_at'))
+        if updated_at is not None:
+            try:
+                occurred_at = parse_datetime(updated_at)
+            except (TypeError, ValueError):
+                occurred_at = None
+            if occurred_at is None:
+                raise ValidationError({'updated_at': 'A valid date and time is required.'})
+        else:
+            occurred_at = None
+        charge = consignment.get('delivery_charge', event.get('delivery_charge'))
+        if charge is not None:
+            charge = serializers.DecimalField(max_digits=18, decimal_places=2,
+                                              min_value=Decimal('0')).run_validation(charge)
+        _, changed = apply_status(shipment, provider_status, event_type='WEBHOOK_STATUS',
+                                  occurred_at=occurred_at, delivery_charge=charge)
         return JsonResponse({'accepted': True, 'updated': changed})
     except NotFound:
         return JsonResponse({'detail': 'Integration connection not found.'}, status=404)

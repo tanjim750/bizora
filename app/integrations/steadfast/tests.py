@@ -2,9 +2,12 @@ import hashlib
 import hmac
 import io
 import json
+from datetime import datetime
+from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
@@ -276,7 +279,8 @@ class SteadfastIntegrationTests(TestCase):
                                            tracking_code='TRACK99', provider='Steadfast', status='SUBMITTED')
         url = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/webhook/'
         raw = json.dumps({'notification_type': 'delivery_status', 'consignment_id': 99,
-                          'status': 'delivered'}).encode()
+                          'status': 'delivered', 'updated_at': '2026-11-16 12:45:30',
+                          'delivery_charge': 80}).encode()
         signature = hmac.new(b'token', raw, hashlib.sha256).hexdigest()
         with patch('app.integrations.steadfast.views.resolve_credentials', return_value={'webhook_secret': 'token'}):
             first = self.client.post(url, raw, content_type='application/json', HTTP_X_STEADFAST_SIGNATURE=signature)
@@ -286,7 +290,73 @@ class SteadfastIntegrationTests(TestCase):
         self.assertTrue(first.json()['updated'])
         self.assertFalse(second.json()['updated'])
         self.assertEqual(shipment.status, 'DELIVERED')
+        self.assertEqual(shipment.delivery_charge, Decimal('80.00'))
+        occurred_at = datetime(2026, 11, 16, 12, 45, 30, tzinfo=ZoneInfo('Asia/Dhaka'))
+        self.assertEqual(shipment.delivered_at, occurred_at)
+        self.assertEqual(ShipmentEvent.objects.get(shipment=shipment).occurred_at, occurred_at)
         self.assertEqual(ShipmentEvent.objects.filter(shipment=shipment).count(), 1)
+
+    def test_late_webhook_cannot_regress_status(self):
+        shipment = Shipment.objects.create(business=self.business, order=self.order,
+                                           integration_connection=self.connection, external_shipment_id='99',
+                                           tracking_code='TRACK99', provider='Steadfast', status='SUBMITTED')
+        url = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/webhook/'
+
+        def send(status, updated_at):
+            raw = json.dumps({'notification_type': 'delivery_status', 'consignment_id': 99,
+                              'status': status, 'updated_at': updated_at, 'delivery_charge': 80}).encode()
+            signature = hmac.new(b'token', raw, hashlib.sha256).hexdigest()
+            return self.client.post(url, raw, content_type='application/json', HTTP_X_STEADFAST_SIGNATURE=signature)
+
+        with patch('app.integrations.steadfast.views.resolve_credentials', return_value={'webhook_secret': 'token'}):
+            self.assertTrue(send('in_transit', '2026-11-16 11:00:00').json()['updated'])
+            self.assertFalse(send('in_transit', '2026-11-16 13:00:00').json()['updated'])
+            self.assertFalse(send('picked_up', '2026-11-16 12:00:00').json()['updated'])
+        shipment.refresh_from_db()
+        self.assertEqual(shipment.status, 'IN_TRANSIT')
+        self.assertEqual(ShipmentEvent.objects.filter(shipment=shipment).count(), 1)
+
+    def test_webhook_rejects_conflicting_identifiers(self):
+        shipment = Shipment.objects.create(business=self.business, order=self.order,
+                                           integration_connection=self.connection, external_shipment_id='99',
+                                           tracking_code='TRACK99', provider='Steadfast', status='SUBMITTED')
+        url = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/webhook/'
+
+        def send(consignment_id, tracking_code):
+            raw = json.dumps({'notification_type': 'delivery_status', 'consignment_id': consignment_id,
+                              'tracking_code': tracking_code, 'status': 'delivered',
+                              'updated_at': '2026-11-16 12:45:30', 'delivery_charge': 80}).encode()
+            signature = hmac.new(b'token', raw, hashlib.sha256).hexdigest()
+            return self.client.post(url, raw, content_type='application/json', HTTP_X_STEADFAST_SIGNATURE=signature)
+
+        with patch('app.integrations.steadfast.views.resolve_credentials', return_value={'webhook_secret': 'token'}):
+            self.assertEqual(send(100, 'TRACK99').status_code, 400)
+            self.assertEqual(send(99, 'OTHER').status_code, 400)
+        shipment.refresh_from_db()
+        self.assertEqual(shipment.status, 'SUBMITTED')
+
+    def test_webhook_updates_charge_without_status_change_and_validates_amount(self):
+        shipment = Shipment.objects.create(business=self.business, order=self.order,
+                                           integration_connection=self.connection, external_shipment_id='99',
+                                           tracking_code='TRACK99', provider='Steadfast', status='SUBMITTED')
+        url = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/webhook/'
+
+        def send(charge):
+            raw = json.dumps({'notification_type': 'delivery_status', 'consignment_id': 99,
+                              'status': 'pending', 'updated_at': '2026-11-16 12:45:30',
+                              'delivery_charge': charge}).encode()
+            signature = hmac.new(b'token', raw, hashlib.sha256).hexdigest()
+            return self.client.post(url, raw, content_type='application/json', HTTP_X_STEADFAST_SIGNATURE=signature)
+
+        with patch('app.integrations.steadfast.views.resolve_credentials', return_value={'webhook_secret': 'token'}):
+            self.assertEqual(send(-5).status_code, 400)
+            response = send(80)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['updated'])
+        shipment.refresh_from_db()
+        self.assertEqual(shipment.status, 'SUBMITTED')
+        self.assertEqual(shipment.delivery_charge, Decimal('80.00'))
+        self.assertEqual(ShipmentEvent.objects.get(shipment=shipment).metadata['delivery_charge'], '80.00')
 
     def test_create_and_refresh_routes_require_business_access(self):
         base = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/'
