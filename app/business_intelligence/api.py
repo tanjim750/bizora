@@ -432,6 +432,7 @@ class IssueListCreateView(BaseIntelligenceAPIView):
             rule_key=body["rule_key"],
             fact_ids=body["fact_ids"],
             snapshot_ids=body["snapshot_ids"],
+            validate_references=True,
         )
 
         return Response(

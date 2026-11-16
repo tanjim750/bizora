@@ -293,6 +293,7 @@ def create_or_update_issue(
     fact_ids: list[int] | None = None,
     snapshot_ids: list[int] | None = None,
     metadata: dict[str, Any] | None = None,
+    validate_references: bool = False,
 ) -> tuple[models.BusinessIssue, bool]:
     """Create or update a detected business issue.
 
@@ -318,6 +319,25 @@ def create_or_update_issue(
 
     now = timezone.now()
     detected = detected_at or now
+
+    if validate_references:
+        if fact_ids:
+            unique_fact_ids = set(fact_ids)
+            facts_count = models.BusinessFact.all_objects.filter(
+                business_id=business_id,
+                pk__in=unique_fact_ids,
+            ).count()
+            if facts_count != len(unique_fact_ids):
+                raise IssueValidationError("One or more fact_ids do not exist or belong to another business.")
+
+        if snapshot_ids:
+            unique_snap_ids = set(snapshot_ids)
+            snaps_count = models.MetricSnapshot.objects.filter(
+                business_id=business_id,
+                pk__in=unique_snap_ids,
+            ).count()
+            if snaps_count != len(unique_snap_ids):
+                raise IssueValidationError("One or more snapshot_ids do not exist or belong to another business.")
 
     meta = dict(metadata or {})
     if fact_ids:
@@ -357,27 +377,56 @@ def create_or_update_issue(
             active_issue.metadata = existing_meta
             active_issue.updated_at = now
             active_issue.save()
-            return active_issue, False
+            target_issue = active_issue
+            created = False
+        else:
+            # No active issue found (or previous was RESOLVED/DISMISSED): create fresh OPEN issue
+            target_issue = models.BusinessIssue.objects.create(
+                business_id=business_id,
+                issue_type=issue_type,
+                subject_entity_type=subject_entity_type,
+                subject_entity_id=subject_entity_id,
+                title=title,
+                description=description,
+                severity=severity,
+                confidence=confidence,
+                status=ISSUE_STATUS_OPEN,
+                rule_key=rule_key,
+                detected_at=detected,
+                resolved_at=None,
+                metadata=meta or None,
+                created_at=now,
+                updated_at=now,
+            )
+            created = True
 
-        # No active issue found (or previous was RESOLVED/DISMISSED): create fresh OPEN issue
-        new_issue = models.BusinessIssue.objects.create(
-            business_id=business_id,
-            issue_type=issue_type,
-            subject_entity_type=subject_entity_type,
-            subject_entity_id=subject_entity_id,
-            title=title,
-            description=description,
-            severity=severity,
-            confidence=confidence,
-            status=ISSUE_STATUS_OPEN,
-            rule_key=rule_key,
-            detected_at=detected,
-            resolved_at=None,
-            metadata=meta or None,
-            created_at=now,
-            updated_at=now,
-        )
-        return new_issue, True
+        if fact_ids:
+            for fid in sorted(set(fact_ids)):
+                if models.BusinessFact.all_objects.filter(pk=fid, business_id=business_id).exists():
+                    models.BusinessIssueEvidence.objects.get_or_create(
+                        business_issue=target_issue,
+                        business_fact_id=fid,
+                        defaults={
+                            "evidence_type": "BUSINESS_FACT",
+                            "entity_type": "BUSINESS_FACT",
+                            "entity_id": fid,
+                        },
+                    )
+
+        if snapshot_ids:
+            for sid in sorted(set(snapshot_ids)):
+                if models.MetricSnapshot.objects.filter(pk=sid, business_id=business_id).exists():
+                    models.BusinessIssueEvidence.objects.get_or_create(
+                        business_issue=target_issue,
+                        metric_snapshot_id=sid,
+                        defaults={
+                            "evidence_type": "METRIC_SNAPSHOT",
+                            "entity_type": "METRIC_SNAPSHOT",
+                            "entity_id": sid,
+                        },
+                    )
+
+        return target_issue, created
 
 
 def update_issue_lifecycle(
