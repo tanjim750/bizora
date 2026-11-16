@@ -129,10 +129,15 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
     min_confidence = None
     min_conf_raw = get_fn("min_confidence")
     if min_conf_raw is not None and min_conf_raw != "":
+        if isinstance(min_conf_raw, bool):
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
         try:
-            min_confidence = Decimal(str(min_conf_raw))
+            val = Decimal(str(min_conf_raw))
         except (InvalidOperation, TypeError, ValueError):
-            pass
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
+        if not val.is_finite() or not (Decimal("0") <= val <= Decimal("1")):
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
+        min_confidence = val
 
     status_val = get_fn("status") or None
     channel_val = get_fn("channel") or None
