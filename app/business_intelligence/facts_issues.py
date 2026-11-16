@@ -29,6 +29,7 @@ Key principles enforced:
 import datetime
 from decimal import Decimal
 from typing import Any
+import uuid
 
 from django.db import transaction
 from django.utils import timezone
@@ -127,15 +128,15 @@ def create_or_update_fact(
     statement: str,
     value: Decimal | None = None,
     value_unit: str | None = None,
-    confidence: Decimal = Decimal("1.0000"),
-    status: str = FACT_STATUS_VERIFIED,
+    confidence: Decimal | None = None,
+    status: str | None = None,
     rule_key: str | None = None,
     subject_entity_type: str | None = None,
     subject_entity_id: int | None = None,
     valid_from: datetime.datetime | None = None,
     valid_to: datetime.datetime | None = None,
     detected_at: datetime.datetime | None = None,
-    evidence: dict[str, Any] | None = None,
+    evidence: dict[str, Any] | list[dict[str, Any]] | None = None,
 ) -> tuple[models.BusinessFact, bool]:
     """Create or update a verified business fact. Idempotent and scoped."""
     if not isinstance(business_id, int) or business_id <= 0:
@@ -144,17 +145,23 @@ def create_or_update_fact(
     if not statement or not statement.strip():
         raise FactValidationError("Fact statement cannot be empty")
 
-    status = (status or FACT_STATUS_VERIFIED).upper()
+    if status is None:
+        status = FACT_STATUS_VERIFIED if evidence else FACT_STATUS_CANDIDATE
+    else:
+        status = status.upper()
+
     if status not in FACT_STATUSES:
         raise FactValidationError(f"Invalid fact status {status!r}; expected one of {sorted(FACT_STATUSES)}")
 
-    if not (Decimal("0.0000") <= confidence <= Decimal("1.0000")):
+    confidence_dec = Decimal(str(confidence)) if confidence is not None else Decimal("1.0000")
+    if not (Decimal("0.0000") <= confidence_dec <= Decimal("1.0000")):
         raise FactValidationError("confidence must be between 0 and 1")
 
     now = timezone.now()
     detected = detected_at or now
 
-    metadata = dict(evidence or {})
+    metadata = dict(evidence) if isinstance(evidence, dict) else ({"items": evidence} if evidence else {})
+    rule_key = rule_key or f"fact.manual.{uuid.uuid4().hex[:12]}"
 
     with transaction.atomic():
         # Look for existing fact matching scope, rule, type, entity, and validity
@@ -174,33 +181,64 @@ def create_or_update_fact(
             fact.statement = statement
             fact.value = value
             fact.value_unit = value_unit
-            fact.confidence = confidence
+            fact.confidence = confidence_dec
             fact.status = status
             fact.detected_at = detected
             fact.metadata = metadata
             fact.updated_at = now
             fact.save()
-            return fact, False
+            created = False
+        else:
+            fact = models.BusinessFact.all_objects.create(
+                business_id=business_id,
+                fact_type=fact_type,
+                subject_entity_type=subject_entity_type,
+                subject_entity_id=subject_entity_id,
+                statement=statement,
+                value=value,
+                value_unit=value_unit,
+                confidence=confidence_dec,
+                status=status,
+                rule_key=rule_key,
+                valid_from=valid_from,
+                valid_to=valid_to,
+                detected_at=detected,
+                metadata=metadata,
+                created_at=now,
+                updated_at=now,
+            )
+            created = True
 
-        fact = models.BusinessFact.all_objects.create(
-            business_id=business_id,
-            fact_type=fact_type,
-            subject_entity_type=subject_entity_type,
-            subject_entity_id=subject_entity_id,
-            statement=statement,
-            value=value,
-            value_unit=value_unit,
-            confidence=confidence,
-            status=status,
-            rule_key=rule_key,
-            valid_from=valid_from,
-            valid_to=valid_to,
-            detected_at=detected,
-            metadata=metadata,
-            created_at=now,
-            updated_at=now,
-        )
-        return fact, True
+        if evidence:
+            items = evidence if isinstance(evidence, list) else [evidence]
+            for item in items:
+                if isinstance(item, dict) and item:
+                    snap_id = item.get("metric_snapshot_id") or item.get("snapshot_id")
+                    if snap_id is not None and not models.MetricSnapshot.objects.filter(pk=snap_id).exists():
+                        snap_id = None
+                    rel_id = item.get("relationship_id")
+                    if rel_id is not None and not models.BusinessRelationship.objects.filter(pk=rel_id).exists():
+                        rel_id = None
+                    weight_val = None
+                    if "weight" in item and item["weight"] is not None:
+                        try:
+                            weight_val = Decimal(str(item["weight"]))
+                        except Exception:
+                            weight_val = None
+
+                    models.BusinessFactEvidence.objects.create(
+                        business_fact=fact,
+                        evidence_type=str(item.get("evidence_type") or item.get("type") or "MANUAL")[:50],
+                        entity_type=item.get("entity_type") or subject_entity_type,
+                        entity_id=item.get("entity_id") or subject_entity_id,
+                        metric_snapshot_id=snap_id,
+                        relationship_id=rel_id,
+                        description=item.get("description"),
+                        weight=weight_val,
+                        evidence_data=item,
+                    )
+
+        return fact, created
 
 
 def update_fact_lifecycle(

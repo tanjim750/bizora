@@ -147,9 +147,23 @@ class FactCreateSerializer(serializers.Serializer):
 
     statement = serializers.CharField()
     fact_type = serializers.CharField(max_length=100, required=False, default="GENERAL")
+    subject_entity_type = serializers.CharField(max_length=50, required=False, allow_null=True, default=None)
+    subject_entity_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
     value = serializers.DecimalField(max_digits=24, decimal_places=6, required=False, allow_null=True, default=None)
     value_unit = serializers.CharField(max_length=30, required=False, allow_null=True, default=None)
+    confidence = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        min_value=Decimal("0.0000"),
+        max_value=Decimal("1.0000"),
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    status = serializers.CharField(max_length=30, required=False, allow_null=True, default=None)
     rule_key = serializers.CharField(max_length=100, required=False, allow_null=True, default=None)
+    valid_from = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    valid_to = serializers.DateTimeField(required=False, allow_null=True, default=None)
     evidence = serializers.DictField(required=False, default=dict)
 
 
@@ -297,7 +311,13 @@ class FactListCreateView(BaseIntelligenceAPIView):
             statement=body["statement"],
             value=body["value"],
             value_unit=body["value_unit"],
-            rule_key=body["rule_key"],
+            rule_key=body.get("rule_key"),
+            subject_entity_type=body.get("subject_entity_type"),
+            subject_entity_id=body.get("subject_entity_id"),
+            confidence=body.get("confidence"),
+            status=body.get("status"),
+            valid_from=body.get("valid_from"),
+            valid_to=body.get("valid_to"),
             evidence=body["evidence"],
         )
 
