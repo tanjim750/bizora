@@ -318,15 +318,23 @@ def build_order_journey(
 
     # Categorize nodes
     customer_node: models.GraphNode | None = None
+    candidate_customer_nodes: list[models.GraphNode] = []
     product_nodes: list[models.GraphNode] = []
     payment_nodes: list[models.GraphNode] = []
     shipment_nodes: list[models.GraphNode] = []
     marketing_nodes: list[models.GraphNode] = []
     comm_nodes: list[models.GraphNode] = []
 
+    # Find the placing customer edge if present
+    placing_customer_node_id = None
+    for e in edges:
+        if e.target_node_id == order_node.pk and e.relationship_type == "PLACED_ORDER":
+            placing_customer_node_id = e.source_node_id
+            break
+
     for n in nodes:
         if n.entity_type == "CUSTOMER":
-            customer_node = n
+            candidate_customer_nodes.append(n)
         elif n.entity_type in ("PRODUCT", "PRODUCT_VARIANT"):
             product_nodes.append(n)
         elif n.entity_type == "PAYMENT":
@@ -337,6 +345,13 @@ def build_order_journey(
             marketing_nodes.append(n)
         elif n.entity_type in ("CONVERSATION", "MESSAGE", "CALL"):
             comm_nodes.append(n)
+
+    if placing_customer_node_id is not None:
+        customer_node = next((n for n in candidate_customer_nodes if n.pk == placing_customer_node_id), None)
+    elif order.customer_id is not None:
+        customer_node = next((n for n in candidate_customer_nodes if n.entity_id == order.customer_id), None)
+    else:
+        customer_node = candidate_customer_nodes[0] if candidate_customer_nodes else None
 
     timeline = _build_timeline_events(nodes, edges)
 
