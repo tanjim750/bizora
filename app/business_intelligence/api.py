@@ -37,8 +37,10 @@ from app.business_intelligence.anomalies import (
     AnomalyValidationError,
 )
 from app.business_intelligence.facts_issues import (
+    FactNotFoundError,
     FactScopeError,
     FactValidationError,
+    IssueNotFoundError,
     IssueScopeError,
     IssueValidationError,
     create_or_update_fact,
@@ -96,8 +98,8 @@ class BaseIntelligenceAPIView(BusinessScopedAPIView):
     def handle_exception(self, exc):
         # SEC-MED-1: Return uniform caller-facing error messages to prevent cross-tenant ID oracles
         if isinstance(exc, (FactScopeError, IssueScopeError, AnomalyScopeError)):
-            logger.warning("Tenant scope violation attempt: %s", exc)
-            return error_response("FORBIDDEN", NOT_FOUND_DETAIL, status.HTTP_403_FORBIDDEN)
+            logger.warning("Tenant scope violation or not found attempt: %s", exc)
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
         if isinstance(exc, (MetricSnapshotConflictError, RelationshipConflictError)):
             logger.warning("Conflict while running a BI operation: %s", exc)
             return error_response(

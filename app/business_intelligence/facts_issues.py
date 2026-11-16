@@ -45,6 +45,10 @@ class FactScopeError(FactError):
     """Fact does not belong to the requested business."""
 
 
+class FactNotFoundError(FactScopeError):
+    """Fact not found for the requested business."""
+
+
 class FactValidationError(FactError):
     """Fact parameters or constraints are invalid."""
 
@@ -55,6 +59,10 @@ class IssueError(Exception):
 
 class IssueScopeError(IssueError):
     """Issue does not belong to the requested business."""
+
+
+class IssueNotFoundError(IssueScopeError):
+    """Issue not found for the requested business."""
 
 
 class IssueValidationError(IssueError):
@@ -256,12 +264,9 @@ def update_fact_lifecycle(
     if new_status not in FACT_STATUSES:
         raise FactValidationError(f"Invalid fact status {new_status!r}; expected one of {sorted(FACT_STATUSES)}")
 
-    fact = models.BusinessFact.all_objects.filter(pk=fact_id).first()
+    fact = models.BusinessFact.all_objects.filter(pk=fact_id, business_id=business_id).first()
     if fact is None:
-        raise FactValidationError(f"BusinessFact #{fact_id} does not exist.")
-
-    if fact.business_id != business_id:
-        raise FactScopeError(f"BusinessFact #{fact_id} belongs to business {fact.business_id}, not {business_id}.")
+        raise FactNotFoundError(f"BusinessFact #{fact_id} does not exist.")
 
     now = timezone.now()
     fact.status = new_status
@@ -448,12 +453,9 @@ def update_issue_lifecycle(
     if new_status not in ISSUE_STATUSES:
         raise IssueValidationError(f"Invalid issue status {new_status!r}; expected one of {sorted(ISSUE_STATUSES)}")
 
-    issue = models.BusinessIssue.objects.filter(pk=issue_id).first()
+    issue = models.BusinessIssue.objects.filter(pk=issue_id, business_id=business_id).first()
     if issue is None:
-        raise IssueValidationError(f"BusinessIssue #{issue_id} does not exist.")
-
-    if issue.business_id != business_id:
-        raise IssueScopeError(f"BusinessIssue #{issue_id} belongs to business {issue.business_id}, not {business_id}.")
+        raise IssueNotFoundError(f"BusinessIssue #{issue_id} does not exist.")
 
     now = timezone.now()
     issue.status = new_status
@@ -503,9 +505,11 @@ __all__ = [
     "SEVERITY_LOW",
     "SEVERITY_MEDIUM",
     "FactError",
+    "FactNotFoundError",
     "FactScopeError",
     "FactValidationError",
     "IssueError",
+    "IssueNotFoundError",
     "IssueScopeError",
     "IssueValidationError",
     "create_or_update_fact",
