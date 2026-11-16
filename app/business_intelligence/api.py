@@ -26,6 +26,7 @@ from typing import Any
 import datetime
 import logging
 
+from django.http import Http404
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
@@ -60,9 +61,17 @@ from app.business_intelligence.relationships import (
 
 logger = logging.getLogger(__name__)
 
+MAX_BIGINT = 2**63 - 1
+
 
 class BaseIntelligenceAPIView(BusinessScopedAPIView):
     """Base class providing URL-scoped membership checks and SEC-MED-1 anti-oracle protection."""
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        for param, val in kwargs.items():
+            if isinstance(val, int) and (val < 1 or val > MAX_BIGINT):
+                raise Http404()
 
     def paginate_queryset(self, queryset):
         """Standard limit/offset pagination helper."""
@@ -102,6 +111,8 @@ class BaseIntelligenceAPIView(BusinessScopedAPIView):
                 "Invalid request parameters or unresolvable resource reference.",
                 status.HTTP_400_BAD_REQUEST,
             )
+        if isinstance(exc, OverflowError):
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
         return super().handle_exception(exc)
 
 
