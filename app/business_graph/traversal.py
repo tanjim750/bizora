@@ -315,10 +315,6 @@ def traverse_graph(
         )
 
         for edge, neighbor in neighbors:
-            if edge.pk not in seen_edge_ids:
-                seen_edge_ids.add(edge.pk)
-                edges.append(edge)
-
             if neighbor.pk not in visited_node_ids:
                 if len(nodes) >= max_nodes:
                     truncated = True
@@ -327,8 +323,18 @@ def traverse_graph(
                 nodes.append(neighbor)
                 queue.append((neighbor, curr_depth + 1))
 
+            if edge.pk not in seen_edge_ids:
+                seen_edge_ids.add(edge.pk)
+                edges.append(edge)
+
         if truncated:
             break
+
+    # Drop any edge whose endpoints were not both visited (e.g. truncated traversal)
+    edges = [
+        edge for edge in edges
+        if edge.source_node_id in visited_node_ids and edge.target_node_id in visited_node_ids
+    ]
 
     return TraversalResult(
         business_id=business_id,
