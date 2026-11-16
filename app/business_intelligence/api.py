@@ -53,6 +53,10 @@ from app.business_intelligence.metrics import (
     MetricValidationError,
     sync_metric_registry,
 )
+from app.business_intelligence.pipeline import (
+    default_period,
+    run_metric_calculators,
+)
 from app.business_intelligence.relationships import (
     RelationshipConflictError,
     RelationshipRebuildResult,
@@ -510,6 +514,21 @@ class PipelineOrchestrationView(BaseIntelligenceAPIView):
         # 2. Sync metric registry
         sync_metric_registry(business_id=biz.pk)
 
+        # 3. Compute metric snapshots for default period (BIA-03)
+        period_type, start, end = default_period()
+        run_metric_calculators(
+            business_id=biz.pk,
+            period_type=period_type,
+            period_start=start,
+            period_end=end,
+        )
+        metrics_computed = models.MetricSnapshot.objects.filter(
+            business_id=biz.pk,
+            period_type=period_type,
+            period_start=start,
+            period_end=end,
+        ).count()
+
         total_facts = models.BusinessFact.objects.filter(business_id=biz.pk).count()
         total_issues = models.BusinessIssue.objects.filter(business_id=biz.pk, status="OPEN").count()
 
@@ -524,6 +543,7 @@ class PipelineOrchestrationView(BaseIntelligenceAPIView):
             "quarantined_records": len(quarantined),
             "active_facts_count": total_facts,
             "open_issues_count": total_issues,
+            "metrics_computed": metrics_computed,
             "status": "COMPLETED",
         })
 
