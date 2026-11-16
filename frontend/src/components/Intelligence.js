@@ -42,6 +42,7 @@ import {
 } from '@/components/ui'
 import { dateTime, relativeTime } from '@/lib/format'
 import { clientApi } from '@/lib/clientApi'
+import { metricsPath, snapshotsPath, normalizeList } from '@/lib/intelligence/metrics'
 
 // Sample data for demo mode (SIMULATED)
 const SAMPLE_FACTS = [
@@ -139,6 +140,56 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
   const [graphData, setGraphData] = useState(null)
   const [loadingGraph, setLoadingGraph] = useState(false)
   const [graphError, setGraphError] = useState('')
+
+  // Metrics Tab State (FE-W1)
+  const [metricsList, setMetricsList] = useState([])
+  const [loadingMetrics, setLoadingMetrics] = useState(false)
+  const [metricsError, setMetricsError] = useState('')
+  const [selectedMetric, setSelectedMetric] = useState(null)
+  const [snapshotsList, setSnapshotsList] = useState([])
+  const [loadingSnapshots, setLoadingSnapshots] = useState(false)
+  const [snapshotsError, setSnapshotsError] = useState('')
+
+  useEffect(() => {
+    if (activeTab !== 'metrics' || !businessId) return
+    let active = true
+    setLoadingMetrics(true)
+    setMetricsError('')
+    clientApi(metricsPath(businessId, { limit: 100, offset: 0 }))
+      .then((data) => {
+        if (!active) return
+        const norm = normalizeList(data)
+        setMetricsList(norm.results)
+      })
+      .catch((err) => {
+        if (!active) return
+        setMetricsError(err?.detail || err?.message || 'Failed to load metrics.')
+      })
+      .finally(() => {
+        if (active) setLoadingMetrics(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [activeTab, businessId])
+
+  const handleSelectMetric = (metric) => {
+    setSelectedMetric(metric)
+    setLoadingSnapshots(true)
+    setSnapshotsError('')
+    setSnapshotsList([])
+    clientApi(snapshotsPath(businessId, metric.key, { limit: 50, offset: 0 }))
+      .then((data) => {
+        const norm = normalizeList(data)
+        setSnapshotsList(norm.results)
+      })
+      .catch((err) => {
+        setSnapshotsError(err?.detail || err?.message || 'Failed to load metric snapshots.')
+      })
+      .finally(() => {
+        setLoadingSnapshots(false)
+      })
+  }
 
   const handleInspectGraph = async (e) => {
     if (e) e.preventDefault()
@@ -512,10 +563,178 @@ export default function Intelligence({ business = {}, businessId, activeTab = 'f
       {/* TAB 3: METRICS & ANALYSIS                                      */}
       {/* ============================================================== */}
       {activeTab === 'metrics' && (
-        <UnavailableState
-          owner="Business Intelligence"
-          reason="Analytical metrics registry and multidimensional aggregation engine are unmounted."
-        />
+        <div className="stack-lg">
+          <div aria-live="polite" className="sr-only">
+            {loadingMetrics ? 'Loading metrics registry...' : ''}
+            {loadingSnapshots ? 'Loading metric observations...' : ''}
+          </div>
+
+          {metricsError && (
+            <Banner variant="danger">
+              <strong>Failed to load metrics:</strong> {metricsError}
+            </Banner>
+          )}
+
+          {loadingMetrics ? (
+            <div className="surface card-padding text-muted">Loading metrics registry...</div>
+          ) : metricsList.length === 0 ? (
+            <EmptyState
+              icon={BarChart2}
+              title="No metrics yet"
+              description="No metrics yet. A manager can run the data pipeline on the Pipeline tab."
+            />
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: 'var(--space-4)',
+              }}
+            >
+              <section className="surface card-padding stack-sm" aria-labelledby="metrics-title">
+                <div className="section-header">
+                  <div>
+                    <h2 id="metrics-title" className="section-title">
+                      Metrics Registry
+                    </h2>
+                    <p className="text-secondary text-caption">
+                      Verified KPI metrics and calculated observation definitions.
+                    </p>
+                  </div>
+                  <span className="count-chip font-mono">{metricsList.length}</span>
+                </div>
+
+                <DataTable
+                  columns={[
+                    {
+                      key: 'name',
+                      label: 'Metric Name',
+                      render: (row) => <div className="font-semibold text-body">{row.name || row.key}</div>,
+                    },
+                    {
+                      key: 'key',
+                      label: 'Key',
+                      render: (row) => (
+                        <span className="font-mono text-caption text-secondary">{row.key}</span>
+                      ),
+                    },
+                    {
+                      key: 'category',
+                      label: 'Category',
+                      render: (row) => <span className="badge badge-secondary">{row.category}</span>,
+                    },
+                    {
+                      key: 'unit',
+                      label: 'Unit',
+                      render: (row) => <span className="font-mono text-caption">{row.unit || '—'}</span>,
+                    },
+                    {
+                      key: 'value_type',
+                      label: 'Type',
+                      render: (row) => <span className="text-caption text-muted">{row.value_type}</span>,
+                    },
+                    {
+                      key: 'actions',
+                      label: 'Snapshots',
+                      render: (row) => (
+                        <Button
+                          variant={selectedMetric?.key === row.key ? 'primary' : 'secondary'}
+                          size="sm"
+                          onClick={() => handleSelectMetric(row)}
+                        >
+                          View
+                        </Button>
+                      ),
+                    },
+                  ]}
+                  data={metricsList}
+                  keyExtractor={(row) => row.key || row.id}
+                />
+              </section>
+
+              <section className="surface card-padding stack-sm" aria-labelledby="snapshots-title">
+                <div className="section-header">
+                  <div>
+                    <h2 id="snapshots-title" className="section-title">
+                      {selectedMetric
+                        ? `Snapshots: ${selectedMetric.name || selectedMetric.key}`
+                        : 'Metric Snapshots'}
+                    </h2>
+                    <p className="text-secondary text-caption">
+                      {selectedMetric
+                        ? `Observations recorded for ${selectedMetric.key}`
+                        : 'Select a metric from the registry to inspect calculated snapshots.'}
+                    </p>
+                  </div>
+                  {selectedMetric && <span className="count-chip font-mono">{snapshotsList.length}</span>}
+                </div>
+
+                {snapshotsError && (
+                  <Banner variant="danger">
+                    <strong>Failed to load snapshots:</strong> {snapshotsError}
+                  </Banner>
+                )}
+
+                {!selectedMetric ? (
+                  <div className="empty-state-card text-muted">
+                    Select a metric from the list to view its observations.
+                  </div>
+                ) : loadingSnapshots ? (
+                  <div className="text-muted">Loading snapshots...</div>
+                ) : snapshotsList.length === 0 ? (
+                  <div className="empty-state-card text-muted">Not computed for this period.</div>
+                ) : (
+                  <DataTable
+                    columns={[
+                      {
+                        key: 'value',
+                        label: 'Value',
+                        render: (row) => (
+                          <span className="font-mono font-semibold text-body">
+                            {row.value != null ? String(row.value) : '—'}{' '}
+                            {selectedMetric.unit ? (
+                              <span className="text-muted font-normal text-caption">
+                                {selectedMetric.unit}
+                              </span>
+                            ) : null}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'period_type',
+                        label: 'Period',
+                        render: (row) => <span className="badge badge-secondary">{row.period_type}</span>,
+                      },
+                      {
+                        key: 'window',
+                        label: 'Time Window',
+                        render: (row) => (
+                          <span className="font-mono text-caption text-secondary">
+                            {row.period_start ? dateTime(row.period_start, timezone) : '—'} to{' '}
+                            {row.period_end ? dateTime(row.period_end, timezone) : '—'}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'dimension',
+                        label: 'Dimension',
+                        render: (row) => (
+                          <span className="font-mono text-caption text-muted">
+                            {row.dimension_type
+                              ? `${row.dimension_type}: ${row.dimension_value || 'all'}`
+                              : '—'}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    data={snapshotsList}
+                    keyExtractor={(row, idx) => row.id || idx}
+                  />
+                )}
+              </section>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ============================================================== */}
