@@ -35,10 +35,11 @@ class PipelineFailureTests(HardeningFixture):
     def test_rolled_back_reconciliation_is_a_failure_with_its_reason(self):
         with patch("app.business_intelligence.api.rebuild_relationships", side_effect=RelationshipValidationError("bad row 7")):
             response = self.owner.post(self.url("pipeline/run/"), {})
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 409)
         body = response.json()
-        self.assertEqual(body["code"], "PIPELINE_FAILED")
-        self.assertIn("bad row 7", body["detail"])
+        self.assertEqual(body["code"], "RELATIONSHIP_RECONCILIATION_FAILED")
+        self.assertEqual(body["detail"], "Relationship reconciliation failed.")
+        self.assertNotIn("bad row 7", body["detail"])
         self.assertNotIn("status", body)
 
     def test_conflicts_are_409_not_500(self):

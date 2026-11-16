@@ -504,11 +504,12 @@ class PipelineOrchestrationView(BaseIntelligenceAPIView):
         # 1. Reconcile relationships with quarantine protection (SEC-HIGH-1)
         rel_result, quarantined = reconcile_relationships_with_quarantine(business_id=biz.pk)
         if quarantined:
-            # BI-04: the rebuild was rolled back as a whole; report the failure and its reason, never "COMPLETED".
+            # BIA-11: Answer 409 with generic body, log specifics on server only
+            logger.error("Relationship reconciliation failed for business %s: %s", biz.pk, quarantined[0]["error"])
             return error_response(
-                "PIPELINE_FAILED",
-                f"Relationship reconciliation was rolled back: {quarantined[0]['error']}",
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "RELATIONSHIP_RECONCILIATION_FAILED",
+                "Relationship reconciliation failed.",
+                status.HTTP_409_CONFLICT,
             )
 
         # 2. Sync metric registry
