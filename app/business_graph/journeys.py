@@ -129,7 +129,20 @@ class CampaignJourney:
 
 def _extract_node_timestamp(node: models.GraphNode) -> datetime.datetime | None:
     """Determine the authoritative activity timestamp for chronological timeline ordering."""
-    return node.first_seen_at or node.created_at
+    if node.first_seen_at:
+        return node.first_seen_at
+    props = node.properties or {}
+    for key in ("occurred_at", "sent_at", "paid_at", "converted_at", "started_at", "ordered_at", "shipped_at"):
+        val = props.get(key)
+        if val:
+            if isinstance(val, datetime.datetime):
+                return val
+            if isinstance(val, str):
+                try:
+                    return datetime.datetime.fromisoformat(val)
+                except ValueError:
+                    pass
+    return node.created_at
 
 
 def _build_timeline_events(

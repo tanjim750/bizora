@@ -218,17 +218,56 @@ def _build_node_properties(entity_type: str, entity: Model) -> dict[str, Any]:
     return props
 
 
-def _get_entity_timestamps(entity: Model) -> tuple[datetime.datetime | None, datetime.datetime | None]:
-    """Extract first_seen_at and last_seen_at for graph nodes (BG §1 Node Activity Tracking)."""
-    created = getattr(entity, "created_at", None)
-    started = getattr(entity, "started_at", None)
-    ordered = getattr(entity, "ordered_at", None)
-    first_seen = started or ordered or created
+# Mapping of canonical entity types to their authoritative first_seen and last_seen timestamp fields (BG §1, §5)
+ENTITY_TIMESTAMP_FIELDS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "WEBSITE_EVENT": (("occurred_at", "created_at"), ("occurred_at", "created_at")),
+    "WEBSITE_SESSION": (("started_at", "created_at"), ("ended_at", "last_activity_at", "started_at", "created_at")),
+    "WEBSITE_VISITOR": (("first_seen_at", "created_at"), ("last_seen_at", "first_seen_at", "updated_at", "created_at")),
+    "ORDER": (("ordered_at", "created_at"), ("delivered_at", "shipped_at", "paid_at", "ordered_at", "updated_at", "created_at")),
+    "PAYMENT": (("paid_at", "created_at"), ("paid_at", "updated_at", "created_at")),
+    "SHIPMENT": (("shipped_at", "created_at"), ("delivered_at", "shipped_at", "updated_at", "created_at")),
+    "CAMPAIGN": (("started_at", "created_at"), ("ended_at", "started_at", "updated_at", "created_at")),
+    "CAMPAIGN_CONVERSION": (("converted_at", "created_at"), ("converted_at", "created_at")),
+    "CONVERSATION": (("started_at", "created_at"), ("last_message_at", "resolved_at", "started_at", "updated_at", "created_at")),
+    "MESSAGE": (("sent_at", "created_at"), ("sent_at", "created_at")),
+    "CALL": (("started_at", "submitted_at", "created_at"), ("ended_at", "submitted_at", "started_at", "updated_at", "created_at")),
+    "CUSTOMER": (("created_at",), ("updated_at", "created_at")),
+    "PRODUCT": (("created_at",), ("updated_at", "created_at")),
+    "PRODUCT_VARIANT": (("created_at",), ("updated_at", "created_at")),
+}
 
-    updated = getattr(entity, "updated_at", None)
-    last_msg = getattr(entity, "last_message_at", None)
-    resolved = getattr(entity, "resolved_at", None)
-    last_seen = last_msg or resolved or updated or first_seen
+
+def _get_entity_timestamps(entity: Model, entity_type: str | None = None) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+    """Extract first_seen_at and last_seen_at for graph nodes (BG §1 Node Activity Tracking)."""
+    if entity_type and entity_type in ENTITY_TIMESTAMP_FIELDS:
+        first_fields, last_fields = ENTITY_TIMESTAMP_FIELDS[entity_type]
+        first_seen = next((getattr(entity, f, None) for f in first_fields if getattr(entity, f, None) is not None), None)
+        last_seen = next((getattr(entity, f, None) for f in last_fields if getattr(entity, f, None) is not None), None)
+        return first_seen, last_seen or first_seen
+
+    first_seen = (
+        getattr(entity, "occurred_at", None)
+        or getattr(entity, "sent_at", None)
+        or getattr(entity, "paid_at", None)
+        or getattr(entity, "converted_at", None)
+        or getattr(entity, "first_seen_at", None)
+        or getattr(entity, "started_at", None)
+        or getattr(entity, "submitted_at", None)
+        or getattr(entity, "ordered_at", None)
+        or getattr(entity, "shipped_at", None)
+        or getattr(entity, "created_at", None)
+    )
+
+    last_seen = (
+        getattr(entity, "ended_at", None)
+        or getattr(entity, "last_activity_at", None)
+        or getattr(entity, "last_seen_at", None)
+        or getattr(entity, "last_message_at", None)
+        or getattr(entity, "resolved_at", None)
+        or getattr(entity, "delivered_at", None)
+        or getattr(entity, "updated_at", None)
+        or first_seen
+    )
 
     return first_seen, last_seen
 
@@ -262,7 +301,7 @@ def project_entity_node(
 
     label = _build_node_label(entity_type, entity)
     properties = _build_node_properties(entity_type, entity)
-    first_seen, last_seen = _get_entity_timestamps(entity)
+    first_seen, last_seen = _get_entity_timestamps(entity, entity_type)
     now = timezone.now()
 
     canonical_identity_id = getattr(entity, "canonical_identity_id", None)
