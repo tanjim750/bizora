@@ -1,13 +1,28 @@
 const BACKEND_ORIGIN = process.env.DJANGO_API_ORIGIN || 'http://127.0.0.1:8000'
 const ALLOWED_ROOTS = new Set(['frontend', 'businesses', 'actions'])
 
+function isPathValid(path) {
+  if (!path?.length || !ALLOWED_ROOTS.has(path[0])) {
+    return false
+  }
+  const isMetricSnapshotsPath =
+    path.length === 6 &&
+    path[0] === 'businesses' &&
+    /^\d+$/.test(path[1]) &&
+    path[2] === 'intelligence' &&
+    path[3] === 'metrics' &&
+    path[5] === 'snapshots'
+
+  if (isMetricSnapshotsPath) {
+    return /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/.test(path[4])
+  }
+
+  return path.every((segment) => /^[a-zA-Z0-9_-]+$/.test(segment))
+}
+
 async function proxy(request, context) {
   const { path } = await context.params
-  if (
-    !path?.length ||
-    !ALLOWED_ROOTS.has(path[0]) ||
-    path.some((segment) => !/^[a-zA-Z0-9_-]+$/.test(segment))
-  ) {
+  if (!isPathValid(path)) {
     return Response.json({ detail: 'Unknown API route.' }, { status: 404 })
   }
   if (request.method !== 'GET') {
