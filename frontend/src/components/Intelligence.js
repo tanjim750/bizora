@@ -58,6 +58,13 @@ import {
   issuePatchBody,
   confidencePercent,
 } from '@/lib/intelligence/facts'
+import {
+  ENTITY_KINDS,
+  REBUILD_BODY,
+  traversalPath,
+  buildGraphView,
+  graphErrorKind,
+} from '@/lib/intelligence/graph'
 
 // Sample data for demo mode (SIMULATED)
 const SAMPLE_FACTS = [
@@ -180,12 +187,14 @@ export default function Intelligence({
   const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState(null)
 
-  // One-Hop Graph Context state (D22)
+  // Context Graph state (FE-W4)
   const [graphKind, setGraphKind] = useState('customer')
   const [graphEntityId, setGraphEntityId] = useState('1')
   const [graphData, setGraphData] = useState(null)
   const [loadingGraph, setLoadingGraph] = useState(false)
   const [graphError, setGraphError] = useState('')
+  const [graphErrorKindVal, setGraphErrorKindVal] = useState('')
+  const [rebuildingGraphInTab, setRebuildingGraphInTab] = useState(false)
 
   // Metrics Tab State (FE-W1)
   const [metricsList, setMetricsList] = useState([])
@@ -284,21 +293,57 @@ export default function Intelligence({
 
   const handleInspectGraph = async (e) => {
     if (e) e.preventDefault()
-    if (!graphEntityId.trim()) return
+    const trimmed = graphEntityId ? String(graphEntityId).trim() : ''
+    let idBig
+    try {
+      idBig = BigInt(trimmed)
+    } catch {
+      setGraphError('Please enter a valid entity ID between 1 and 9223372036854775807.')
+      return
+    }
+    if (idBig <= 0n || idBig > 9223372036854775807n) {
+      setGraphError('Please enter a valid entity ID between 1 and 9223372036854775807.')
+      return
+    }
 
     setLoadingGraph(true)
     setGraphError('')
+    setGraphErrorKindVal('')
     setGraphData(null)
 
     try {
-      const data = await clientApi(
-        `businesses/${businessId}/graph-context/${graphKind}/${graphEntityId.trim()}`,
-      )
-      setGraphData(data)
+      // Calls businesses/<id>/graph/traversal/ via traversalPath
+      const path = traversalPath(businessId, graphKind, trimmed)
+      const data = await clientApi(path)
+      const view = buildGraphView(data)
+      setGraphData(view)
     } catch (err) {
-      setGraphError(err.detail || err.message || 'One-hop context graph is not initialized for this entity.')
+      const kind = graphErrorKind(err)
+      setGraphErrorKindVal(kind)
+      if (kind === 'not_built') {
+        setGraphError('The business graph has not been built yet.')
+      } else if (kind === 'not_found') {
+        setGraphError('This entity is not in the graph. Rebuild the graph if it is new.')
+      } else {
+        setGraphError(err.detail || err.message || 'Failed to inspect graph.')
+      }
     } finally {
       setLoadingGraph(false)
+    }
+  }
+
+  const handleRebuildGraphInTab = async () => {
+    setRebuildingGraphInTab(true)
+    try {
+      await clientApi(GRAPH_REBUILD_PATH(businessId), {
+        method: 'POST',
+        body: JSON.stringify(REBUILD_BODY),
+      })
+      await handleInspectGraph()
+    } catch (err) {
+      setGraphError(err.detail || err.message || 'Failed to rebuild graph.')
+    } finally {
+      setRebuildingGraphInTab(false)
     }
   }
 
@@ -620,12 +665,12 @@ export default function Intelligence({
               </div>
 
               <Button type="submit" variant="primary" size="sm" icon={Search} loading={loadingGraph}>
-                Inspect One-Hop Context
+                Inspect Graph
               </Button>
             </div>
 
             <span className="font-mono text-caption text-muted">
-              Scope: <strong>PERSISTED_ONE_HOP</strong> (Fixed 1-hop depth)
+              Scope: <strong>Depth 2, up to 100 nodes</strong>
             </span>
           </form>
 
@@ -664,15 +709,35 @@ export default function Intelligence({
 
           {/* Graph Visualization / Node List */}
           <div className="surface card-padding stack-sm">
-            <div className="section-header">
+            <div
+              className="section-header"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 'var(--space-2)',
+              }}
+            >
               <div>
                 <h3 className="section-title">
-                  Persisted Topology for {graphKind.toUpperCase()} #{graphEntityId}
+                  Topology for {graphKind.toUpperCase()} #{graphEntityId}
                 </h3>
                 <p className="section-desc">
-                  Persisted one-hop node relationships connecting authoritative entities.
+                  Graph nodes and relationships connecting authoritative entities.
                 </p>
               </div>
+
+              {graphData && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  {graphData.truncated && <span className="badge badge-warning">Truncated</span>}
+                  {graphData.hiddenEdges > 0 && (
+                    <span className="badge badge-neutral">
+                      {graphData.hiddenEdges} {graphData.hiddenEdges === 1 ? 'edge hidden' : 'edges hidden'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {loadingGraph ? (
@@ -680,70 +745,120 @@ export default function Intelligence({
                 Loading graph topology...
               </div>
             ) : graphError ? (
-              <UnavailableState owner="Business Graph" reason={graphError} />
-            ) : graphData?.nodes?.results?.length > 0 ? (
-              <div className="graph-node-list">
-                {graphData.nodes.results.map((node) => {
-                  const isCircle = node.entity_type === 'CUSTOMER'
-                  const isDiamond = node.entity_type === 'ORDER'
-                  const isSquare = node.entity_type === 'PRODUCT'
-                  const symbolClass = isCircle
-                    ? 'circle'
-                    : isDiamond
-                      ? 'diamond'
-                      : isSquare
-                        ? 'square'
-                        : 'hexagon'
+              <div className="stack-md">
+                <UnavailableState owner="Business Graph" reason={graphError} />
+                {graphErrorKindVal === 'not_built' && canManage && (
+                  <div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleRebuildGraphInTab}
+                      loading={rebuildingGraphInTab}
+                    >
+                      Rebuild graph
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : graphData?.nodes?.length > 0 ? (
+              <div className="stack-md">
+                <div className="graph-node-list">
+                  {graphData.nodes.map((node) => {
+                    const isCircle = node.entity_type === 'CUSTOMER'
+                    const isDiamond = node.entity_type === 'ORDER'
+                    const isSquare = node.entity_type === 'PRODUCT'
+                    const symbolClass = isCircle
+                      ? 'circle'
+                      : isDiamond
+                        ? 'diamond'
+                        : isSquare
+                          ? 'square'
+                          : 'hexagon'
 
-                  return (
-                    <div key={node.id} className="graph-node-item">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                        <div className={`graph-legend-symbol ${symbolClass}`} aria-hidden="true">
-                          {isCircle ? (
-                            <User size={12} />
-                          ) : isDiamond ? (
-                            <ShoppingBag size={10} />
-                          ) : isSquare ? (
-                            <Package size={12} />
-                          ) : (
-                            <Shield size={12} />
+                    return (
+                      <div key={node.id} className="graph-node-item">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                          <div className={`graph-legend-symbol ${symbolClass}`} aria-hidden="true">
+                            {isCircle ? (
+                              <User size={12} />
+                            ) : isDiamond ? (
+                              <ShoppingBag size={10} />
+                            ) : isSquare ? (
+                              <Package size={12} />
+                            ) : (
+                              <Shield size={12} />
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="font-semibold text-body">
+                              {node.label || `${node.entity_type} #${node.entity_id}`}
+                            </span>
+                            <span
+                              className="text-caption font-mono text-muted"
+                              style={{ marginLeft: 'var(--space-2)' }}
+                            >
+                              [{node.entity_type}]
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="graph-edge-tag">Node #{node.id}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {graphData.edges?.length > 0 && (
+                  <div className="stack-xs" style={{ marginTop: 'var(--space-3)' }}>
+                    <h4
+                      className="font-semibold text-caption text-secondary"
+                      style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                    >
+                      Graph Relationships ({graphData.edges.length})
+                    </h4>
+                    <div className="stack-xs">
+                      {graphData.edges.map((edge) => (
+                        <div
+                          key={edge.id}
+                          className="surface-secondary"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: 'var(--space-2) var(--space-3)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-caption)',
+                            fontFamily: 'var(--font-mono)',
+                          }}
+                        >
+                          <span>
+                            <strong>{edge.sourceLabel}</strong>
+                            {' -- '}
+                            <span className="text-secondary">{edge.relationship_type}</span>
+                            {' --> '}
+                            <strong>{edge.targetLabel}</strong>
+                          </span>
+                          {typeof edge.confidence === 'number' && (
+                            <span className="text-muted text-caption">
+                              {Math.round(edge.confidence * 100)}%
+                            </span>
                           )}
                         </div>
-
-                        <div>
-                          <span className="font-semibold text-body">
-                            {node.label || `${node.entity_type} #${node.entity_id}`}
-                          </span>
-                          <span
-                            className="text-caption font-mono text-muted"
-                            style={{ marginLeft: 'var(--space-2)' }}
-                          >
-                            [{node.entity_type}]
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className="graph-edge-tag">One-Hop Connected</span>
+                      ))}
                     </div>
-                  )
-                })}
+                  </div>
+                )}
               </div>
             ) : (
               <UnavailableState
                 owner="Business Graph"
-                reason="Persisted one-hop graph context is not yet mapped for this entity."
+                reason="Graph context is not yet mapped for this entity."
               />
             )}
           </div>
 
-          {/* Unmounted Multi-Hop Notice per spec */}
-          <div className="stack-sm">
-            <h4 className="section-title">Multi-Hop Traversal &amp; Deep Journeys</h4>
-            <UnavailableState
-              owner="Business Graph"
-              reason="Multi-hop graph traversal, cross-domain paths, and historical snapshots are unmounted."
-            />
-          </div>
+          {/* Customer and Order Journeys placeholder (FE-W5) */}
         </div>
       )}
 

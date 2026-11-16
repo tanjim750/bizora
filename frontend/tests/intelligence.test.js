@@ -41,11 +41,8 @@ test('intelligence graph legend differentiates by shape and icon, not color alon
   assert.ok(content.includes('Package'), 'Package icon missing')
   assert.ok(content.includes('Shield'), 'Shield icon missing')
 
-  // One-hop graph context endpoint
-  assert.ok(
-    content.includes('graph-context/${graphKind}/${graphEntityId.trim()}'),
-    'D22 graph-context endpoint missing',
-  )
+  // Multi-hop graph traversal endpoint
+  assert.ok(content.includes('graph/traversal'), 'Graph traversal endpoint missing')
 
   // Sample data toggle
   assert.ok(content.includes('Sample data (SIMULATED)'), 'Sample data switch missing')
