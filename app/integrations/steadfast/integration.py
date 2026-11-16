@@ -1,14 +1,23 @@
 """Bizora persistence boundary for confirmed Steadfast consignments."""
+from datetime import timedelta
+from urllib.parse import urlsplit
+from uuid import uuid4
+
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import NotFound, ValidationError
-from urllib.parse import urlsplit
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 
 from app.configuration.integrations import CredentialUnavailable, resolve_credentials
 from app.models import IntegrationConnection, Order, Shipment, ShipmentEvent
+from app.observability.models import OperationAttempt
 
-from .client import SteadfastClient
-from .services import SteadfastService
+from .client import SteadfastClient, SteadfastError
+from .services import OrderRequest, SteadfastService
+
+
+class SubmissionPending(APIException):
+    status_code = 409
+    default_detail = 'Steadfast submission outcome is uncertain. Check the invoice with Steadfast before retrying.'
 
 
 def service_for(connection, *, operation='read', transport=None, sleep=None):
@@ -69,37 +78,65 @@ def status_name(provider_status):
     return 'SUBMITTED' if value in {'', 'pending', 'created', 'submitted', 'in_review'} else 'PENDING'
 
 
-@transaction.atomic
 def submit_order(connection, order_id, details, *, service=None):
-    """Submit one Bizora order and save the confirmed consignment once."""
+    """Record the attempt before contacting Steadfast, then save a confirmed consignment."""
     if isinstance(order_id, bool) or not isinstance(order_id, int) or order_id <= 0:
         raise ValidationError({'order_id': 'A positive integer is required.'})
-    order = Order.objects.select_for_update().filter(pk=order_id, business_id=connection.business_id).first()
-    if order is None:
-        raise NotFound('Order not found.')
-    existing = Shipment.objects.filter(order=order, integration_connection=connection).first()
-    if existing:
-        return existing, False
-    if order.currency != 'BDT':
-        raise ValidationError('Steadfast shipment COD must be in BDT.')
-    invoice = f'BIZORA-{order.pk}'
-    payload = {'invoice': invoice, 'recipient_name': details.get('recipient_name'),
-               'recipient_phone': details.get('recipient_phone'), 'recipient_address': details.get('recipient_address'),
-               'cod_amount': details.get('cod_amount', str(order.total_amount))}
-    payload.update({key: details[key] for key in ('note', 'alternative_phone', 'recipient_email', 'item_description', 'total_lot', 'delivery_type') if key in details})
-    result = (service or service_for(connection, operation='write')).create_order(payload)
+    with transaction.atomic():
+        order = Order.objects.select_for_update().filter(pk=order_id, business_id=connection.business_id).first()
+        if order is None:
+            raise NotFound('Order not found.')
+        existing = Shipment.objects.filter(order=order, integration_connection=connection).first()
+        if existing:
+            return existing, False
+        if order.currency != 'BDT':
+            raise ValidationError('Steadfast shipment COD must be in BDT.')
+        invoice = f'BIZORA-{order.pk}'
+        payload = {'invoice': invoice, 'recipient_name': details.get('recipient_name'),
+                   'recipient_phone': details.get('recipient_phone'), 'recipient_address': details.get('recipient_address'),
+                   'cod_amount': details.get('cod_amount', str(order.total_amount))}
+        payload.update({key: details[key] for key in ('note', 'alternative_phone', 'recipient_email', 'item_description', 'total_lot', 'delivery_type') if key in details})
+        client = service or service_for(connection, operation='write')
+        validator = OrderRequest(data=payload)
+        validator.is_valid(raise_exception=True)
+        pending = OperationAttempt.objects.filter(connection=connection, action='CREATE_SHIPMENT',
+                                                  target_id=order.pk, status='RUNNING').first()
+        if pending:
+            if (details.get('confirmed_absent') is not True or
+                    (pending.result.get('outcome') != 'UNKNOWN' and
+                     timezone.now() - pending.created_at < timedelta(seconds=60))):
+                raise SubmissionPending(f'Check invoice {invoice} with Steadfast before retrying.')
+            pending.status = 'FAILED'
+            pending.completed_at = timezone.now()
+            pending.result = {'invoice': invoice, 'resolution': 'confirmed_absent_by_manager'}
+            pending.save(update_fields=['status', 'completed_at', 'result'])
+        attempt = OperationAttempt.objects.create(
+            business_id=connection.business_id, connection=connection,
+            key=f'steadfast:create:{order.pk}:{uuid4().hex}', action='CREATE_SHIPMENT',
+            target_id=order.pk, status='RUNNING', result={'invoice': invoice, 'outcome': 'IN_FLIGHT'})
+    try:
+        result = client.create_order(payload)
+    except SteadfastError:
+        attempt.result = {'invoice': invoice, 'outcome': 'UNKNOWN'}
+        attempt.save(update_fields=['result'])
+        raise
     consignment = result['consignment']
-    shipment = Shipment.objects.create(
-        business_id=connection.business_id, order=order, customer=order.customer,
-        integration_connection=connection, external_shipment_id=str(consignment['consignment_id']),
-        tracking_code=consignment['tracking_code'], provider='Steadfast',
-        status=status_name(consignment.get('status', '')), cod_amount=payload['cod_amount'],
-        recipient_name=payload['recipient_name'], recipient_phone=payload['recipient_phone'],
-        delivery_address=payload['recipient_address'], submitted_at=timezone.now(),
-        source_metadata={'invoice': invoice, 'tracking_link': consignment.get('tracking_link')},
-    )
-    ShipmentEvent.objects.create(shipment=shipment, event_type='SUBMITTED', status=shipment.status,
-                                 description='Submitted to Steadfast', occurred_at=shipment.submitted_at)
+    with transaction.atomic():
+        shipment = Shipment.objects.create(
+            business_id=connection.business_id, order=order, customer=order.customer,
+            integration_connection=connection, external_shipment_id=str(consignment['consignment_id']),
+            tracking_code=consignment['tracking_code'], provider='Steadfast',
+            status=status_name(consignment.get('status', '')), cod_amount=payload['cod_amount'],
+            recipient_name=payload['recipient_name'], recipient_phone=payload['recipient_phone'],
+            delivery_address=payload['recipient_address'], submitted_at=timezone.now(),
+            source_metadata={'invoice': invoice, 'tracking_link': consignment.get('tracking_link')},
+        )
+        ShipmentEvent.objects.create(shipment=shipment, event_type='SUBMITTED', status=shipment.status,
+                                     description='Submitted to Steadfast', occurred_at=shipment.submitted_at)
+        attempt.status = 'SUCCEEDED'
+        attempt.completed_at = timezone.now()
+        attempt.result = {'invoice': invoice, 'shipment_id': shipment.pk}
+        attempt.save(update_fields=['status', 'completed_at', 'result'])
     return shipment, True
 
 

@@ -75,7 +75,7 @@ class SteadfastService:
 
     def create_order(self, order):
         payload = _validated(OrderRequest, order)
-        data = self.client.post('/create_order', payload, retry=True)
+        data = self.client.post('/create_order', payload, retry=False)
         consignment = data.get('consignment') if isinstance(data, dict) else None
         if (not isinstance(data, dict) or data.get('status') != 200
                 or not isinstance(data.get('message'), str) or not isinstance(consignment, dict)
@@ -91,7 +91,7 @@ class SteadfastService:
             raise serializers.ValidationError({'data': 'Provide between 1 and 500 orders.'})
         payload = {'data': [_validated(OrderRequest, order) for order in orders]}
         endpoint = '/create_order/bulk-order/extended' if extended else '/create_order/bulk-order'
-        return self.client.post(endpoint, payload, retry=True)
+        return self.client.post(endpoint, payload, retry=False)
 
     def status_by_consignment_id(self, consignment_id, *, with_return=False):
         if isinstance(consignment_id, bool) or not isinstance(consignment_id, int) or consignment_id <= 0:

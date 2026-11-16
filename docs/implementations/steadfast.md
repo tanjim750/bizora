@@ -6,11 +6,11 @@ Migration `0011_steadfast_source` registers the `steadfast` courier provider. Co
 
 Routes under `/api/businesses/<business_id>/integrations/steadfast/<connection_id>/`:
 
-- `POST shipments/`: authenticated manager operation with `order_id`, `recipient_name`, `recipient_phone`, and `recipient_address`; optional `cod_amount` and supported Steadfast order fields. The order's BDT total is used for COD when omitted. Returns the saved shipment and whether it was newly created.
+- `POST shipments/`: authenticated manager operation with `order_id`, `recipient_name`, `recipient_phone`, and `recipient_address`; optional `cod_amount` and supported Steadfast order fields. The order's BDT total is used for COD when omitted. Returns the saved shipment and whether it was newly created. After an uncertain submission, the route returns 409 and names the invoice. A manager may resend with `confirmed_absent: true` only after verifying that invoice is absent in Steadfast.
 - `POST shipments/<shipment_id>/refresh/`: authenticated manager operation; fetches the courier status and records a change event.
 - `POST webhook/`: validates the configured signature or bearer token and updates an existing shipment matched within the connection. The endpoint never creates an order or shipment from an incoming webhook.
 
-The external invoice is deterministic (`BIZORA-<order_id>`). Submission locks the order and returns an existing shipment for the same connection to avoid duplicate local records. The PHP SDK retries order creation on transient errors; this port does likewise with that deterministic invoice. If the courier accepts a request but the response is lost, confirm the invoice with Steadfast before manually resubmitting.
+The external invoice is deterministic (`BIZORA-<order_id>`). Before sending, Bizora records an operation attempt for the order and connection. A confirmed response creates the shipment and marks the attempt successful. If the response is lost or the local save fails, the pending attempt blocks another submission until a manager checks the invoice in Steadfast. Courier order creation is sent once per attempt; reads may still be retried.
 
 The Python service can be used directly from trusted server code via `service_for(connection)`. The HTTP client accepts an injected transport and sleep callback for deterministic tests. It does not follow redirects, rejects absolute endpoints, bounds timeout and retries, and keeps credential values out of persisted records.
 Live Bizora connections accept only the official `portal.packzy.com` HTTPS host as their provider base URL.

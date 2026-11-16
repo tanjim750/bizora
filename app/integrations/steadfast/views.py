@@ -61,6 +61,8 @@ def webhook(request, business_id, connection_id):
         webhook_config = config.get('webhooks') or {}
         if not webhook_config.get('enabled'):
             return JsonResponse({'detail': 'Webhook unavailable.'}, status=404)
+        if 'scopes' in config and 'READ_SHIPMENTS' not in config['scopes']:
+            return JsonResponse({'detail': 'Shipment access is disabled.'}, status=403)
         token = resolve_credentials(connection).get('webhook_secret')
         if not token or not verify_webhook(request.body, token=token,
                                            signature=request.headers.get('X-Steadfast-Signature'),

@@ -11,9 +11,10 @@ from django.test import SimpleTestCase, TestCase
 from rest_framework.exceptions import ValidationError
 
 from app.models import Business, BusinessMembership, IntegrationConnection, IntegrationSource, Order, Shipment, ShipmentEvent
+from app.observability.models import OperationAttempt
 
 from .client import SteadfastClient, SteadfastError, SteadfastNetworkError
-from .integration import apply_status, service_for, submit_order
+from .integration import SubmissionPending, apply_status, service_for, submit_order
 from .services import SteadfastService
 from .webhooks import parse_webhook, verify_webhook
 
@@ -109,10 +110,13 @@ class SteadfastServiceTests(SimpleTestCase):
         self.assertEqual(self.calls[0][1], '/create_order')
         self.assertEqual(self.calls[0][2]['cod_amount'], 250.0)
         self.assertEqual(self.calls[0][2]['delivery_type'], 0)
+        self.assertFalse(self.calls[0][3]['retry'])
         with self.assertRaises(ValidationError):
             self.service.create_order({**order, 'recipient_phone': '123'})
         with self.assertRaises(ValidationError):
             self.service.create_bulk([])
+        self.service.create_bulk([order])
+        self.assertFalse(self.calls[-1][3]['retry'])
 
     def test_create_rejects_mismatched_provider_invoice(self):
         order = {'invoice': 'OTHER', 'recipient_name': 'Customer', 'recipient_phone': '01712345678',
@@ -181,6 +185,78 @@ class SteadfastIntegrationTests(TestCase):
         _, changed = apply_status(shipment, 'delivered')
         self.assertFalse(changed)
         self.assertEqual(ShipmentEvent.objects.count(), 2)
+
+    def test_uncertain_submission_blocks_another_create(self):
+        calls = []
+
+        def create_order(payload):
+            calls.append(payload)
+            raise SteadfastNetworkError('Response lost.')
+
+        details = {'recipient_name': 'A Person', 'recipient_phone': '01712345678',
+                   'recipient_address': 'Dhaka'}
+        service = SimpleNamespace(create_order=create_order)
+        with self.assertRaises(SteadfastNetworkError):
+            submit_order(self.connection, self.order.pk, details, service=service)
+        self.assertEqual(OperationAttempt.objects.get().status, 'RUNNING')
+        with self.assertRaises(SubmissionPending):
+            submit_order(self.connection, self.order.pk, details, service=service)
+        self.assertEqual(len(calls), 1)
+        self.assertFalse(Shipment.objects.exists())
+
+    def test_confirmed_absence_allows_manager_to_retry(self):
+        details = {'recipient_name': 'A Person', 'recipient_phone': '01712345678',
+                   'recipient_address': 'Dhaka'}
+        first = SimpleNamespace(create_order=lambda payload: (_ for _ in ()).throw(SteadfastNetworkError('Lost')))
+        with self.assertRaises(SteadfastNetworkError):
+            submit_order(self.connection, self.order.pk, details, service=first)
+        second = SimpleNamespace(create_order=lambda payload: {'consignment': {
+            'consignment_id': 48, 'tracking_code': 'TRACK48', 'status': 'pending'}})
+        shipment, created = submit_order(self.connection, self.order.pk,
+                                         {**details, 'confirmed_absent': True}, service=second)
+        self.assertTrue(created)
+        self.assertEqual(shipment.external_shipment_id, '48')
+        self.assertEqual(list(OperationAttempt.objects.order_by('pk').values_list('status', flat=True)),
+                         ['FAILED', 'SUCCEEDED'])
+
+    def test_confirmation_cannot_override_an_active_request(self):
+        OperationAttempt.objects.create(business=self.business, connection=self.connection,
+                                        key='steadfast:create:active', action='CREATE_SHIPMENT',
+                                        target_id=self.order.pk, status='RUNNING',
+                                        result={'invoice': f'BIZORA-{self.order.pk}', 'outcome': 'IN_FLIGHT'})
+        details = {'recipient_name': 'A Person', 'recipient_phone': '01712345678',
+                   'recipient_address': 'Dhaka', 'confirmed_absent': True}
+        service = SimpleNamespace(create_order=lambda payload: self.fail('Second order was sent'))
+        with self.assertRaises(SubmissionPending):
+            submit_order(self.connection, self.order.pk, details, service=service)
+
+    def test_create_route_reports_uncertain_submission_as_conflict(self):
+        base = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/shipments/'
+        body = {'order_id': self.order.pk, 'recipient_name': 'A Person',
+                'recipient_phone': '01712345678', 'recipient_address': 'Dhaka'}
+        service = SimpleNamespace(create_order=lambda payload: (_ for _ in ()).throw(SteadfastNetworkError('Lost')))
+        with patch('app.integrations.steadfast.integration.service_for', return_value=service):
+            self.assertEqual(self.client.post(base, body, content_type='application/json').status_code, 502)
+            retry = self.client.post(base, body, content_type='application/json')
+        self.assertEqual(retry.status_code, 409)
+        self.assertIn(f'BIZORA-{self.order.pk}', retry.json()['detail'])
+
+    def test_webhook_respects_read_scope(self):
+        self.connection.config['scopes'] = ['CREATE_SHIPMENTS']
+        self.connection.save(update_fields=['config'])
+        shipment = Shipment.objects.create(business=self.business, order=self.order,
+                                           integration_connection=self.connection, external_shipment_id='99',
+                                           provider='Steadfast', status='SUBMITTED')
+        url = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/webhook/'
+        raw = json.dumps({'notification_type': 'delivery_status', 'consignment_id': 99,
+                          'status': 'delivered'}).encode()
+        signature = hmac.new(b'token', raw, hashlib.sha256).hexdigest()
+        with patch('app.integrations.steadfast.views.resolve_credentials', return_value={'webhook_secret': 'token'}):
+            response = self.client.post(url, raw, content_type='application/json',
+                                        HTTP_X_STEADFAST_SIGNATURE=signature)
+        self.assertEqual(response.status_code, 403)
+        shipment.refresh_from_db()
+        self.assertEqual(shipment.status, 'SUBMITTED')
 
     def test_business_boundary_and_webhook_signature(self):
         url = f'/api/businesses/{self.business.pk}/integrations/steadfast/{self.connection.pk}/webhook/'
