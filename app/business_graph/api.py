@@ -565,10 +565,12 @@ class GraphRebuildAPIView(BaseGraphAPIView):
 
     def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        clean = bool(_json_object(request).get("clean", False))
+        clean_raw = _json_object(request).get("clean", False)
+        if not isinstance(clean_raw, bool):
+            raise GraphValidationError("clean must be a boolean.")
         summary = rebuild_business_graph(
             business_id=biz.pk,
-            clean=clean,
+            clean=clean_raw,
         )
 
         return Response({

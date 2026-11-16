@@ -299,6 +299,9 @@ def rebuild_business_graph(
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
 
+    if not isinstance(clean, bool):
+        raise GraphValidationError("clean must be a boolean.")
+
     if not models.Business.objects.filter(pk=business_id).exists():
         raise GraphScopeError(f"Business {business_id} does not exist.")
 
