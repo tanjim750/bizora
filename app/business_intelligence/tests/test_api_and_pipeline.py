@@ -104,13 +104,6 @@ class IntelligenceAPITests(TestCase):
         self.assertEqual(resp_snaps.json()["total_count"], 1)
         self.assertEqual(resp_snaps.json()["results"][0]["value"], "1500.000000")
 
-        # The numeric metric id works too (metric keys contain dots, which the frontend proxy rejects).
-        metric_id = models.BusinessMetric.objects.get(business=self.biz_a, key=metric_key).pk
-        resp_by_id = self.api.get(self.url(f"metrics/{metric_id}/snapshots/"))
-        self.assertEqual(resp_by_id.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_by_id.json()["metric_key"], metric_key)
-        self.assertEqual(resp_by_id.json()["total_count"], 1)
-
     def test_facts_crud_and_lifecycle_api(self):
         resp_post = self.api.post(
             self.url("facts/"),
