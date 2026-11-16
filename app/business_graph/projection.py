@@ -135,18 +135,37 @@ class ProjectionSummary:
     total_edges: int
 
 
+ENTITY_BUSINESS_LOOKUPS: dict[str, str] = {
+    "WEBSITE_EVENT": "session__business_id",
+    "MESSAGE": "conversation__business_id",
+    "CAMPAIGN_CONVERSION": "campaign__business_id",
+    "PRODUCT_VARIANT": "product__business_id",
+}
+
+
+def get_entity_business_filter(entity_type: str, business_id: int) -> dict[str, Any]:
+    """Return ORM filter kwargs scoping entity_type to business_id."""
+    lookup = ENTITY_BUSINESS_LOOKUPS.get(entity_type, "business_id")
+    return {lookup: business_id}
+
+
 def _resolve_entity_business_id(entity_type: str, entity: Model) -> int:
     """Resolve the authoritative business ID for a canonical entity."""
-    if hasattr(entity, "business_id"):
+    lookup = ENTITY_BUSINESS_LOOKUPS.get(entity_type)
+    if lookup == "session__business_id":
+        if hasattr(entity, "session") and entity.session is not None and hasattr(entity.session, "business_id"):
+            return entity.session.business_id
+    elif lookup == "conversation__business_id":
+        if hasattr(entity, "conversation") and entity.conversation is not None and hasattr(entity.conversation, "business_id"):
+            return entity.conversation.business_id
+    elif lookup == "campaign__business_id":
+        if hasattr(entity, "campaign") and entity.campaign is not None and hasattr(entity.campaign, "business_id"):
+            return entity.campaign.business_id
+    elif lookup == "product__business_id":
+        if hasattr(entity, "product") and entity.product is not None and hasattr(entity.product, "business_id"):
+            return entity.product.business_id
+    elif hasattr(entity, "business_id"):
         return entity.business_id
-    elif hasattr(entity, "product") and hasattr(entity.product, "business_id"):
-        return entity.product.business_id
-    elif hasattr(entity, "campaign") and hasattr(entity.campaign, "business_id"):
-        return entity.campaign.business_id
-    elif hasattr(entity, "session") and hasattr(entity.session, "business_id"):
-        return entity.session.business_id
-    elif hasattr(entity, "conversation") and hasattr(entity.conversation, "business_id"):
-        return entity.conversation.business_id
     raise GraphValidationError(f"Cannot resolve business_id for entity type {entity_type}")
 
 
@@ -388,17 +407,7 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
     with transaction.atomic():
         # 1. Project nodes for all supported canonical entities
         for entity_type, model_cls in SUPPORTED_ENTITY_MODELS.items():
-            filter_kwargs = {"business_id": business_id}
-            if not hasattr(model_cls, "business_id"):
-                if hasattr(model_cls, "product"):
-                    filter_kwargs = {"product__business_id": business_id}
-                elif hasattr(model_cls, "campaign"):
-                    filter_kwargs = {"campaign__business_id": business_id}
-                elif hasattr(model_cls, "session"):
-                    filter_kwargs = {"session__business_id": business_id}
-                elif hasattr(model_cls, "conversation"):
-                    filter_kwargs = {"conversation__business_id": business_id}
-
+            filter_kwargs = get_entity_business_filter(entity_type, business_id)
             entity_ids = model_cls.objects.filter(**filter_kwargs).values_list("pk", flat=True)
             for e_id in entity_ids:
                 _, created = project_entity_node(
@@ -412,6 +421,8 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
                     nodes_updated += 1
 
         # 2. Project edges for all active relationships
+        nodes_before_edges = models.GraphNode.objects.filter(business_id=business_id).count()
+
         rels = models.BusinessRelationship.objects.filter(
             business_id=business_id,
             rule_key__in=PROJECTABLE_RULE_KEYS,
@@ -429,6 +440,9 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
                     edges_updated += 1
             else:
                 edges_pruned += 1
+
+        nodes_after_edges = models.GraphNode.objects.filter(business_id=business_id).count()
+        nodes_created += max(0, nodes_after_edges - nodes_before_edges)
 
         total_nodes = models.GraphNode.objects.filter(business_id=business_id).count()
         total_edges = models.GraphEdge.objects.filter(business_id=business_id).count()
@@ -448,6 +462,7 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
 __all__ = [
     "BI_RELATIONSHIP_KEY_PREFIX",
     "BI_RELATIONSHIP_KEY_SUFFIX",
+    "ENTITY_BUSINESS_LOOKUPS",
     "GraphCrossBusinessError",
     "GraphNotFoundError",
     "GraphScopeError",
@@ -458,6 +473,7 @@ __all__ = [
     "SUPPORTED_RELATIONSHIP_RULES",
     "VALID_RELATIONSHIP_SOURCES",
     "canonical_rule_name",
+    "get_entity_business_filter",
     "project_business_graph",
     "project_entity_node",
     "project_relationship_edge",

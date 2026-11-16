@@ -35,6 +35,7 @@ from app.business_graph.projection import (
     GraphValidationError,
     SUPPORTED_ENTITY_MODELS,
     PROJECTABLE_RULE_KEYS,
+    get_entity_business_filter,
     project_business_graph,
     project_entity_node,
     project_relationship_edge,
@@ -70,18 +71,7 @@ def _get_existing_entity_pks(business_id: int, entity_type: str, candidate_pks: 
         return set()
 
     filter_kwargs: dict[str, Any] = {"pk__in": candidate_pks}
-    if hasattr(model_cls, "business_id"):
-        filter_kwargs["business_id"] = business_id
-    elif hasattr(model_cls, "product"):
-        filter_kwargs["product__business_id"] = business_id
-    elif hasattr(model_cls, "campaign"):
-        filter_kwargs["campaign__business_id"] = business_id
-    elif hasattr(model_cls, "session"):
-        filter_kwargs["session__business_id"] = business_id
-    elif hasattr(model_cls, "conversation"):
-        filter_kwargs["conversation__business_id"] = business_id
-    else:
-        return set()
+    filter_kwargs.update(get_entity_business_filter(entity_type, business_id))
 
     return set(model_cls.objects.filter(**filter_kwargs).values_list("pk", flat=True))
 
