@@ -1158,6 +1158,7 @@ class BusinessIssue(models.Model):
             qs = BusinessIssue.objects.filter(
                 business=self.business,
                 issue_type=self.issue_type,
+                rule_key=self.rule_key,
                 subject_entity_type=self.subject_entity_type,
                 subject_entity_id=self.subject_entity_id,
                 status='OPEN'
