@@ -175,35 +175,40 @@ def _resolve_entity_business_id(entity_type: str, entity: Model) -> int:
 
 def _build_node_label(entity_type: str, entity: Model) -> str:
     """Construct human-readable node label (BG §1 Node Labels)."""
+    raw_label: str
     if entity_type == "CUSTOMER":
-        return entity.display_name or f"Customer #{entity.pk}"
+        display_name = getattr(entity, "display_name", None)
+        full_name = f"{getattr(entity, 'first_name', '') or ''} {getattr(entity, 'last_name', '') or ''}".strip()
+        raw_label = display_name or full_name or f"Customer #{entity.pk}"
     elif entity_type == "PRODUCT":
-        return entity.name
+        raw_label = getattr(entity, "name", None) or f"Product #{entity.pk}"
     elif entity_type == "PRODUCT_VARIANT":
-        return getattr(entity, "title", None) or getattr(entity, "sku", None) or f"Variant #{entity.pk}"
+        raw_label = getattr(entity, "name", None) or getattr(entity, "title", None) or getattr(entity, "sku", None) or f"Variant #{entity.pk}"
     elif entity_type == "ORDER":
-        return getattr(entity, "order_number", None) or f"Order #{entity.pk}"
+        raw_label = getattr(entity, "order_number", None) or f"Order #{entity.pk}"
     elif entity_type == "PAYMENT":
-        return f"Payment {getattr(entity, 'amount', '')} {getattr(entity, 'currency', '')}".strip()
+        raw_label = f"Payment {getattr(entity, 'amount', '')} {getattr(entity, 'currency', '')}".strip()
     elif entity_type == "SHIPMENT":
-        return f"Shipment ({getattr(entity, 'provider', '')}) #{entity.pk}"
+        raw_label = f"Shipment ({getattr(entity, 'provider', '')}) #{entity.pk}"
     elif entity_type == "CAMPAIGN":
-        return entity.name
+        raw_label = getattr(entity, "name", None) or f"Campaign #{entity.pk}"
     elif entity_type == "CAMPAIGN_CONVERSION":
-        return f"{getattr(entity, 'conversion_type', 'Conversion')} #{entity.pk}"
+        raw_label = f"{getattr(entity, 'conversion_type', 'Conversion')} #{entity.pk}"
     elif entity_type == "WEBSITE_VISITOR":
-        return getattr(entity, "visitor_key", None) or f"Visitor #{entity.pk}"
+        raw_label = getattr(entity, "visitor_key", None) or f"Visitor #{entity.pk}"
     elif entity_type == "WEBSITE_SESSION":
-        return f"Session #{entity.pk}"
+        raw_label = f"Session #{entity.pk}"
     elif entity_type == "WEBSITE_EVENT":
-        return f"{getattr(entity, 'event_type', 'Event')} #{entity.pk}"
+        raw_label = f"{getattr(entity, 'event_type', 'Event')} #{entity.pk}"
     elif entity_type == "CONVERSATION":
-        return f"{getattr(entity, 'channel', '')} Conversation #{entity.pk}"
+        raw_label = f"{getattr(entity, 'channel', '')} Conversation #{entity.pk}"
     elif entity_type == "MESSAGE":
-        return f"{getattr(entity, 'direction', '')} Message #{entity.pk}"
+        raw_label = f"{getattr(entity, 'direction', '')} Message #{entity.pk}"
     elif entity_type == "CALL":
-        return f"{getattr(entity, 'direction', '')} Call #{entity.pk}"
-    return f"{entity_type} #{entity.pk}"
+        raw_label = f"{getattr(entity, 'direction', '')} Call #{entity.pk}"
+    else:
+        raw_label = f"{entity_type} #{entity.pk}"
+    return str(raw_label)[:255]
 
 
 def _build_node_properties(entity_type: str, entity: Model) -> dict[str, Any]:
