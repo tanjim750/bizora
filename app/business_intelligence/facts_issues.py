@@ -29,6 +29,7 @@ Key principles enforced:
 import datetime
 from decimal import Decimal
 from typing import Any
+import uuid
 
 from django.db import transaction
 from django.utils import timezone
@@ -44,6 +45,10 @@ class FactScopeError(FactError):
     """Fact does not belong to the requested business."""
 
 
+class FactNotFoundError(FactScopeError):
+    """Fact not found for the requested business."""
+
+
 class FactValidationError(FactError):
     """Fact parameters or constraints are invalid."""
 
@@ -54,6 +59,10 @@ class IssueError(Exception):
 
 class IssueScopeError(IssueError):
     """Issue does not belong to the requested business."""
+
+
+class IssueNotFoundError(IssueScopeError):
+    """Issue not found for the requested business."""
 
 
 class IssueValidationError(IssueError):
@@ -127,15 +136,15 @@ def create_or_update_fact(
     statement: str,
     value: Decimal | None = None,
     value_unit: str | None = None,
-    confidence: Decimal = Decimal("1.0000"),
-    status: str = FACT_STATUS_VERIFIED,
+    confidence: Decimal | None = None,
+    status: str | None = None,
     rule_key: str | None = None,
     subject_entity_type: str | None = None,
     subject_entity_id: int | None = None,
     valid_from: datetime.datetime | None = None,
     valid_to: datetime.datetime | None = None,
     detected_at: datetime.datetime | None = None,
-    evidence: dict[str, Any] | None = None,
+    evidence: dict[str, Any] | list[dict[str, Any]] | None = None,
 ) -> tuple[models.BusinessFact, bool]:
     """Create or update a verified business fact. Idempotent and scoped."""
     if not isinstance(business_id, int) or business_id <= 0:
@@ -144,17 +153,23 @@ def create_or_update_fact(
     if not statement or not statement.strip():
         raise FactValidationError("Fact statement cannot be empty")
 
-    status = (status or FACT_STATUS_VERIFIED).upper()
+    if status is None:
+        status = FACT_STATUS_VERIFIED if evidence else FACT_STATUS_CANDIDATE
+    else:
+        status = status.upper()
+
     if status not in FACT_STATUSES:
         raise FactValidationError(f"Invalid fact status {status!r}; expected one of {sorted(FACT_STATUSES)}")
 
-    if not (Decimal("0.0000") <= confidence <= Decimal("1.0000")):
+    confidence_dec = Decimal(str(confidence)) if confidence is not None else Decimal("1.0000")
+    if not (Decimal("0.0000") <= confidence_dec <= Decimal("1.0000")):
         raise FactValidationError("confidence must be between 0 and 1")
 
     now = timezone.now()
     detected = detected_at or now
 
-    metadata = dict(evidence or {})
+    metadata = dict(evidence) if isinstance(evidence, dict) else ({"items": evidence} if evidence else {})
+    rule_key = rule_key or f"fact.manual.{uuid.uuid4().hex[:12]}"
 
     with transaction.atomic():
         # Look for existing fact matching scope, rule, type, entity, and validity
@@ -174,33 +189,64 @@ def create_or_update_fact(
             fact.statement = statement
             fact.value = value
             fact.value_unit = value_unit
-            fact.confidence = confidence
+            fact.confidence = confidence_dec
             fact.status = status
             fact.detected_at = detected
             fact.metadata = metadata
             fact.updated_at = now
             fact.save()
-            return fact, False
+            created = False
+        else:
+            fact = models.BusinessFact.all_objects.create(
+                business_id=business_id,
+                fact_type=fact_type,
+                subject_entity_type=subject_entity_type,
+                subject_entity_id=subject_entity_id,
+                statement=statement,
+                value=value,
+                value_unit=value_unit,
+                confidence=confidence_dec,
+                status=status,
+                rule_key=rule_key,
+                valid_from=valid_from,
+                valid_to=valid_to,
+                detected_at=detected,
+                metadata=metadata,
+                created_at=now,
+                updated_at=now,
+            )
+            created = True
 
-        fact = models.BusinessFact.all_objects.create(
-            business_id=business_id,
-            fact_type=fact_type,
-            subject_entity_type=subject_entity_type,
-            subject_entity_id=subject_entity_id,
-            statement=statement,
-            value=value,
-            value_unit=value_unit,
-            confidence=confidence,
-            status=status,
-            rule_key=rule_key,
-            valid_from=valid_from,
-            valid_to=valid_to,
-            detected_at=detected,
-            metadata=metadata,
-            created_at=now,
-            updated_at=now,
-        )
-        return fact, True
+        if evidence:
+            items = evidence if isinstance(evidence, list) else [evidence]
+            for item in items:
+                if isinstance(item, dict) and item:
+                    snap_id = item.get("metric_snapshot_id") or item.get("snapshot_id")
+                    if snap_id is not None and not models.MetricSnapshot.objects.filter(pk=snap_id).exists():
+                        snap_id = None
+                    rel_id = item.get("relationship_id")
+                    if rel_id is not None and not models.BusinessRelationship.objects.filter(pk=rel_id).exists():
+                        rel_id = None
+                    weight_val = None
+                    if "weight" in item and item["weight"] is not None:
+                        try:
+                            weight_val = Decimal(str(item["weight"]))
+                        except Exception:
+                            weight_val = None
+
+                    models.BusinessFactEvidence.objects.create(
+                        business_fact=fact,
+                        evidence_type=str(item.get("evidence_type") or item.get("type") or "MANUAL")[:50],
+                        entity_type=item.get("entity_type") or subject_entity_type,
+                        entity_id=item.get("entity_id") or subject_entity_id,
+                        metric_snapshot_id=snap_id,
+                        relationship_id=rel_id,
+                        description=item.get("description"),
+                        weight=weight_val,
+                        evidence_data=item,
+                    )
+
+        return fact, created
 
 
 def update_fact_lifecycle(
@@ -218,12 +264,9 @@ def update_fact_lifecycle(
     if new_status not in FACT_STATUSES:
         raise FactValidationError(f"Invalid fact status {new_status!r}; expected one of {sorted(FACT_STATUSES)}")
 
-    fact = models.BusinessFact.all_objects.filter(pk=fact_id).first()
+    fact = models.BusinessFact.all_objects.filter(pk=fact_id, business_id=business_id).first()
     if fact is None:
-        raise FactValidationError(f"BusinessFact #{fact_id} does not exist.")
-
-    if fact.business_id != business_id:
-        raise FactScopeError(f"BusinessFact #{fact_id} belongs to business {fact.business_id}, not {business_id}.")
+        raise FactNotFoundError(f"BusinessFact #{fact_id} does not exist.")
 
     now = timezone.now()
     fact.status = new_status
@@ -255,6 +298,7 @@ def create_or_update_issue(
     fact_ids: list[int] | None = None,
     snapshot_ids: list[int] | None = None,
     metadata: dict[str, Any] | None = None,
+    validate_references: bool = False,
 ) -> tuple[models.BusinessIssue, bool]:
     """Create or update a detected business issue.
 
@@ -280,6 +324,25 @@ def create_or_update_issue(
 
     now = timezone.now()
     detected = detected_at or now
+
+    if validate_references:
+        if fact_ids:
+            unique_fact_ids = set(fact_ids)
+            facts_count = models.BusinessFact.all_objects.filter(
+                business_id=business_id,
+                pk__in=unique_fact_ids,
+            ).count()
+            if facts_count != len(unique_fact_ids):
+                raise IssueValidationError("One or more fact_ids do not exist or belong to another business.")
+
+        if snapshot_ids:
+            unique_snap_ids = set(snapshot_ids)
+            snaps_count = models.MetricSnapshot.objects.filter(
+                business_id=business_id,
+                pk__in=unique_snap_ids,
+            ).count()
+            if snaps_count != len(unique_snap_ids):
+                raise IssueValidationError("One or more snapshot_ids do not exist or belong to another business.")
 
     meta = dict(metadata or {})
     if fact_ids:
@@ -319,27 +382,56 @@ def create_or_update_issue(
             active_issue.metadata = existing_meta
             active_issue.updated_at = now
             active_issue.save()
-            return active_issue, False
+            target_issue = active_issue
+            created = False
+        else:
+            # No active issue found (or previous was RESOLVED/DISMISSED): create fresh OPEN issue
+            target_issue = models.BusinessIssue.objects.create(
+                business_id=business_id,
+                issue_type=issue_type,
+                subject_entity_type=subject_entity_type,
+                subject_entity_id=subject_entity_id,
+                title=title,
+                description=description,
+                severity=severity,
+                confidence=confidence,
+                status=ISSUE_STATUS_OPEN,
+                rule_key=rule_key,
+                detected_at=detected,
+                resolved_at=None,
+                metadata=meta or None,
+                created_at=now,
+                updated_at=now,
+            )
+            created = True
 
-        # No active issue found (or previous was RESOLVED/DISMISSED): create fresh OPEN issue
-        new_issue = models.BusinessIssue.objects.create(
-            business_id=business_id,
-            issue_type=issue_type,
-            subject_entity_type=subject_entity_type,
-            subject_entity_id=subject_entity_id,
-            title=title,
-            description=description,
-            severity=severity,
-            confidence=confidence,
-            status=ISSUE_STATUS_OPEN,
-            rule_key=rule_key,
-            detected_at=detected,
-            resolved_at=None,
-            metadata=meta or None,
-            created_at=now,
-            updated_at=now,
-        )
-        return new_issue, True
+        if fact_ids:
+            for fid in sorted(set(fact_ids)):
+                if models.BusinessFact.all_objects.filter(pk=fid, business_id=business_id).exists():
+                    models.BusinessIssueEvidence.objects.get_or_create(
+                        business_issue=target_issue,
+                        business_fact_id=fid,
+                        defaults={
+                            "evidence_type": "BUSINESS_FACT",
+                            "entity_type": "BUSINESS_FACT",
+                            "entity_id": fid,
+                        },
+                    )
+
+        if snapshot_ids:
+            for sid in sorted(set(snapshot_ids)):
+                if models.MetricSnapshot.objects.filter(pk=sid, business_id=business_id).exists():
+                    models.BusinessIssueEvidence.objects.get_or_create(
+                        business_issue=target_issue,
+                        metric_snapshot_id=sid,
+                        defaults={
+                            "evidence_type": "METRIC_SNAPSHOT",
+                            "entity_type": "METRIC_SNAPSHOT",
+                            "entity_id": sid,
+                        },
+                    )
+
+        return target_issue, created
 
 
 def update_issue_lifecycle(
@@ -361,12 +453,9 @@ def update_issue_lifecycle(
     if new_status not in ISSUE_STATUSES:
         raise IssueValidationError(f"Invalid issue status {new_status!r}; expected one of {sorted(ISSUE_STATUSES)}")
 
-    issue = models.BusinessIssue.objects.filter(pk=issue_id).first()
+    issue = models.BusinessIssue.objects.filter(pk=issue_id, business_id=business_id).first()
     if issue is None:
-        raise IssueValidationError(f"BusinessIssue #{issue_id} does not exist.")
-
-    if issue.business_id != business_id:
-        raise IssueScopeError(f"BusinessIssue #{issue_id} belongs to business {issue.business_id}, not {business_id}.")
+        raise IssueNotFoundError(f"BusinessIssue #{issue_id} does not exist.")
 
     now = timezone.now()
     issue.status = new_status
@@ -416,9 +505,11 @@ __all__ = [
     "SEVERITY_LOW",
     "SEVERITY_MEDIUM",
     "FactError",
+    "FactNotFoundError",
     "FactScopeError",
     "FactValidationError",
     "IssueError",
+    "IssueNotFoundError",
     "IssueScopeError",
     "IssueValidationError",
     "create_or_update_fact",

@@ -1,7 +1,7 @@
 """Tests for Graph API and Integrated Scenario Tests (T-019).
 
 Verifies:
-1. Deny-by-default authorization seam (rejects unauthenticated/mismatched requests with 403).
+1. Deny-by-default authorization seam (membership of the URL business; others get 403).
 2. Traversal and path search endpoints.
 3. Customer, order, product, and campaign journey endpoints.
 4. Snapshot list, create, and detail endpoints.
@@ -15,19 +15,18 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.test import APIRequestFactory
 
 from app import models
 from app.business_graph import api
 from app.business_graph.projection import project_business_graph
 from app.business_graph.snapshots import explain_path
 from app.business_graph.traversal import find_paths
+from app.tests.bi_graph_helpers import client_for, graph_url, make_member
 
 
 class GraphAPITests(TestCase):
     def setUp(self):
         super().setUp()
-        self.factory = APIRequestFactory()
         self.now = timezone.now()
         self.biz_a = models.Business.objects.create(
             name="Apex Retail",
@@ -99,118 +98,96 @@ class GraphAPITests(TestCase):
         )
 
         project_business_graph(business_id=self.biz_a.pk)
+        self.owner = make_member(self.biz_a, "OWNER")
+        self.member_b = make_member(self.biz_b, "OWNER")
+        self.api = client_for(self.owner)
 
-    def test_deny_by_default_authorization_seam(self):
-        # 1. Request with NO business context must be denied
-        view = api.CustomerJourneyAPIView.as_view()
-        req = self.factory.get(f"/journeys/customer/{self.customer.pk}/")
-        resp = view(req, customer_id=self.customer.pk)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+    def url(self, tail="", business=None):
+        return graph_url((business or self.biz_a).pk, tail)
 
-        # 2. Request with caller-supplied business_id mismatch must be denied
-        req_mismatch = self.factory.get(f"/journeys/customer/{self.customer.pk}/?business_id={self.biz_b.pk}")
-        req_mismatch.business = self.biz_a  # Authorized for A, but requested B
-        resp_mismatch = view(req_mismatch, customer_id=self.customer.pk)
-        self.assertEqual(resp_mismatch.status_code, status.HTTP_403_FORBIDDEN)
+    def test_unauthenticated_and_foreign_callers_are_denied(self):
+        path = f"journeys/customer/{self.customer.pk}/"
 
-        # 3. Request with valid matching business context succeeds
-        req_valid = self.factory.get(f"/journeys/customer/{self.customer.pk}/")
-        req_valid.business = self.biz_a
-        resp_valid = view(req_valid, customer_id=self.customer.pk)
+        # 1. Anonymous callers are rejected
+        self.assertEqual(client_for().get(self.url(path)).status_code, status.HTTP_403_FORBIDDEN)
+
+        # 2. A member of another business cannot read this business
+        resp_foreign = client_for(self.member_b).get(self.url(path))
+        self.assertEqual(resp_foreign.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertNotIn(str(self.biz_a.pk), str(resp_foreign.json().get("detail")))
+
+        # 3. A caller-supplied business_id never overrides the URL
+        resp_mismatch = self.api.get(self.url(path) + f"?business_id={self.biz_b.pk}")
+        self.assertEqual(resp_mismatch.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_mismatch.json()["business_id"], self.biz_a.pk)
+
+        # 4. The legacy request.business seam is gone
+        resp_valid = self.api.get(self.url(path))
         self.assertEqual(resp_valid.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_valid.data["customer_id"], self.customer.pk)
+        self.assertEqual(resp_valid.json()["customer_id"], self.customer.pk)
 
     def test_traversal_api(self):
-        view = api.GraphTraversalAPIView.as_view()
-        req = self.factory.get(f"/traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}&direction=OUTBOUND&max_depth=2")
-        req.business = self.biz_a
-        resp = view(req)
+        resp = self.api.get(
+            self.url(f"traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}&direction=OUTBOUND&max_depth=2")
+        )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data["business_id"], self.biz_a.pk)
-        self.assertGreaterEqual(resp.data["node_count"], 3)
-        self.assertEqual(resp.data["edge_count"], 2)
+        data = resp.json()
+        self.assertEqual(data["business_id"], self.biz_a.pk)
+        self.assertGreaterEqual(data["node_count"], 3)
+        self.assertEqual(data["edge_count"], 2)
 
     def test_path_search_api(self):
-        view = api.GraphPathSearchAPIView.as_view()
-        req = self.factory.get(
-            f"/paths/?start_entity_type=CUSTOMER&start_entity_id={self.customer.pk}&end_entity_type=PRODUCT&end_entity_id={self.product.pk}&direction=OUTBOUND&max_depth=3"
+        resp = self.api.get(
+            self.url(
+                f"paths/?start_entity_type=CUSTOMER&start_entity_id={self.customer.pk}&end_entity_type=PRODUCT&end_entity_id={self.product.pk}&direction=OUTBOUND&max_depth=3"
+            )
         )
-        req.business = self.biz_a
-        resp = view(req)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data["paths_found"], 1)
-        self.assertEqual(resp.data["paths"][0]["length"], 2)
+        self.assertEqual(resp.json()["paths_found"], 1)
+        self.assertEqual(resp.json()["paths"][0]["length"], 2)
 
     def test_order_product_campaign_journey_apis(self):
-        # Order journey
-        view_ord = api.OrderJourneyAPIView.as_view()
-        req_ord = self.factory.get(f"/journeys/order/{self.order.pk}/")
-        req_ord.business = self.biz_a
-        resp_ord = view_ord(req_ord, order_id=self.order.pk)
+        resp_ord = self.api.get(self.url(f"journeys/order/{self.order.pk}/"))
         self.assertEqual(resp_ord.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_ord.data["order_id"], self.order.pk)
-        self.assertEqual(resp_ord.data["product_count"], 1)
+        self.assertEqual(resp_ord.json()["order_id"], self.order.pk)
+        self.assertEqual(resp_ord.json()["product_count"], 1)
 
-        # Product journey
-        view_prod = api.ProductJourneyAPIView.as_view()
-        req_prod = self.factory.get(f"/journeys/product/{self.product.pk}/")
-        req_prod.business = self.biz_a
-        resp_prod = view_prod(req_prod, product_id=self.product.pk)
+        resp_prod = self.api.get(self.url(f"journeys/product/{self.product.pk}/"))
         self.assertEqual(resp_prod.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_prod.data["product_id"], self.product.pk)
+        self.assertEqual(resp_prod.json()["product_id"], self.product.pk)
 
     def test_snapshot_lifecycle_api(self):
-        # Create snapshot
-        view_snap = api.GraphSnapshotListCreateAPIView.as_view()
-        req_create = self.factory.post("/snapshots/", {"snapshot_type": "BUSINESS", "name": "API Test Snapshot"}, format="json")
-        req_create.business = self.biz_a
-        resp_create = view_snap(req_create)
+        resp_create = self.api.post(self.url("snapshots/"), {"snapshot_type": "BUSINESS", "name": "API Test Snapshot"})
         self.assertEqual(resp_create.status_code, status.HTTP_201_CREATED)
-        snap_id = resp_create.data["id"]
+        snap_id = resp_create.json()["id"]
 
-        # Detail snapshot
-        view_detail = api.GraphSnapshotDetailAPIView.as_view()
-        req_detail = self.factory.get(f"/snapshots/{snap_id}/")
-        req_detail.business = self.biz_a
-        resp_detail = view_detail(req_detail, snapshot_id=snap_id)
+        resp_detail = self.api.get(self.url(f"snapshots/{snap_id}/"))
         self.assertEqual(resp_detail.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_detail.data["id"], snap_id)
-        self.assertIn("nodes", resp_detail.data["snapshot_data"])
+        self.assertEqual(resp_detail.json()["id"], snap_id)
+        self.assertIn("nodes", resp_detail.json()["snapshot_data"])
+
+        resp_list = self.api.get(self.url("snapshots/"))
+        self.assertEqual([row["id"] for row in resp_list.json()], [snap_id])
 
     def test_rebuild_api(self):
-        view_reb = api.GraphRebuildAPIView.as_view()
-        req_reb = self.factory.post("/rebuild/", {"clean": False}, format="json")
-        req_reb.business = self.biz_a
-        resp_reb = view_reb(req_reb)
+        resp_reb = self.api.post(self.url("rebuild/"), {"clean": False})
         self.assertEqual(resp_reb.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_reb.data["business_id"], self.biz_a.pk)
-        self.assertGreaterEqual(resp_reb.data["total_nodes"], 3)
-        self.assertEqual(resp_reb.data["total_edges"], 2)
+        data = resp_reb.json()
+        self.assertEqual(data["business_id"], self.biz_a.pk)
+        self.assertGreaterEqual(data["total_nodes"], 3)
+        self.assertEqual(data["total_edges"], 2)
 
     def test_traversal_api_with_filters(self):
-        view = api.GraphTraversalAPIView.as_view()
-        # Query with status filter matching order status
-        req = self.factory.get(
-            f"/traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}&status=PAID"
-        )
-        req.business = self.biz_a
-        resp = view(req)
+        base = f"traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}"
+        resp = self.api.get(self.url(base + "&status=PAID"))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        node_types = [n["entity_type"] for n in resp.data["nodes"]]
-        self.assertIn("ORDER", node_types)
+        self.assertIn("ORDER", [n["entity_type"] for n in resp.json()["nodes"]])
 
-        # Query with non-matching status
-        req_nonmatch = self.factory.get(
-            f"/traversal/?root_entity_type=CUSTOMER&root_entity_id={self.customer.pk}&status=CANCELLED"
-        )
-        req_nonmatch.business = self.biz_a
-        resp_nonmatch = view(req_nonmatch)
+        resp_nonmatch = self.api.get(self.url(base + "&status=CANCELLED"))
         self.assertEqual(resp_nonmatch.status_code, status.HTTP_200_OK)
-        node_types_nonmatch = [n["entity_type"] for n in resp_nonmatch.data["nodes"]]
-        self.assertNotIn("ORDER", node_types_nonmatch)
+        self.assertNotIn("ORDER", [n["entity_type"] for n in resp_nonmatch.json()["nodes"]])
 
     def test_path_search_api_with_explain(self):
-        # Create fact and issue for order
         models.BusinessFact.objects.create(
             business=self.biz_a,
             fact_type="ORDER_PROFITABILITY",
@@ -224,15 +201,14 @@ class GraphAPITests(TestCase):
             updated_at=self.now,
         )
 
-        view = api.GraphPathSearchAPIView.as_view()
-        req = self.factory.get(
-            f"/paths/?start_entity_type=CUSTOMER&start_entity_id={self.customer.pk}&end_entity_type=PRODUCT&end_entity_id={self.product.pk}&explain=true"
+        resp = self.api.get(
+            self.url(
+                f"paths/?start_entity_type=CUSTOMER&start_entity_id={self.customer.pk}&end_entity_type=PRODUCT&end_entity_id={self.product.pk}&explain=true"
+            )
         )
-        req.business = self.biz_a
-        resp = view(req)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data["paths_found"], 1)
-        path = resp.data["paths"][0]
+        self.assertEqual(resp.json()["paths_found"], 1)
+        path = resp.json()["paths"][0]
         self.assertIn("explanation", path)
         self.assertEqual(len(path["explanation"]), 3)
         order_step = path["explanation"][1]
@@ -241,46 +217,30 @@ class GraphAPITests(TestCase):
         self.assertEqual(order_step["node"]["facts"][0]["fact_type"], "ORDER_PROFITABILITY")
 
     def test_subgraph_query_api(self):
-        view = api.GraphQueryAPIView.as_view()
-        # Query by relationship_type
-        req = self.factory.get("/query/?relationship_type=PLACED_ORDER")
-        req.business = self.biz_a
-        resp = view(req)
+        resp = self.api.get(self.url("query/?relationship_type=PLACED_ORDER"))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data["edge_count"], 1)
-        self.assertEqual(resp.data["edges"][0]["relationship_type"], "PLACED_ORDER")
+        self.assertEqual(resp.json()["edge_count"], 1)
+        self.assertEqual(resp.json()["edges"][0]["relationship_type"], "PLACED_ORDER")
 
-        # Query by non-existent relationship_type
-        req_empty = self.factory.get("/query/?relationship_type=NONEXISTENT_TYPE")
-        req_empty.business = self.biz_a
-        resp_empty = view(req_empty)
+        resp_empty = self.api.get(self.url("query/?relationship_type=NONEXISTENT_TYPE"))
         self.assertEqual(resp_empty.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp_empty.data["edge_count"], 0)
+        self.assertEqual(resp_empty.json()["edge_count"], 0)
 
     def test_journey_api_with_filters(self):
-        view = api.CustomerJourneyAPIView.as_view()
-        req = self.factory.get(f"/journeys/customer/{self.customer.pk}/?status=PAID")
-        req.business = self.biz_a
-        resp = view(req, customer_id=self.customer.pk)
+        resp = self.api.get(self.url(f"journeys/customer/{self.customer.pk}/?status=PAID"))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data["customer_id"], self.customer.pk)
+        self.assertEqual(resp.json()["customer_id"], self.customer.pk)
 
     def test_snapshot_create_with_filters(self):
-        view = api.GraphSnapshotListCreateAPIView.as_view()
         payload = {
             "snapshot_type": "CUSTOMER",
             "root_entity_id": self.customer.pk,
             "name": "Filtered Customer Snapshot",
-            "filters": {
-                "status": "PAID",
-                "min_confidence": "0.95",
-            },
+            "filters": {"status": "PAID", "min_confidence": "0.95"},
         }
-        req = self.factory.post("/snapshots/", payload, format="json")
-        req.business = self.biz_a
-        resp = view(req)
+        resp = self.api.post(self.url("snapshots/"), payload)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        snap = models.GraphSnapshot.objects.get(pk=resp.data["id"])
+        snap = models.GraphSnapshot.objects.get(pk=resp.json()["id"])
         self.assertEqual(snap.filters.get("status"), "PAID")
         self.assertEqual(snap.filters.get("min_confidence"), "0.95")
 

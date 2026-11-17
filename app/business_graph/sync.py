@@ -34,7 +34,8 @@ from app.business_graph.projection import (
     GraphScopeError,
     GraphValidationError,
     SUPPORTED_ENTITY_MODELS,
-    SUPPORTED_RELATIONSHIP_RULES,
+    PROJECTABLE_RULE_KEYS,
+    get_entity_business_filter,
     project_business_graph,
     project_entity_node,
     project_relationship_edge,
@@ -70,18 +71,7 @@ def _get_existing_entity_pks(business_id: int, entity_type: str, candidate_pks: 
         return set()
 
     filter_kwargs: dict[str, Any] = {"pk__in": candidate_pks}
-    if hasattr(model_cls, "business_id"):
-        filter_kwargs["business_id"] = business_id
-    elif hasattr(model_cls, "product"):
-        filter_kwargs["product__business_id"] = business_id
-    elif hasattr(model_cls, "campaign"):
-        filter_kwargs["campaign__business_id"] = business_id
-    elif hasattr(model_cls, "session"):
-        filter_kwargs["session__business_id"] = business_id
-    elif hasattr(model_cls, "conversation"):
-        filter_kwargs["conversation__business_id"] = business_id
-    else:
-        return set()
+    filter_kwargs.update(get_entity_business_filter(entity_type, business_id))
 
     return set(model_cls.objects.filter(**filter_kwargs).values_list("pk", flat=True))
 
@@ -124,7 +114,7 @@ def prune_stale_projections(*, business_id: int) -> PruneSummary:
                 models.BusinessRelationship.objects.filter(
                     business_id=business_id,
                     pk__in=all_edge_rel_ids,
-                    rule_key__in=SUPPORTED_RELATIONSHIP_RULES.keys(),
+                    rule_key__in=PROJECTABLE_RULE_KEYS,
                 ).values_list("pk", flat=True)
             )
             orphan_rel_ids = all_edge_rel_ids - active_rel_ids
@@ -238,7 +228,7 @@ def sync_entity_node(
         # Refresh connected relationships for this entity if any exist
         connected_rels = models.BusinessRelationship.objects.filter(
             business_id=business_id,
-            rule_key__in=SUPPORTED_RELATIONSHIP_RULES.keys(),
+            rule_key__in=PROJECTABLE_RULE_KEYS,
         ).filter(
             Q(source_entity_type=entity_type, source_entity_id=entity_id)
             | Q(target_entity_type=entity_type, target_entity_id=entity_id)
@@ -308,6 +298,9 @@ def rebuild_business_graph(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+
+    if not isinstance(clean, bool):
+        raise GraphValidationError("clean must be a boolean.")
 
     if not models.Business.objects.filter(pk=business_id).exists():
         raise GraphScopeError(f"Business {business_id} does not exist.")

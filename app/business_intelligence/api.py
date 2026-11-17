@@ -3,10 +3,12 @@
 Serves Business Intelligence specification sections 15-18 and ticket T-012.
 
 Key properties:
-1. Deny-by-default authorization seam:
-   - Resolves authorized business strictly from authenticated/contextual request.business.
-   - Rejects unauthenticated or out-of-scope calls with HTTP 403 PermissionDenied.
-   - Refuses to trust caller-supplied business_id in query parameters or payload.
+1. Deny-by-default authorization seam (see app/business_scope.py):
+   - The business comes only from the URL (businesses/<business_id>/intelligence/...).
+   - The caller must be an active member of that business; reads need any member role,
+     writes and the pipeline run need OWNER or MANAGER.
+   - Rejects unauthenticated or non-member calls with HTTP 403 and never echoes ids.
+   - Ignores any business_id sent in the query string or payload.
 2. Security Gate SEC-MED-1 closed:
    - Validation and scope error responses return generic caller-facing error messages
      so external callers cannot determine whether primary keys exist in other tenants.
@@ -24,18 +26,21 @@ from typing import Any
 import datetime
 import logging
 
-from rest_framework import exceptions, permissions, status
+from django.http import Http404
+from rest_framework import serializers, status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from app import models
+from app.business_scope import NOT_FOUND_DETAIL, BusinessScopedAPIView, error_response
 from app.business_intelligence.anomalies import (
     AnomalyScopeError,
     AnomalyValidationError,
 )
 from app.business_intelligence.facts_issues import (
+    FactNotFoundError,
     FactScopeError,
     FactValidationError,
+    IssueNotFoundError,
     IssueScopeError,
     IssueValidationError,
     create_or_update_fact,
@@ -44,10 +49,16 @@ from app.business_intelligence.facts_issues import (
     update_issue_lifecycle,
 )
 from app.business_intelligence.metrics import (
+    MetricSnapshotConflictError,
     MetricValidationError,
     sync_metric_registry,
 )
+from app.business_intelligence.pipeline import (
+    default_period,
+    run_metric_calculators,
+)
 from app.business_intelligence.relationships import (
+    RelationshipConflictError,
     RelationshipRebuildResult,
     RelationshipValidationError,
     rebuild_relationships,
@@ -56,64 +67,17 @@ from app.business_intelligence.relationships import (
 
 logger = logging.getLogger(__name__)
 
-
-def resolve_authorized_business(request: Any) -> models.Business:
-    """Resolve the authoritative business scope from the request.
-
-    Deny-by-default: requires request.business or request.auth_business.
-    If the caller explicitly passes a business_id parameter or payload field,
-    it must strictly match the authorized business; otherwise access is denied.
-    """
-    biz = getattr(request, "business", None) or getattr(request, "auth_business", None)
-    if biz is None:
-        raise exceptions.PermissionDenied("Access denied: No authorized business scope.")
-
-    if not isinstance(biz, models.Business):
-        if isinstance(biz, int):
-            biz_obj = models.Business.objects.filter(pk=biz).first()
-            if not biz_obj:
-                raise exceptions.PermissionDenied("Access denied: Authorized business not found.")
-            biz = biz_obj
-        else:
-            raise exceptions.PermissionDenied("Access denied: Invalid business context.")
-
-    # Validate against caller-supplied parameters to prevent tenant spoofing
-    caller_biz_id = None
-    if hasattr(request, "query_params"):
-        caller_biz_id = request.query_params.get("business_id")
-    if caller_biz_id is None and hasattr(request, "data") and isinstance(request.data, dict):
-        caller_biz_id = request.data.get("business_id")
-
-    if caller_biz_id is not None:
-        try:
-            if int(caller_biz_id) != biz.pk:
-                raise exceptions.PermissionDenied(
-                    "Access denied: Caller-supplied business_id does not match authorized business."
-                )
-        except (ValueError, TypeError):
-            raise exceptions.PermissionDenied("Access denied: Malformed business_id parameter.")
-
-    return biz
+MAX_BIGINT = 2**63 - 1
 
 
-class HasAuthorizedBusiness(permissions.BasePermission):
-    """Deny-by-default permission checking for an authorized business."""
+class BaseIntelligenceAPIView(BusinessScopedAPIView):
+    """Base class providing URL-scoped membership checks and SEC-MED-1 anti-oracle protection."""
 
-    def has_permission(self, request, view):
-        try:
-            resolve_authorized_business(request)
-            return True
-        except exceptions.PermissionDenied:
-            return False
-
-
-class BaseIntelligenceAPIView(APIView):
-    """Base class providing deny-by-default scoping and SEC-MED-1 anti-oracle protection."""
-
-    permission_classes = [HasAuthorizedBusiness]
-
-    def get_authorized_business(self) -> models.Business:
-        return resolve_authorized_business(self.request)
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        for param, val in kwargs.items():
+            if isinstance(val, int) and (val < 1 or val > MAX_BIGINT):
+                raise Http404()
 
     def paginate_queryset(self, queryset):
         """Standard limit/offset pagination helper."""
@@ -138,17 +102,23 @@ class BaseIntelligenceAPIView(APIView):
     def handle_exception(self, exc):
         # SEC-MED-1: Return uniform caller-facing error messages to prevent cross-tenant ID oracles
         if isinstance(exc, (FactScopeError, IssueScopeError, AnomalyScopeError)):
-            logger.warning("Tenant scope violation attempt: %s", exc)
-            return Response(
-                {"error": "The requested resource was not found or access is denied."},
-                status=status.HTTP_403_FORBIDDEN,
+            logger.warning("Tenant scope violation or not found attempt: %s", exc)
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
+        if isinstance(exc, (MetricSnapshotConflictError, RelationshipConflictError)):
+            logger.warning("Conflict while running a BI operation: %s", exc)
+            return error_response(
+                "CONFLICT", "The operation conflicts with existing intelligence data; retry later.",
+                status.HTTP_409_CONFLICT,
             )
         if isinstance(exc, (FactValidationError, IssueValidationError, AnomalyValidationError, MetricValidationError, RelationshipValidationError)):
             logger.info("Validation error encountered: %s", exc)
-            return Response(
-                {"error": "Invalid request parameters or unresolvable resource reference."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_response(
+                "INVALID_DATA",
+                "Invalid request parameters or unresolvable resource reference.",
+                status.HTTP_400_BAD_REQUEST,
             )
+        if isinstance(exc, OverflowError):
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
         return super().handle_exception(exc)
 
 
@@ -178,12 +148,64 @@ def reconcile_relationships_with_quarantine(
         return RelationshipRebuildResult(created=0, updated=0, unchanged=0, invalidated=0), quarantined
 
 
+class FactCreateSerializer(serializers.Serializer):
+    """BI-07: a malformed fact body is a 400 `{code, detail, fields}`, never a 500."""
+
+    statement = serializers.CharField()
+    fact_type = serializers.CharField(max_length=100, required=False, default="GENERAL")
+    subject_entity_type = serializers.CharField(max_length=50, required=False, allow_null=True, default=None)
+    subject_entity_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
+    value = serializers.DecimalField(max_digits=24, decimal_places=6, required=False, allow_null=True, default=None)
+    value_unit = serializers.CharField(max_length=30, required=False, allow_null=True, default=None)
+    confidence = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        min_value=Decimal("0.0000"),
+        max_value=Decimal("1.0000"),
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    status = serializers.CharField(max_length=30, required=False, allow_null=True, default=None)
+    rule_key = serializers.CharField(max_length=100, required=False, allow_null=True, default=None)
+    valid_from = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    valid_to = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    evidence = serializers.DictField(required=False, default=dict)
+
+
+class FactLifecycleSerializer(serializers.Serializer):
+    status = serializers.CharField(max_length=30)
+    reason = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
+
+
+class IssueCreateSerializer(serializers.Serializer):
+    issue_type = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=255)
+    description = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
+    severity = serializers.CharField(max_length=30, required=False, default="MEDIUM")
+    confidence = serializers.DecimalField(max_digits=5, decimal_places=4, min_value=Decimal("0"), max_value=Decimal("1"),
+                                          required=False, default=Decimal("1.0000"))
+    rule_key = serializers.CharField(max_length=100, required=False, allow_null=True, default=None)
+    fact_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, default=list)
+    snapshot_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, default=list)
+
+
+class IssueLifecycleSerializer(serializers.Serializer):
+    status = serializers.CharField(max_length=30)
+    notes = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
+
+
+def validated_body(serializer_class, request):
+    serializer = serializer_class(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data
+
+
 class MetricListView(BaseIntelligenceAPIView):
     """List registered business metrics."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
-        sync_metric_registry(business_id=biz.pk)
         metrics_qs = models.BusinessMetric.objects.filter(business_id=biz.pk).order_by("key")
         data = self.paginate_queryset(metrics_qs)
         return Response({
@@ -207,14 +229,11 @@ class MetricListView(BaseIntelligenceAPIView):
 class MetricSnapshotListView(BaseIntelligenceAPIView):
     """Retrieve historical snapshots for a specific metric key."""
 
-    def get(self, request, metric_key: str):
+    def get(self, request, business_id: int, metric_key: str):
         biz = self.get_authorized_business()
         metric = models.BusinessMetric.objects.filter(business_id=biz.pk, key=metric_key).first()
         if not metric:
-            return Response(
-                {"error": "The requested resource was not found or access is denied."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
 
         snapshots_qs = models.MetricSnapshot.objects.filter(
             business_id=biz.pk, metric=metric
@@ -253,7 +272,7 @@ class MetricSnapshotListView(BaseIntelligenceAPIView):
 class FactListCreateView(BaseIntelligenceAPIView):
     """List or create business facts with evidence."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         status_param = request.query_params.get("status")
         facts_manager = models.BusinessFact.all_objects if status_param else models.BusinessFact.objects
@@ -288,24 +307,24 @@ class FactListCreateView(BaseIntelligenceAPIView):
             ],
         })
 
-    def post(self, request):
+    def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        statement = request.data.get("statement")
-        fact_type = request.data.get("fact_type", "GENERAL")
-        value = request.data.get("value")
-        value_dec = Decimal(str(value)) if value is not None else None
-        value_unit = request.data.get("value_unit")
-        rule_key = request.data.get("rule_key")
-        evidence = request.data.get("evidence", {})
+        body = validated_body(FactCreateSerializer, request)
 
         fact, created = create_or_update_fact(
             business_id=biz.pk,
-            fact_type=fact_type,
-            statement=statement,
-            value=value_dec,
-            value_unit=value_unit,
-            rule_key=rule_key,
-            evidence=evidence,
+            fact_type=body["fact_type"],
+            statement=body["statement"],
+            value=body["value"],
+            value_unit=body["value_unit"],
+            rule_key=body.get("rule_key"),
+            subject_entity_type=body.get("subject_entity_type"),
+            subject_entity_id=body.get("subject_entity_id"),
+            confidence=body.get("confidence"),
+            status=body.get("status"),
+            valid_from=body.get("valid_from"),
+            valid_to=body.get("valid_to"),
+            evidence=body["evidence"],
         )
 
         return Response(
@@ -323,15 +342,12 @@ class FactListCreateView(BaseIntelligenceAPIView):
 class FactDetailView(BaseIntelligenceAPIView):
     """Retrieve or update fact lifecycle."""
 
-    def get(self, request, fact_id: int):
+    def get(self, request, business_id: int, fact_id: int):
         biz = self.get_authorized_business()
         fact = models.BusinessFact.all_objects.filter(pk=fact_id).first()
         if not fact or fact.business_id != biz.pk:
             # SEC-MED-1: Return uniform 403/404 to avoid ID oracle
-            return Response(
-                {"error": "The requested resource was not found or access is denied."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
 
         return Response({
             "id": fact.pk,
@@ -349,16 +365,15 @@ class FactDetailView(BaseIntelligenceAPIView):
             "evidence": fact.metadata or {},
         })
 
-    def patch(self, request, fact_id: int):
+    def patch(self, request, business_id: int, fact_id: int):
         biz = self.get_authorized_business()
-        new_status = request.data.get("status")
-        reason = request.data.get("reason")
+        body = validated_body(FactLifecycleSerializer, request)
 
         fact = update_fact_lifecycle(
             business_id=biz.pk,
             fact_id=fact_id,
-            new_status=new_status,
-            reason=reason,
+            new_status=body["status"],
+            reason=body["reason"],
         )
         return Response({
             "id": fact.pk,
@@ -371,7 +386,7 @@ class FactDetailView(BaseIntelligenceAPIView):
 class IssueListCreateView(BaseIntelligenceAPIView):
     """List or create business issues with evidence linking."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         issues_qs = models.BusinessIssue.objects.filter(business_id=biz.pk).order_by("-detected_at")
 
@@ -409,27 +424,21 @@ class IssueListCreateView(BaseIntelligenceAPIView):
             ],
         })
 
-    def post(self, request):
+    def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        issue_type = request.data.get("issue_type")
-        title = request.data.get("title")
-        description = request.data.get("description")
-        severity = request.data.get("severity", "MEDIUM")
-        confidence = Decimal(str(request.data.get("confidence", "1.0000")))
-        rule_key = request.data.get("rule_key")
-        fact_ids = request.data.get("fact_ids", [])
-        snapshot_ids = request.data.get("snapshot_ids", [])
+        body = validated_body(IssueCreateSerializer, request)
 
         issue, created = create_or_update_issue(
             business_id=biz.pk,
-            issue_type=issue_type,
-            title=title,
-            description=description,
-            severity=severity,
-            confidence=confidence,
-            rule_key=rule_key,
-            fact_ids=fact_ids,
-            snapshot_ids=snapshot_ids,
+            issue_type=body["issue_type"],
+            title=body["title"],
+            description=body["description"],
+            severity=body["severity"],
+            confidence=body["confidence"],
+            rule_key=body["rule_key"],
+            fact_ids=body["fact_ids"],
+            snapshot_ids=body["snapshot_ids"],
+            validate_references=True,
         )
 
         return Response(
@@ -447,14 +456,11 @@ class IssueListCreateView(BaseIntelligenceAPIView):
 class IssueDetailView(BaseIntelligenceAPIView):
     """Retrieve or update issue operational lifecycle."""
 
-    def get(self, request, issue_id: int):
+    def get(self, request, business_id: int, issue_id: int):
         biz = self.get_authorized_business()
         issue = models.BusinessIssue.objects.filter(pk=issue_id).first()
         if not issue or issue.business_id != biz.pk:
-            return Response(
-                {"error": "The requested resource was not found or access is denied."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
 
         return Response({
             "id": issue.pk,
@@ -471,16 +477,15 @@ class IssueDetailView(BaseIntelligenceAPIView):
             "metadata": issue.metadata or {},
         })
 
-    def patch(self, request, issue_id: int):
+    def patch(self, request, business_id: int, issue_id: int):
         biz = self.get_authorized_business()
-        new_status = request.data.get("status")
-        notes = request.data.get("notes")
+        body = validated_body(IssueLifecycleSerializer, request)
 
         issue = update_issue_lifecycle(
             business_id=biz.pk,
             issue_id=issue_id,
-            new_status=new_status,
-            resolution_notes=notes,
+            new_status=body["status"],
+            resolution_notes=body["notes"],
         )
         return Response({
             "id": issue.pk,
@@ -493,14 +498,37 @@ class IssueDetailView(BaseIntelligenceAPIView):
 class PipelineOrchestrationView(BaseIntelligenceAPIView):
     """Trigger intelligence pipeline execution for the authorized business."""
 
-    def post(self, request):
+    def post(self, request, business_id: int):
         biz = self.get_authorized_business()
 
         # 1. Reconcile relationships with quarantine protection (SEC-HIGH-1)
         rel_result, quarantined = reconcile_relationships_with_quarantine(business_id=biz.pk)
+        if quarantined:
+            # BIA-11: Answer 409 with generic body, log specifics on server only
+            logger.error("Relationship reconciliation failed for business %s: %s", biz.pk, quarantined[0]["error"])
+            return error_response(
+                "RELATIONSHIP_RECONCILIATION_FAILED",
+                "Relationship reconciliation failed.",
+                status.HTTP_409_CONFLICT,
+            )
 
         # 2. Sync metric registry
         sync_metric_registry(business_id=biz.pk)
+
+        # 3. Compute metric snapshots for default period (BIA-03)
+        period_type, start, end = default_period()
+        run_metric_calculators(
+            business_id=biz.pk,
+            period_type=period_type,
+            period_start=start,
+            period_end=end,
+        )
+        metrics_computed = models.MetricSnapshot.objects.filter(
+            business_id=biz.pk,
+            period_type=period_type,
+            period_start=start,
+            period_end=end,
+        ).count()
 
         total_facts = models.BusinessFact.objects.filter(business_id=biz.pk).count()
         total_issues = models.BusinessIssue.objects.filter(business_id=biz.pk, status="OPEN").count()
@@ -516,6 +544,7 @@ class PipelineOrchestrationView(BaseIntelligenceAPIView):
             "quarantined_records": len(quarantined),
             "active_facts_count": total_facts,
             "open_issues_count": total_issues,
+            "metrics_computed": metrics_computed,
             "status": "COMPLETED",
         })
 
@@ -524,12 +553,11 @@ __all__ = [
     "BaseIntelligenceAPIView",
     "FactDetailView",
     "FactListCreateView",
-    "HasAuthorizedBusiness",
     "IssueDetailView",
     "IssueListCreateView",
     "MetricListView",
     "MetricSnapshotListView",
     "PipelineOrchestrationView",
+    "validated_body",
     "reconcile_relationships_with_quarantine",
-    "resolve_authorized_business",
 ]

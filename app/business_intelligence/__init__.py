@@ -56,6 +56,7 @@ from .facts_issues import (
     FACT_TYPE_REVENUE_CHANGE,
     FACT_TYPE_SUPPORT_DELAY,
     FactError,
+    FactNotFoundError,
     FactScopeError,
     FactValidationError,
     ISSUE_SEVERITIES,
@@ -70,6 +71,7 @@ from .facts_issues import (
     ISSUE_TYPE_REVENUE_DECLINE,
     ISSUE_TYPE_SUPPORT_RESPONSE_DELAY,
     IssueError,
+    IssueNotFoundError,
     IssueScopeError,
     IssueValidationError,
     SEVERITY_CRITICAL as ISSUE_SEVERITY_CRITICAL,
@@ -86,15 +88,14 @@ from .api import (
     BaseIntelligenceAPIView,
     FactDetailView,
     FactListCreateView,
-    HasAuthorizedBusiness,
     IssueDetailView,
     IssueListCreateView,
     MetricListView,
     MetricSnapshotListView,
     PipelineOrchestrationView,
     reconcile_relationships_with_quarantine,
-    resolve_authorized_business,
 )
+from app.business_scope import HasAuthorizedBusiness
 from . import urls
 from . import support
 from .support import (
@@ -565,6 +566,7 @@ __all__ = [
     "FACT_TYPE_REVENUE_CHANGE",
     "FACT_TYPE_SUPPORT_DELAY",
     "FactError",
+    "FactNotFoundError",
     "FactScopeError",
     "FactValidationError",
     "ISSUE_SEVERITIES",
@@ -579,6 +581,7 @@ __all__ = [
     "ISSUE_TYPE_REVENUE_DECLINE",
     "ISSUE_TYPE_SUPPORT_RESPONSE_DELAY",
     "IssueError",
+    "IssueNotFoundError",
     "IssueScopeError",
     "IssueValidationError",
     "ISSUE_SEVERITY_CRITICAL",
@@ -601,5 +604,4 @@ __all__ = [
     "MetricSnapshotListView",
     "PipelineOrchestrationView",
     "reconcile_relationships_with_quarantine",
-    "resolve_authorized_business",
 ]

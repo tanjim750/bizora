@@ -32,11 +32,14 @@ from app.business_graph.journeys import (
 )
 from app.business_graph.projection import (
     GraphScopeError,
+    GraphNotFoundError,
     GraphValidationError,
 )
 from app.business_graph.traversal import (
     GraphFilter,
     GraphPath,
+    _matches_edge_filter,
+    _matches_node_filter,
 )
 
 
@@ -137,8 +140,21 @@ def create_graph_snapshot(
     summary: dict[str, Any] = {}
 
     if snapshot_type == "BUSINESS":
-        nodes = list(models.GraphNode.objects.filter(business_id=business_id).order_by("id"))
-        edges = list(models.GraphEdge.objects.filter(business_id=business_id).order_by("id"))
+        all_nodes = list(models.GraphNode.objects.filter(business_id=business_id).order_by("id"))
+        all_edges = list(
+            models.GraphEdge.objects.filter(business_id=business_id)
+            .select_related("source_node", "target_node")
+            .order_by("id")
+        )
+        nodes = [n for n in all_nodes if _matches_node_filter(n, filters)]
+        valid_node_ids = {n.pk for n in nodes}
+        edges = [
+            e
+            for e in all_edges
+            if e.source_node_id in valid_node_ids
+            and e.target_node_id in valid_node_ids
+            and _matches_edge_filter(e, filters)
+        ]
         summary = {"type": "FULL_BUSINESS_GRAPH", "node_count": len(nodes), "edge_count": len(edges)}
         name = name or f"Business Graph Snapshot ({now.strftime('%Y-%m-%d %H:%M')})"
 
@@ -225,6 +241,12 @@ def create_graph_snapshot(
             serialized_filters["provider"] = filters.provider
         if filters.dimensions:
             serialized_filters["dimensions"] = filters.dimensions
+        if filters.time_from:
+            serialized_filters["time_from"] = filters.time_from.isoformat()
+        if filters.time_to:
+            serialized_filters["time_to"] = filters.time_to.isoformat()
+        if filters.valid_at:
+            serialized_filters["valid_at"] = filters.valid_at.isoformat()
 
     with transaction.atomic():
         snapshot = models.GraphSnapshot.objects.create(
@@ -255,7 +277,7 @@ def get_graph_snapshot(
 
     snapshot = models.GraphSnapshot.objects.filter(pk=snapshot_id).first()
     if snapshot is None:
-        raise GraphValidationError(f"GraphSnapshot #{snapshot_id} does not exist.")
+        raise GraphNotFoundError(f"GraphSnapshot #{snapshot_id} does not exist.")
 
     if snapshot.business_id != business_id:
         raise GraphScopeError(

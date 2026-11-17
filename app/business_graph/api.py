@@ -3,10 +3,12 @@
 Serves Business Graph specification and ticket T-019.
 
 Key properties:
-1. Deny-by-default authorization seam:
-   - Resolves authorized business strictly from authenticated/contextual request.business.
-   - Rejects unauthenticated or out-of-scope calls with HTTP 403 PermissionDenied.
-   - Refuses to trust caller-supplied business_id in query parameters or payload.
+1. Deny-by-default authorization seam (see app/business_scope.py):
+   - The business comes only from the URL (businesses/<business_id>/graph/...).
+   - The caller must be an active member of that business; reads need any member role,
+     snapshot creation and rebuilds need OWNER or MANAGER.
+   - Rejects unauthenticated or non-member calls with HTTP 403 and never echoes ids.
+   - Ignores any business_id sent in the query string or payload.
 2. Standard DRF endpoints:
    - Traversal and path search
    - Journey projections (Customer, Order, Product, Campaign)
@@ -17,13 +19,14 @@ Key properties:
 from decimal import Decimal, InvalidOperation
 from typing import Any
 import datetime
+import logging
 
 from django.utils.dateparse import parse_datetime
-from rest_framework import exceptions, permissions, status
+from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from app import models
+from app.business_scope import NOT_FOUND_DETAIL, BusinessScopedAPIView, error_response
 from app.business_graph.journeys import (
     build_campaign_journey,
     build_customer_journey,
@@ -32,8 +35,12 @@ from app.business_graph.journeys import (
 )
 from app.business_graph.projection import (
     GraphCrossBusinessError,
+    GraphNotBuiltError,
+    GraphNotFoundError,
     GraphScopeError,
     GraphValidationError,
+    SUPPORTED_ENTITY_MODELS,
+    SUPPORTED_RELATIONSHIP_TYPES,
 )
 from app.business_graph.snapshots import (
     create_graph_snapshot,
@@ -51,6 +58,114 @@ from app.business_graph.traversal import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+# BG-05: the documents ask for caps but give no numbers. These are named, reviewable values
+# (to be confirmed by the owner); a request above a cap is rejected with 400, never silently clamped.
+MAX_TRAVERSAL_DEPTH = 5
+MAX_TRAVERSAL_NODES = 1000
+MAX_QUERY_LIMIT = 1000
+MAX_BIGINT = 2**63 - 1
+
+
+def _int_param(source: Any, name: str, default: int | None, *, minimum: int, maximum: int | None = None) -> int | None:
+    """Read an optional integer parameter; a malformed or out-of-range value is a 400 (BG-06, BG-05)."""
+    raw = source.get(name) if source is not None else None
+    if raw is None or raw == "":
+        return default
+    if isinstance(raw, bool) or (isinstance(raw, float) and not raw.is_integer()):
+        raise GraphValidationError(f"{name} must be an integer.")
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        raise GraphValidationError(f"{name} must be an integer.")
+    if value < minimum:
+        raise GraphValidationError(f"{name} must be at least {minimum}.")
+    effective_max = MAX_BIGINT if maximum is None else maximum
+    if value > effective_max:
+        raise GraphValidationError(f"{name} must be at most {effective_max}.")
+    return value
+
+
+def _bool_param(source: Any, name: str, default: bool = False) -> bool:
+    """Read an optional boolean parameter from a strict set ('true', 'false', '1', '0')."""
+    raw = source.get(name) if source is not None else None
+    if raw is None or raw == "":
+        return default
+    if isinstance(raw, bool):
+        return raw
+    val = str(raw).strip().lower()
+    if val in ("true", "1"):
+        return True
+    if val in ("false", "0"):
+        return False
+    raise GraphValidationError(f"{name} must be a boolean.")
+
+
+def _json_object(request) -> Any:
+    """The request body as a mapping; anything else (array, string) is a 400 instead of a crash."""
+    if not hasattr(request.data, "get"):
+        raise GraphValidationError("The request body must be a JSON object.")
+    return request.data
+
+
+def _text_field(body: Any, name: str) -> str | None:
+    value = body.get(name)
+    if value is not None and not isinstance(value, str):
+        raise GraphValidationError(f"{name} must be a string.")
+    return value
+
+
+def _datetime_param(get_fn, name: str) -> datetime.datetime | None:
+    """Read an optional timezone-aware ISO 8601 datetime; malformed or naive values are a 400 (BG-06)."""
+    raw = get_fn(name)
+    if not raw:
+        return None
+    if isinstance(raw, datetime.datetime):
+        value = raw
+    elif isinstance(raw, str):
+        try:
+            value = parse_datetime(raw)
+        except ValueError:
+            value = None
+        if value is None:
+            raise GraphValidationError(f"{name} must be an ISO 8601 datetime.")
+    else:
+        raise GraphValidationError(f"{name} must be an ISO 8601 datetime.")
+    if value.tzinfo is None:
+        raise GraphValidationError(f"{name} must include a UTC offset.")
+    return value
+
+
+def _parse_filter_set(params: Any, get_fn: Any, key: str, valid_set: Any, label: str) -> frozenset[str] | None:
+    if hasattr(params, "getlist"):
+        raw_items = params.getlist(key)
+    else:
+        raw = get_fn(key)
+        raw_items = raw if isinstance(raw, (list, set, tuple)) else ([raw] if raw else [])
+
+    parsed = []
+    for item in raw_items:
+        if isinstance(item, str):
+            for part in item.split(","):
+                p = part.strip()
+                if p:
+                    parsed.append(p)
+        elif item:
+            parsed.append(str(item).strip())
+
+    if not parsed:
+        return None
+
+    validated = []
+    for val in parsed:
+        val_upper = val.upper()
+        if val_upper not in valid_set:
+            raise GraphValidationError(f"Invalid {label} {val!r}; expected one of {sorted(valid_set)}")
+        validated.append(val_upper)
+    return frozenset(validated)
+
+
 def _parse_graph_filter(params: Any) -> GraphFilter | None:
     """Parse GraphFilter criteria from query_params or dict payload."""
     if not params:
@@ -63,54 +178,26 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
     min_confidence = None
     min_conf_raw = get_fn("min_confidence")
     if min_conf_raw is not None and min_conf_raw != "":
+        if isinstance(min_conf_raw, bool):
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
         try:
-            min_confidence = Decimal(str(min_conf_raw))
+            val = Decimal(str(min_conf_raw))
         except (InvalidOperation, TypeError, ValueError):
-            pass
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
+        if not val.is_finite() or not (Decimal("0") <= val <= Decimal("1")):
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
+        min_confidence = val
 
     status_val = get_fn("status") or None
     channel_val = get_fn("channel") or None
     provider_val = get_fn("provider") or None
 
-    entity_types = None
-    et_raw = get_fn("entity_types")
-    if et_raw:
-        if isinstance(et_raw, (list, set, tuple)):
-            entity_types = frozenset(str(x).strip().upper() for x in et_raw if str(x).strip())
-        elif isinstance(et_raw, str):
-            entity_types = frozenset(x.strip().upper() for x in et_raw.split(",") if x.strip())
+    entity_types = _parse_filter_set(params, get_fn, "entity_types", SUPPORTED_ENTITY_MODELS, "entity_type")
+    relationship_types = _parse_filter_set(params, get_fn, "relationship_types", SUPPORTED_RELATIONSHIP_TYPES, "relationship_type")
 
-    relationship_types = None
-    rt_raw = get_fn("relationship_types")
-    if rt_raw:
-        if isinstance(rt_raw, (list, set, tuple)):
-            relationship_types = frozenset(str(x).strip().upper() for x in rt_raw if str(x).strip())
-        elif isinstance(rt_raw, str):
-            relationship_types = frozenset(x.strip().upper() for x in rt_raw.split(",") if x.strip())
-
-    time_from = None
-    tf_raw = get_fn("time_from")
-    if tf_raw:
-        if isinstance(tf_raw, datetime.datetime):
-            time_from = tf_raw
-        elif isinstance(tf_raw, str):
-            time_from = parse_datetime(tf_raw)
-
-    time_to = None
-    tt_raw = get_fn("time_to")
-    if tt_raw:
-        if isinstance(tt_raw, datetime.datetime):
-            time_to = tt_raw
-        elif isinstance(tt_raw, str):
-            time_to = parse_datetime(tt_raw)
-
-    valid_at = None
-    va_raw = get_fn("valid_at")
-    if va_raw:
-        if isinstance(va_raw, datetime.datetime):
-            valid_at = va_raw
-        elif isinstance(va_raw, str):
-            valid_at = parse_datetime(va_raw)
+    time_from = _datetime_param(get_fn, "time_from")
+    time_to = _datetime_param(get_fn, "time_to")
+    valid_at = _datetime_param(get_fn, "valid_at")
 
     dimensions = None
     dim_raw = get_fn("dimensions")
@@ -148,93 +235,54 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
     )
 
 
-def resolve_authorized_business(request: Any) -> models.Business:
-    """Resolve the authoritative business scope from the request.
+class BaseGraphAPIView(BusinessScopedAPIView):
+    """Base class providing URL-scoped membership checks and error translation."""
 
-    Deny-by-default: requires request.business or request.auth_business.
-    If the caller explicitly passes a business_id parameter or payload field,
-    it must strictly match the authorized business; otherwise access is denied.
-    """
-    biz = getattr(request, "business", None) or getattr(request, "auth_business", None)
-    if biz is None:
-        raise exceptions.PermissionDenied("Access denied: No authorized business scope.")
-
-    if not isinstance(biz, models.Business):
-        if isinstance(biz, int):
-            biz_obj = models.Business.objects.filter(pk=biz).first()
-            if not biz_obj:
-                raise exceptions.PermissionDenied("Access denied: Authorized business not found.")
-            biz = biz_obj
-        else:
-            raise exceptions.PermissionDenied("Access denied: Invalid business context.")
-
-    # Validate against caller-supplied parameters to prevent spoofing
-    caller_biz_id = None
-    if hasattr(request, "query_params"):
-        caller_biz_id = request.query_params.get("business_id")
-    if caller_biz_id is None and hasattr(request, "data") and isinstance(request.data, dict):
-        caller_biz_id = request.data.get("business_id")
-
-    if caller_biz_id is not None:
-        try:
-            if int(caller_biz_id) != biz.pk:
-                raise exceptions.PermissionDenied(
-                    "Access denied: Caller-supplied business_id does not match authorized business."
-                )
-        except (ValueError, TypeError):
-            raise exceptions.PermissionDenied("Access denied: Malformed business_id parameter.")
-
-    return biz
-
-
-class HasAuthorizedBusiness(permissions.BasePermission):
-    """Deny-by-default permission checking for an authorized business."""
-
-    def has_permission(self, request, view):
-        try:
-            resolve_authorized_business(request)
-            return True
-        except exceptions.PermissionDenied:
-            return False
-
-
-class BaseGraphAPIView(APIView):
-    """Base class providing deny-by-default business scoping and error translation."""
-
-    permission_classes = [HasAuthorizedBusiness]
-
-    def get_authorized_business(self) -> models.Business:
-        return resolve_authorized_business(self.request)
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        for param, val in kwargs.items():
+            if isinstance(val, int) and (val < 1 or val > MAX_BIGINT):
+                raise GraphValidationError(f"{param} must be between 1 and {MAX_BIGINT}.")
 
     def handle_exception(self, exc):
-        if isinstance(exc, GraphScopeError):
-            return Response({"error": str(exc)}, status=status.HTTP_403_FORBIDDEN)
-        if isinstance(exc, (GraphValidationError, GraphCrossBusinessError)):
-            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        if isinstance(exc, GraphNotBuiltError):
+            return error_response(
+                "GRAPH_NOT_BUILT",
+                "The business graph has not been built yet. Rebuild it first.",
+                status.HTTP_409_CONFLICT,
+            )
+        if isinstance(exc, (GraphNotFoundError, GraphScopeError, GraphCrossBusinessError)):
+            # BG-07: missing and foreign entities answer identically, and the service message
+            # (which names the owning business) is logged, never returned to the caller.
+            log = logger.info if isinstance(exc, GraphNotFoundError) else logger.warning
+            log("Graph request not served: %s", exc)
+            return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
+        if isinstance(exc, GraphValidationError):
+            return error_response("INVALID_DATA", str(exc), status.HTTP_400_BAD_REQUEST)
+        if isinstance(exc, OverflowError):
+            return error_response("INVALID_DATA", "Integer parameter exceeds maximum supported size.", status.HTTP_400_BAD_REQUEST)
         return super().handle_exception(exc)
 
 
 class GraphTraversalAPIView(BaseGraphAPIView):
     """Multi-hop bounded graph traversal endpoint."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         root_type = request.query_params.get("root_entity_type")
         root_id = request.query_params.get("root_entity_id")
         if not root_type or not root_id:
-            return Response(
-                {"error": "root_entity_type and root_entity_id query parameters are required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_response(
+                "INVALID_DATA",
+                "root_entity_type and root_entity_id query parameters are required.",
+                status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            root_id_int = int(root_id)
-        except ValueError:
-            return Response({"error": "root_entity_id must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
+        root_id_int = _int_param(request.query_params, "root_entity_id", None, minimum=1, maximum=MAX_BIGINT)
 
         direction = request.query_params.get("direction", "OUTBOUND")
-        max_depth = int(request.query_params.get("max_depth", 2))
-        max_nodes = int(request.query_params.get("max_nodes", 100))
+        max_depth = _int_param(request.query_params, "max_depth", 2, minimum=0, maximum=MAX_TRAVERSAL_DEPTH)
+        max_nodes = _int_param(request.query_params, "max_nodes", 100, minimum=1, maximum=MAX_TRAVERSAL_NODES)
         filters = _parse_graph_filter(request.query_params)
 
         result = traverse_graph(
@@ -280,7 +328,7 @@ class GraphTraversalAPIView(BaseGraphAPIView):
 class GraphPathSearchAPIView(BaseGraphAPIView):
     """Path search endpoint between two entities with optional explainability."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         start_type = request.query_params.get("start_entity_type")
         start_id = request.query_params.get("start_entity_id")
@@ -288,20 +336,18 @@ class GraphPathSearchAPIView(BaseGraphAPIView):
         end_id = request.query_params.get("end_entity_id")
 
         if not all([start_type, start_id, end_type, end_id]):
-            return Response(
-                {"error": "start_entity_type, start_entity_id, end_entity_type, and end_entity_id are required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_response(
+                "INVALID_DATA",
+                "start_entity_type, start_entity_id, end_entity_type, and end_entity_id are required.",
+                status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            s_id = int(start_id)
-            e_id = int(end_id)
-        except ValueError:
-            return Response({"error": "start_entity_id and end_entity_id must be integers."}, status=status.HTTP_400_BAD_REQUEST)
+        s_id = _int_param(request.query_params, "start_entity_id", None, minimum=1, maximum=MAX_BIGINT)
+        e_id = _int_param(request.query_params, "end_entity_id", None, minimum=1, maximum=MAX_BIGINT)
 
-        max_depth = int(request.query_params.get("max_depth", 5))
+        max_depth = _int_param(request.query_params, "max_depth", 5, minimum=1, maximum=MAX_TRAVERSAL_DEPTH)
         direction = request.query_params.get("direction", "OUTBOUND")
-        explain = str(request.query_params.get("explain", "false")).lower() in ("true", "1")
+        explain = _bool_param(request.query_params, "explain", default=False)
         filters = _parse_graph_filter(request.query_params)
 
         paths = find_paths(
@@ -336,13 +382,26 @@ class GraphPathSearchAPIView(BaseGraphAPIView):
 class GraphQueryAPIView(BaseGraphAPIView):
     """General structured graph query endpoint for entities and relationships."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         entity_type = request.query_params.get("entity_type")
-        entity_id_raw = request.query_params.get("entity_id")
-        entity_id = int(entity_id_raw) if entity_id_raw is not None else None
+        entity_id = _int_param(request.query_params, "entity_id", None, minimum=1)
         relationship_type = request.query_params.get("relationship_type")
-        limit = int(request.query_params.get("limit", 100))
+
+        if (entity_type and not entity_id) or (entity_id and not entity_type):
+            raise GraphValidationError("entity_type and entity_id must be provided together.")
+
+        if entity_type:
+            entity_type = entity_type.strip().upper()
+            if entity_type not in SUPPORTED_ENTITY_MODELS:
+                raise GraphValidationError(
+                    f"Invalid entity_type {entity_type!r}; expected one of {sorted(SUPPORTED_ENTITY_MODELS)}"
+                )
+
+        if relationship_type:
+            relationship_type = relationship_type.strip().upper()
+
+        limit = _int_param(request.query_params, "limit", 100, minimum=1, maximum=MAX_QUERY_LIMIT)
         filters = _parse_graph_filter(request.query_params)
 
         result = query_subgraph(
@@ -387,7 +446,7 @@ class GraphQueryAPIView(BaseGraphAPIView):
 class CustomerJourneyAPIView(BaseGraphAPIView):
     """Customer multi-channel journey endpoint."""
 
-    def get(self, request, customer_id: int):
+    def get(self, request, business_id: int, customer_id: int):
         biz = self.get_authorized_business()
         filters = _parse_graph_filter(request.query_params)
         journey = build_customer_journey(
@@ -420,7 +479,7 @@ class CustomerJourneyAPIView(BaseGraphAPIView):
 class OrderJourneyAPIView(BaseGraphAPIView):
     """Order lifecycle journey endpoint."""
 
-    def get(self, request, order_id: int):
+    def get(self, request, business_id: int, order_id: int):
         biz = self.get_authorized_business()
         filters = _parse_graph_filter(request.query_params)
         oj = build_order_journey(
@@ -454,7 +513,7 @@ class OrderJourneyAPIView(BaseGraphAPIView):
 class ProductJourneyAPIView(BaseGraphAPIView):
     """Product journey endpoint."""
 
-    def get(self, request, product_id: int):
+    def get(self, request, business_id: int, product_id: int):
         biz = self.get_authorized_business()
         filters = _parse_graph_filter(request.query_params)
         pj = build_product_journey(
@@ -474,7 +533,7 @@ class ProductJourneyAPIView(BaseGraphAPIView):
 class CampaignJourneyAPIView(BaseGraphAPIView):
     """Campaign journey endpoint."""
 
-    def get(self, request, campaign_id: int):
+    def get(self, request, business_id: int, campaign_id: int):
         biz = self.get_authorized_business()
         filters = _parse_graph_filter(request.query_params)
         cj = build_campaign_journey(
@@ -494,7 +553,7 @@ class CampaignJourneyAPIView(BaseGraphAPIView):
 class GraphSnapshotListCreateAPIView(BaseGraphAPIView):
     """List or create graph snapshots."""
 
-    def get(self, request):
+    def get(self, request, business_id: int):
         biz = self.get_authorized_business()
         snapshots = models.GraphSnapshot.objects.filter(business_id=biz.pk).order_by("-generated_at")
         return Response([
@@ -509,33 +568,21 @@ class GraphSnapshotListCreateAPIView(BaseGraphAPIView):
             for s in snapshots
         ])
 
-    def post(self, request):
+    def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        snapshot_type = request.data.get("snapshot_type", "BUSINESS")
-        name = request.data.get("name")
-        root_type = request.data.get("root_entity_type")
-        root_id = request.data.get("root_entity_id")
-        filters = _parse_graph_filter(request.data.get("filters") or request.data)
+        body = _json_object(request)
+        snapshot_type = _text_field(body, "snapshot_type") or "BUSINESS"
+        name = _text_field(body, "name")
+        root_type = _text_field(body, "root_entity_type")
+        filters = _parse_graph_filter(body.get("filters") or body)
 
         snapshot = create_graph_snapshot(
             business_id=biz.pk,
             snapshot_type=snapshot_type,
             name=name,
             root_entity_type=root_type,
-            root_entity_id=int(root_id) if root_id is not None else None,
+            root_entity_id=_int_param(body, "root_entity_id", None, minimum=1),
             filters=filters,
-        )
-
-        return Response(
-            {
-                "id": snapshot.pk,
-                "name": snapshot.name,
-                "snapshot_type": snapshot.snapshot_type,
-                "node_count": snapshot.node_count,
-                "edge_count": snapshot.edge_count,
-                "generated_at": snapshot.generated_at.isoformat(),
-            },
-            status=status.HTTP_201_CREATED,
         )
 
         return Response(
@@ -554,7 +601,7 @@ class GraphSnapshotListCreateAPIView(BaseGraphAPIView):
 class GraphSnapshotDetailAPIView(BaseGraphAPIView):
     """Retrieve an individual graph snapshot with serialized data."""
 
-    def get(self, request, snapshot_id: int):
+    def get(self, request, business_id: int, snapshot_id: int):
         biz = self.get_authorized_business()
         snapshot = get_graph_snapshot(
             business_id=biz.pk,
@@ -577,12 +624,14 @@ class GraphSnapshotDetailAPIView(BaseGraphAPIView):
 class GraphRebuildAPIView(BaseGraphAPIView):
     """Execute a full graph rebuild for the authorized business."""
 
-    def post(self, request):
+    def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        clean = bool(request.data.get("clean", False))
+        clean_raw = _json_object(request).get("clean", False)
+        if not isinstance(clean_raw, bool):
+            raise GraphValidationError("clean must be a boolean.")
         summary = rebuild_business_graph(
             business_id=biz.pk,
-            clean=clean,
+            clean=clean_raw,
         )
 
         return Response({
@@ -608,8 +657,6 @@ __all__ = [
     "GraphSnapshotDetailAPIView",
     "GraphSnapshotListCreateAPIView",
     "GraphTraversalAPIView",
-    "HasAuthorizedBusiness",
     "OrderJourneyAPIView",
     "ProductJourneyAPIView",
-    "resolve_authorized_business",
 ]

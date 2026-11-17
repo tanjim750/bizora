@@ -1,5 +1,7 @@
 """Business Graph domain: canonical graph nodes, relationship edges, traversal, journeys, snapshots, and API."""
 
+from app.business_scope import HasAuthorizedBusiness
+
 from . import api, journeys, projection, snapshots, sync, traversal, urls
 from .api import (
     BaseGraphAPIView,
@@ -11,10 +13,8 @@ from .api import (
     GraphSnapshotDetailAPIView,
     GraphSnapshotListCreateAPIView,
     GraphTraversalAPIView,
-    HasAuthorizedBusiness,
     OrderJourneyAPIView,
     ProductJourneyAPIView,
-    resolve_authorized_business,
 )
 from .journeys import (
     CampaignJourney,
@@ -30,12 +30,15 @@ from .journeys import (
 )
 from .projection import (
     GraphCrossBusinessError,
+    GraphNotFoundError,
     GraphScopeError,
     GraphValidationError,
     ProjectionSummary,
+    PROJECTABLE_RULE_KEYS,
     SUPPORTED_ENTITY_MODELS,
     SUPPORTED_RELATIONSHIP_RULES,
     VALID_RELATIONSHIP_SOURCES,
+    canonical_rule_name,
     project_business_graph,
     project_entity_node,
     project_relationship_edge,
@@ -81,6 +84,7 @@ __all__ = [
     "GraphPathSearchAPIView",
     "GraphQueryAPIView",
     "GraphRebuildAPIView",
+    "GraphNotFoundError",
     "GraphScopeError",
     "GraphSnapshotDetailAPIView",
     "GraphSnapshotListCreateAPIView",
@@ -98,11 +102,13 @@ __all__ = [
     "RebuildSummary",
     "STAGE_MAPPING",
     "SUPPORTED_ENTITY_MODELS",
+    "PROJECTABLE_RULE_KEYS",
     "SUPPORTED_RELATIONSHIP_RULES",
     "SUPPORTED_SNAPSHOT_TYPES",
     "TraversalResult",
     "VALID_DIRECTIONS",
     "VALID_RELATIONSHIP_SOURCES",
+    "canonical_rule_name",
     "api",
     "build_campaign_journey",
     "build_customer_journey",
@@ -122,7 +128,6 @@ __all__ = [
     "prune_stale_projections",
     "query_subgraph",
     "rebuild_business_graph",
-    "resolve_authorized_business",
     "snapshots",
     "sync",
     "sync_entity_node",
