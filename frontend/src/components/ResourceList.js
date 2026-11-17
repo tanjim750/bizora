@@ -29,6 +29,7 @@ export default function ResourceList({
   query = {},
   path,
   children,
+  hideHeading = false,
 }) {
   const rows = Array.isArray(data) ? data : data?.results || []
   const count = Array.isArray(data) ? data.length : (data?.count ?? rows.length)
@@ -37,14 +38,16 @@ export default function ResourceList({
   const next = data?.next ? new URL(data.next, 'https://frontend.invalid').search : null
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <p className="page-context">Business operations</p>
-          <h1>{title}</h1>
-          <p>{description || 'Authorized, stored records for this business.'}</p>
+      {!hideHeading && (
+        <div className="page-heading">
+          <div>
+            <p className="page-context">Business operations</p>
+            <h1>{title}</h1>
+            <p>{description || 'Authorized, stored records for this business.'}</p>
+          </div>
+          <span className="count-chip">{count} records</span>
         </div>
-        <span className="count-chip">{count} records</span>
-      </div>
+      )}
       {filters.length > 0 && (
         <form className="filter-panel" action={path}>
           <div className="filter-grid">

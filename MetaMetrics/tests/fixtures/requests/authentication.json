@@ -1,0 +1,11 @@
+{
+  "description": "Golden Meta API requests produced by the authentication service. Ported from the PHP suite so that both implementations are checked against the same contract.",
+  "validate": {
+    "method": "GET",
+    "path": "/v23.0/act_123456789",
+    "query": {
+      "fields": "id"
+    },
+    "encoded_query": "fields=id"
+  }
+}

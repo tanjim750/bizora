@@ -32,9 +32,12 @@ from django.db.models import Q
 
 from app import models
 from app.business_graph.projection import (
+    GraphNotBuiltError,
     GraphScopeError,
     GraphNotFoundError,
     GraphValidationError,
+    SUPPORTED_ENTITY_MODELS,
+    _resolve_entity_business_id,
 )
 
 
@@ -257,6 +260,8 @@ def traverse_graph(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(root_entity_id, int) or root_entity_id <= 0 or root_entity_id > 2**63 - 1:
+        raise GraphValidationError("root_entity_id must be a positive integer at most 9223372036854775807")
 
     if max_depth < 0:
         raise GraphValidationError("max_depth must be non-negative")
@@ -286,6 +291,26 @@ def traverse_graph(
             raise GraphScopeError(
                 f"Root entity {root_entity_type} #{root_entity_id} belongs to business {other_node.business_id}, not {business_id}."
             )
+
+        model_cls = SUPPORTED_ENTITY_MODELS.get(root_entity_type)
+        if model_cls is not None:
+            entity = model_cls.objects.filter(pk=root_entity_id).first()
+            if entity is None:
+                raise GraphNotFoundError(
+                    f"Root entity {root_entity_type} #{root_entity_id} not found in business {business_id} graph."
+                )
+            try:
+                entity_biz = _resolve_entity_business_id(root_entity_type, entity)
+            except Exception:
+                entity_biz = None
+            if entity_biz is not None and entity_biz != business_id:
+                raise GraphScopeError(
+                    f"Root entity {root_entity_type} #{root_entity_id} belongs to business {entity_biz}, not {business_id}."
+                )
+
+        if not models.GraphNode.objects.filter(business_id=business_id).exists():
+            raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
+
         raise GraphNotFoundError(
             f"Root entity {root_entity_type} #{root_entity_id} not found in business {business_id} graph."
         )
@@ -315,10 +340,6 @@ def traverse_graph(
         )
 
         for edge, neighbor in neighbors:
-            if edge.pk not in seen_edge_ids:
-                seen_edge_ids.add(edge.pk)
-                edges.append(edge)
-
             if neighbor.pk not in visited_node_ids:
                 if len(nodes) >= max_nodes:
                     truncated = True
@@ -327,8 +348,18 @@ def traverse_graph(
                 nodes.append(neighbor)
                 queue.append((neighbor, curr_depth + 1))
 
+            if edge.pk not in seen_edge_ids:
+                seen_edge_ids.add(edge.pk)
+                edges.append(edge)
+
         if truncated:
             break
+
+    # Drop any edge whose endpoints were not both visited (e.g. truncated traversal)
+    edges = [
+        edge for edge in edges
+        if edge.source_node_id in visited_node_ids and edge.target_node_id in visited_node_ids
+    ]
 
     return TraversalResult(
         business_id=business_id,
@@ -362,6 +393,10 @@ def find_paths(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(start_entity_id, int) or start_entity_id <= 0 or start_entity_id > 2**63 - 1:
+        raise GraphValidationError("start_entity_id must be a positive integer at most 9223372036854775807")
+    if not isinstance(end_entity_id, int) or end_entity_id <= 0 or end_entity_id > 2**63 - 1:
+        raise GraphValidationError("end_entity_id must be a positive integer at most 9223372036854775807")
 
     if max_depth <= 0:
         raise GraphValidationError("max_depth must be positive")
@@ -450,8 +485,32 @@ def query_subgraph(
     """General structured graph query endpoint for entities and relationships."""
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if entity_id is not None and (not isinstance(entity_id, int) or entity_id <= 0 or entity_id > 2**63 - 1):
+        raise GraphValidationError("entity_id must be a positive integer at most 9223372036854775807")
+
+    if relationship_type:
+        relationship_type = relationship_type.strip().upper()
 
     if entity_type and entity_id:
+        if relationship_type:
+            rel_types = frozenset({relationship_type})
+            if filters is None:
+                filters = GraphFilter(relationship_types=rel_types)
+            elif not filters.relationship_types:
+                filters = GraphFilter(
+                    entity_types=filters.entity_types,
+                    relationship_types=rel_types,
+                    min_confidence=filters.min_confidence,
+                    valid_at=filters.valid_at,
+                    time_from=filters.time_from,
+                    time_to=filters.time_to,
+                    status=filters.status,
+                    channel=filters.channel,
+                    provider=filters.provider,
+                    dimensions=filters.dimensions,
+                    node_properties=filters.node_properties,
+                    edge_properties=filters.edge_properties,
+                )
         return traverse_graph(
             business_id=business_id,
             root_entity_type=entity_type,

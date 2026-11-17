@@ -35,9 +35,12 @@ from app.business_graph.journeys import (
 )
 from app.business_graph.projection import (
     GraphCrossBusinessError,
+    GraphNotBuiltError,
     GraphNotFoundError,
     GraphScopeError,
     GraphValidationError,
+    SUPPORTED_ENTITY_MODELS,
+    SUPPORTED_RELATIONSHIP_TYPES,
 )
 from app.business_graph.snapshots import (
     create_graph_snapshot,
@@ -62,6 +65,7 @@ logger = logging.getLogger(__name__)
 MAX_TRAVERSAL_DEPTH = 5
 MAX_TRAVERSAL_NODES = 1000
 MAX_QUERY_LIMIT = 1000
+MAX_BIGINT = 2**63 - 1
 
 
 def _int_param(source: Any, name: str, default: int | None, *, minimum: int, maximum: int | None = None) -> int | None:
@@ -77,9 +81,25 @@ def _int_param(source: Any, name: str, default: int | None, *, minimum: int, max
         raise GraphValidationError(f"{name} must be an integer.")
     if value < minimum:
         raise GraphValidationError(f"{name} must be at least {minimum}.")
-    if maximum is not None and value > maximum:
-        raise GraphValidationError(f"{name} must be at most {maximum}.")
+    effective_max = MAX_BIGINT if maximum is None else maximum
+    if value > effective_max:
+        raise GraphValidationError(f"{name} must be at most {effective_max}.")
     return value
+
+
+def _bool_param(source: Any, name: str, default: bool = False) -> bool:
+    """Read an optional boolean parameter from a strict set ('true', 'false', '1', '0')."""
+    raw = source.get(name) if source is not None else None
+    if raw is None or raw == "":
+        return default
+    if isinstance(raw, bool):
+        return raw
+    val = str(raw).strip().lower()
+    if val in ("true", "1"):
+        return True
+    if val in ("false", "0"):
+        return False
+    raise GraphValidationError(f"{name} must be a boolean.")
 
 
 def _json_object(request) -> Any:
@@ -117,6 +137,35 @@ def _datetime_param(get_fn, name: str) -> datetime.datetime | None:
     return value
 
 
+def _parse_filter_set(params: Any, get_fn: Any, key: str, valid_set: Any, label: str) -> frozenset[str] | None:
+    if hasattr(params, "getlist"):
+        raw_items = params.getlist(key)
+    else:
+        raw = get_fn(key)
+        raw_items = raw if isinstance(raw, (list, set, tuple)) else ([raw] if raw else [])
+
+    parsed = []
+    for item in raw_items:
+        if isinstance(item, str):
+            for part in item.split(","):
+                p = part.strip()
+                if p:
+                    parsed.append(p)
+        elif item:
+            parsed.append(str(item).strip())
+
+    if not parsed:
+        return None
+
+    validated = []
+    for val in parsed:
+        val_upper = val.upper()
+        if val_upper not in valid_set:
+            raise GraphValidationError(f"Invalid {label} {val!r}; expected one of {sorted(valid_set)}")
+        validated.append(val_upper)
+    return frozenset(validated)
+
+
 def _parse_graph_filter(params: Any) -> GraphFilter | None:
     """Parse GraphFilter criteria from query_params or dict payload."""
     if not params:
@@ -129,30 +178,22 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
     min_confidence = None
     min_conf_raw = get_fn("min_confidence")
     if min_conf_raw is not None and min_conf_raw != "":
+        if isinstance(min_conf_raw, bool):
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
         try:
-            min_confidence = Decimal(str(min_conf_raw))
+            val = Decimal(str(min_conf_raw))
         except (InvalidOperation, TypeError, ValueError):
-            pass
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
+        if not val.is_finite() or not (Decimal("0") <= val <= Decimal("1")):
+            raise GraphValidationError("min_confidence must be a number between 0 and 1.")
+        min_confidence = val
 
     status_val = get_fn("status") or None
     channel_val = get_fn("channel") or None
     provider_val = get_fn("provider") or None
 
-    entity_types = None
-    et_raw = get_fn("entity_types")
-    if et_raw:
-        if isinstance(et_raw, (list, set, tuple)):
-            entity_types = frozenset(str(x).strip().upper() for x in et_raw if str(x).strip())
-        elif isinstance(et_raw, str):
-            entity_types = frozenset(x.strip().upper() for x in et_raw.split(",") if x.strip())
-
-    relationship_types = None
-    rt_raw = get_fn("relationship_types")
-    if rt_raw:
-        if isinstance(rt_raw, (list, set, tuple)):
-            relationship_types = frozenset(str(x).strip().upper() for x in rt_raw if str(x).strip())
-        elif isinstance(rt_raw, str):
-            relationship_types = frozenset(x.strip().upper() for x in rt_raw.split(",") if x.strip())
+    entity_types = _parse_filter_set(params, get_fn, "entity_types", SUPPORTED_ENTITY_MODELS, "entity_type")
+    relationship_types = _parse_filter_set(params, get_fn, "relationship_types", SUPPORTED_RELATIONSHIP_TYPES, "relationship_type")
 
     time_from = _datetime_param(get_fn, "time_from")
     time_to = _datetime_param(get_fn, "time_to")
@@ -197,7 +238,19 @@ def _parse_graph_filter(params: Any) -> GraphFilter | None:
 class BaseGraphAPIView(BusinessScopedAPIView):
     """Base class providing URL-scoped membership checks and error translation."""
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        for param, val in kwargs.items():
+            if isinstance(val, int) and (val < 1 or val > MAX_BIGINT):
+                raise GraphValidationError(f"{param} must be between 1 and {MAX_BIGINT}.")
+
     def handle_exception(self, exc):
+        if isinstance(exc, GraphNotBuiltError):
+            return error_response(
+                "GRAPH_NOT_BUILT",
+                "The business graph has not been built yet. Rebuild it first.",
+                status.HTTP_409_CONFLICT,
+            )
         if isinstance(exc, (GraphNotFoundError, GraphScopeError, GraphCrossBusinessError)):
             # BG-07: missing and foreign entities answer identically, and the service message
             # (which names the owning business) is logged, never returned to the caller.
@@ -206,6 +259,8 @@ class BaseGraphAPIView(BusinessScopedAPIView):
             return error_response("NOT_FOUND", NOT_FOUND_DETAIL, status.HTTP_404_NOT_FOUND)
         if isinstance(exc, GraphValidationError):
             return error_response("INVALID_DATA", str(exc), status.HTTP_400_BAD_REQUEST)
+        if isinstance(exc, OverflowError):
+            return error_response("INVALID_DATA", "Integer parameter exceeds maximum supported size.", status.HTTP_400_BAD_REQUEST)
         return super().handle_exception(exc)
 
 
@@ -223,10 +278,7 @@ class GraphTraversalAPIView(BaseGraphAPIView):
                 status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            root_id_int = int(root_id)
-        except ValueError:
-            return error_response("INVALID_DATA", "root_entity_id must be an integer.", status.HTTP_400_BAD_REQUEST)
+        root_id_int = _int_param(request.query_params, "root_entity_id", None, minimum=1, maximum=MAX_BIGINT)
 
         direction = request.query_params.get("direction", "OUTBOUND")
         max_depth = _int_param(request.query_params, "max_depth", 2, minimum=0, maximum=MAX_TRAVERSAL_DEPTH)
@@ -290,17 +342,12 @@ class GraphPathSearchAPIView(BaseGraphAPIView):
                 status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            s_id = int(start_id)
-            e_id = int(end_id)
-        except ValueError:
-            return error_response(
-                "INVALID_DATA", "start_entity_id and end_entity_id must be integers.", status.HTTP_400_BAD_REQUEST
-            )
+        s_id = _int_param(request.query_params, "start_entity_id", None, minimum=1, maximum=MAX_BIGINT)
+        e_id = _int_param(request.query_params, "end_entity_id", None, minimum=1, maximum=MAX_BIGINT)
 
         max_depth = _int_param(request.query_params, "max_depth", 5, minimum=1, maximum=MAX_TRAVERSAL_DEPTH)
         direction = request.query_params.get("direction", "OUTBOUND")
-        explain = str(request.query_params.get("explain", "false")).lower() in ("true", "1")
+        explain = _bool_param(request.query_params, "explain", default=False)
         filters = _parse_graph_filter(request.query_params)
 
         paths = find_paths(
@@ -340,6 +387,20 @@ class GraphQueryAPIView(BaseGraphAPIView):
         entity_type = request.query_params.get("entity_type")
         entity_id = _int_param(request.query_params, "entity_id", None, minimum=1)
         relationship_type = request.query_params.get("relationship_type")
+
+        if (entity_type and not entity_id) or (entity_id and not entity_type):
+            raise GraphValidationError("entity_type and entity_id must be provided together.")
+
+        if entity_type:
+            entity_type = entity_type.strip().upper()
+            if entity_type not in SUPPORTED_ENTITY_MODELS:
+                raise GraphValidationError(
+                    f"Invalid entity_type {entity_type!r}; expected one of {sorted(SUPPORTED_ENTITY_MODELS)}"
+                )
+
+        if relationship_type:
+            relationship_type = relationship_type.strip().upper()
+
         limit = _int_param(request.query_params, "limit", 100, minimum=1, maximum=MAX_QUERY_LIMIT)
         filters = _parse_graph_filter(request.query_params)
 
@@ -565,10 +626,12 @@ class GraphRebuildAPIView(BaseGraphAPIView):
 
     def post(self, request, business_id: int):
         biz = self.get_authorized_business()
-        clean = bool(_json_object(request).get("clean", False))
+        clean_raw = _json_object(request).get("clean", False)
+        if not isinstance(clean_raw, bool):
+            raise GraphValidationError("clean must be a boolean.")
         summary = rebuild_business_graph(
             business_id=biz.pk,
-            clean=clean,
+            clean=clean_raw,
         )
 
         return Response({

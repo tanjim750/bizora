@@ -31,8 +31,7 @@ from decimal import Decimal
 from typing import Any
 import datetime
 
-from django.db import transaction
-from django.db.models import Model
+from django.db import models as db_models, transaction
 from django.utils import timezone
 
 from app import models
@@ -54,8 +53,12 @@ class GraphCrossBusinessError(GraphValidationError):
     """Source and target entities belong to different businesses."""
 
 
+class GraphNotBuiltError(GraphValidationError):
+    """Raised when an operation requires an existing graph but the business graph has not been built yet."""
+
+
 # Supported canonical entity models and their business resolution paths
-SUPPORTED_ENTITY_MODELS: dict[str, type[Model]] = {
+SUPPORTED_ENTITY_MODELS: dict[str, type[db_models.Model]] = {
     "CUSTOMER": models.Customer,
     "PRODUCT": models.Product,
     "PRODUCT_VARIANT": models.ProductVariant,
@@ -100,6 +103,10 @@ SUPPORTED_RELATIONSHIP_RULES: dict[str, tuple[str, str, str]] = {
     "campaign_session": ("CAMPAIGN", "REPORTED_SESSION", "WEBSITE_SESSION"),
 }
 
+SUPPORTED_RELATIONSHIP_TYPES: frozenset[str] = frozenset(
+    r[1] for r in SUPPORTED_RELATIONSHIP_RULES.values()
+)
+
 # Business Intelligence persists every rule as "bi.relationship.<name>.v1" (BG-03); the bare
 # "<name>" form is what the Graph rule table and its fixtures use. Both resolve to the same
 # rule through canonical_rule_name(), which is the single place the two spellings are aligned.
@@ -135,55 +142,79 @@ class ProjectionSummary:
     total_edges: int
 
 
-def _resolve_entity_business_id(entity_type: str, entity: Model) -> int:
+ENTITY_BUSINESS_LOOKUPS: dict[str, str] = {
+    "WEBSITE_EVENT": "session__business_id",
+    "MESSAGE": "conversation__business_id",
+    "CAMPAIGN_CONVERSION": "campaign__business_id",
+    "PRODUCT_VARIANT": "product__business_id",
+}
+
+
+def get_entity_business_filter(entity_type: str, business_id: int) -> dict[str, Any]:
+    """Return ORM filter kwargs scoping entity_type to business_id."""
+    lookup = ENTITY_BUSINESS_LOOKUPS.get(entity_type, "business_id")
+    return {lookup: business_id}
+
+
+def _resolve_entity_business_id(entity_type: str, entity: db_models.Model) -> int:
     """Resolve the authoritative business ID for a canonical entity."""
-    if hasattr(entity, "business_id"):
+    lookup = ENTITY_BUSINESS_LOOKUPS.get(entity_type)
+    if lookup == "session__business_id":
+        if hasattr(entity, "session") and entity.session is not None and hasattr(entity.session, "business_id"):
+            return entity.session.business_id
+    elif lookup == "conversation__business_id":
+        if hasattr(entity, "conversation") and entity.conversation is not None and hasattr(entity.conversation, "business_id"):
+            return entity.conversation.business_id
+    elif lookup == "campaign__business_id":
+        if hasattr(entity, "campaign") and entity.campaign is not None and hasattr(entity.campaign, "business_id"):
+            return entity.campaign.business_id
+    elif lookup == "product__business_id":
+        if hasattr(entity, "product") and entity.product is not None and hasattr(entity.product, "business_id"):
+            return entity.product.business_id
+    elif hasattr(entity, "business_id"):
         return entity.business_id
-    elif hasattr(entity, "product") and hasattr(entity.product, "business_id"):
-        return entity.product.business_id
-    elif hasattr(entity, "campaign") and hasattr(entity.campaign, "business_id"):
-        return entity.campaign.business_id
-    elif hasattr(entity, "session") and hasattr(entity.session, "business_id"):
-        return entity.session.business_id
-    elif hasattr(entity, "conversation") and hasattr(entity.conversation, "business_id"):
-        return entity.conversation.business_id
     raise GraphValidationError(f"Cannot resolve business_id for entity type {entity_type}")
 
 
-def _build_node_label(entity_type: str, entity: Model) -> str:
+def _build_node_label(entity_type: str, entity: db_models.Model) -> str:
     """Construct human-readable node label (BG §1 Node Labels)."""
+    raw_label: str
     if entity_type == "CUSTOMER":
-        return entity.display_name or f"Customer #{entity.pk}"
+        display_name = getattr(entity, "display_name", None)
+        full_name = f"{getattr(entity, 'first_name', '') or ''} {getattr(entity, 'last_name', '') or ''}".strip()
+        raw_label = display_name or full_name or f"Customer #{entity.pk}"
     elif entity_type == "PRODUCT":
-        return entity.name
+        raw_label = getattr(entity, "name", None) or f"Product #{entity.pk}"
     elif entity_type == "PRODUCT_VARIANT":
-        return getattr(entity, "title", None) or getattr(entity, "sku", None) or f"Variant #{entity.pk}"
+        raw_label = getattr(entity, "name", None) or getattr(entity, "title", None) or getattr(entity, "sku", None) or f"Variant #{entity.pk}"
     elif entity_type == "ORDER":
-        return getattr(entity, "order_number", None) or f"Order #{entity.pk}"
+        raw_label = getattr(entity, "order_number", None) or f"Order #{entity.pk}"
     elif entity_type == "PAYMENT":
-        return f"Payment {getattr(entity, 'amount', '')} {getattr(entity, 'currency', '')}".strip()
+        raw_label = f"Payment {getattr(entity, 'amount', '')} {getattr(entity, 'currency', '')}".strip()
     elif entity_type == "SHIPMENT":
-        return f"Shipment ({getattr(entity, 'provider', '')}) #{entity.pk}"
+        raw_label = f"Shipment ({getattr(entity, 'provider', '')}) #{entity.pk}"
     elif entity_type == "CAMPAIGN":
-        return entity.name
+        raw_label = getattr(entity, "name", None) or f"Campaign #{entity.pk}"
     elif entity_type == "CAMPAIGN_CONVERSION":
-        return f"{getattr(entity, 'conversion_type', 'Conversion')} #{entity.pk}"
+        raw_label = f"{getattr(entity, 'conversion_type', 'Conversion')} #{entity.pk}"
     elif entity_type == "WEBSITE_VISITOR":
-        return getattr(entity, "visitor_key", None) or f"Visitor #{entity.pk}"
+        raw_label = getattr(entity, "visitor_key", None) or f"Visitor #{entity.pk}"
     elif entity_type == "WEBSITE_SESSION":
-        return f"Session #{entity.pk}"
+        raw_label = f"Session #{entity.pk}"
     elif entity_type == "WEBSITE_EVENT":
-        return f"{getattr(entity, 'event_type', 'Event')} #{entity.pk}"
+        raw_label = f"{getattr(entity, 'event_type', 'Event')} #{entity.pk}"
     elif entity_type == "CONVERSATION":
-        return f"{getattr(entity, 'channel', '')} Conversation #{entity.pk}"
+        raw_label = f"{getattr(entity, 'channel', '')} Conversation #{entity.pk}"
     elif entity_type == "MESSAGE":
-        return f"{getattr(entity, 'direction', '')} Message #{entity.pk}"
+        raw_label = f"{getattr(entity, 'direction', '')} Message #{entity.pk}"
     elif entity_type == "CALL":
-        return f"{getattr(entity, 'direction', '')} Call #{entity.pk}"
-    return f"{entity_type} #{entity.pk}"
+        raw_label = f"{getattr(entity, 'direction', '')} Call #{entity.pk}"
+    else:
+        raw_label = f"{entity_type} #{entity.pk}"
+    return str(raw_label)[:255]
 
 
-def _build_node_properties(entity_type: str, entity: Model) -> dict[str, Any]:
+def _build_node_properties(entity_type: str, entity: db_models.Model) -> dict[str, Any]:
     """Selective graph properties (BG §1 Node Properties / BG §4 Selective Properties)."""
     props: dict[str, Any] = {}
     for attr in ("status", "channel", "priority", "currency", "provider", "event_type", "direction", "total_amount"):
@@ -195,17 +226,56 @@ def _build_node_properties(entity_type: str, entity: Model) -> dict[str, Any]:
     return props
 
 
-def _get_entity_timestamps(entity: Model) -> tuple[datetime.datetime | None, datetime.datetime | None]:
-    """Extract first_seen_at and last_seen_at for graph nodes (BG §1 Node Activity Tracking)."""
-    created = getattr(entity, "created_at", None)
-    started = getattr(entity, "started_at", None)
-    ordered = getattr(entity, "ordered_at", None)
-    first_seen = started or ordered or created
+# Mapping of canonical entity types to their authoritative first_seen and last_seen timestamp fields (BG §1, §5)
+ENTITY_TIMESTAMP_FIELDS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "WEBSITE_EVENT": (("occurred_at", "created_at"), ("occurred_at", "created_at")),
+    "WEBSITE_SESSION": (("started_at", "created_at"), ("ended_at", "last_activity_at", "started_at", "created_at")),
+    "WEBSITE_VISITOR": (("first_seen_at", "created_at"), ("last_seen_at", "first_seen_at", "updated_at", "created_at")),
+    "ORDER": (("ordered_at", "created_at"), ("delivered_at", "shipped_at", "paid_at", "ordered_at", "updated_at", "created_at")),
+    "PAYMENT": (("paid_at", "created_at"), ("paid_at", "updated_at", "created_at")),
+    "SHIPMENT": (("shipped_at", "created_at"), ("delivered_at", "shipped_at", "updated_at", "created_at")),
+    "CAMPAIGN": (("started_at", "created_at"), ("ended_at", "started_at", "updated_at", "created_at")),
+    "CAMPAIGN_CONVERSION": (("converted_at", "created_at"), ("converted_at", "created_at")),
+    "CONVERSATION": (("started_at", "created_at"), ("last_message_at", "resolved_at", "started_at", "updated_at", "created_at")),
+    "MESSAGE": (("sent_at", "created_at"), ("sent_at", "created_at")),
+    "CALL": (("started_at", "submitted_at", "created_at"), ("ended_at", "submitted_at", "started_at", "updated_at", "created_at")),
+    "CUSTOMER": (("created_at",), ("updated_at", "created_at")),
+    "PRODUCT": (("created_at",), ("updated_at", "created_at")),
+    "PRODUCT_VARIANT": (("created_at",), ("updated_at", "created_at")),
+}
 
-    updated = getattr(entity, "updated_at", None)
-    last_msg = getattr(entity, "last_message_at", None)
-    resolved = getattr(entity, "resolved_at", None)
-    last_seen = last_msg or resolved or updated or first_seen
+
+def _get_entity_timestamps(entity: db_models.Model, entity_type: str | None = None) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+    """Extract first_seen_at and last_seen_at for graph nodes (BG §1 Node Activity Tracking)."""
+    if entity_type and entity_type in ENTITY_TIMESTAMP_FIELDS:
+        first_fields, last_fields = ENTITY_TIMESTAMP_FIELDS[entity_type]
+        first_seen = next((getattr(entity, f, None) for f in first_fields if getattr(entity, f, None) is not None), None)
+        last_seen = next((getattr(entity, f, None) for f in last_fields if getattr(entity, f, None) is not None), None)
+        return first_seen, last_seen or first_seen
+
+    first_seen = (
+        getattr(entity, "occurred_at", None)
+        or getattr(entity, "sent_at", None)
+        or getattr(entity, "paid_at", None)
+        or getattr(entity, "converted_at", None)
+        or getattr(entity, "first_seen_at", None)
+        or getattr(entity, "started_at", None)
+        or getattr(entity, "submitted_at", None)
+        or getattr(entity, "ordered_at", None)
+        or getattr(entity, "shipped_at", None)
+        or getattr(entity, "created_at", None)
+    )
+
+    last_seen = (
+        getattr(entity, "ended_at", None)
+        or getattr(entity, "last_activity_at", None)
+        or getattr(entity, "last_seen_at", None)
+        or getattr(entity, "last_message_at", None)
+        or getattr(entity, "resolved_at", None)
+        or getattr(entity, "delivered_at", None)
+        or getattr(entity, "updated_at", None)
+        or first_seen
+    )
 
     return first_seen, last_seen
 
@@ -239,7 +309,7 @@ def project_entity_node(
 
     label = _build_node_label(entity_type, entity)
     properties = _build_node_properties(entity_type, entity)
-    first_seen, last_seen = _get_entity_timestamps(entity)
+    first_seen, last_seen = _get_entity_timestamps(entity, entity_type)
     now = timezone.now()
 
     canonical_identity_id = getattr(entity, "canonical_identity_id", None)
@@ -388,17 +458,7 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
     with transaction.atomic():
         # 1. Project nodes for all supported canonical entities
         for entity_type, model_cls in SUPPORTED_ENTITY_MODELS.items():
-            filter_kwargs = {"business_id": business_id}
-            if not hasattr(model_cls, "business_id"):
-                if hasattr(model_cls, "product"):
-                    filter_kwargs = {"product__business_id": business_id}
-                elif hasattr(model_cls, "campaign"):
-                    filter_kwargs = {"campaign__business_id": business_id}
-                elif hasattr(model_cls, "session"):
-                    filter_kwargs = {"session__business_id": business_id}
-                elif hasattr(model_cls, "conversation"):
-                    filter_kwargs = {"conversation__business_id": business_id}
-
+            filter_kwargs = get_entity_business_filter(entity_type, business_id)
             entity_ids = model_cls.objects.filter(**filter_kwargs).values_list("pk", flat=True)
             for e_id in entity_ids:
                 _, created = project_entity_node(
@@ -412,6 +472,8 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
                     nodes_updated += 1
 
         # 2. Project edges for all active relationships
+        nodes_before_edges = models.GraphNode.objects.filter(business_id=business_id).count()
+
         rels = models.BusinessRelationship.objects.filter(
             business_id=business_id,
             rule_key__in=PROJECTABLE_RULE_KEYS,
@@ -429,6 +491,9 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
                     edges_updated += 1
             else:
                 edges_pruned += 1
+
+        nodes_after_edges = models.GraphNode.objects.filter(business_id=business_id).count()
+        nodes_created += max(0, nodes_after_edges - nodes_before_edges)
 
         total_nodes = models.GraphNode.objects.filter(business_id=business_id).count()
         total_edges = models.GraphEdge.objects.filter(business_id=business_id).count()
@@ -448,16 +513,20 @@ def project_business_graph(*, business_id: int) -> ProjectionSummary:
 __all__ = [
     "BI_RELATIONSHIP_KEY_PREFIX",
     "BI_RELATIONSHIP_KEY_SUFFIX",
+    "ENTITY_BUSINESS_LOOKUPS",
     "GraphCrossBusinessError",
+    "GraphNotBuiltError",
     "GraphNotFoundError",
     "GraphScopeError",
     "GraphValidationError",
     "ProjectionSummary",
     "SUPPORTED_ENTITY_MODELS",
+    "SUPPORTED_RELATIONSHIP_TYPES",
     "PROJECTABLE_RULE_KEYS",
     "SUPPORTED_RELATIONSHIP_RULES",
     "VALID_RELATIONSHIP_SOURCES",
     "canonical_rule_name",
+    "get_entity_business_filter",
     "project_business_graph",
     "project_entity_node",
     "project_relationship_edge",

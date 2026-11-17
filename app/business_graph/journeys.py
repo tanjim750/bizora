@@ -21,6 +21,7 @@ import datetime
 
 from app import models
 from app.business_graph.projection import (
+    GraphNotBuiltError,
     GraphScopeError,
     GraphNotFoundError,
     GraphValidationError,
@@ -129,7 +130,20 @@ class CampaignJourney:
 
 def _extract_node_timestamp(node: models.GraphNode) -> datetime.datetime | None:
     """Determine the authoritative activity timestamp for chronological timeline ordering."""
-    return node.first_seen_at or node.created_at
+    if node.first_seen_at:
+        return node.first_seen_at
+    props = node.properties or {}
+    for key in ("occurred_at", "sent_at", "paid_at", "converted_at", "started_at", "ordered_at", "shipped_at"):
+        val = props.get(key)
+        if val:
+            if isinstance(val, datetime.datetime):
+                return val
+            if isinstance(val, str):
+                try:
+                    return datetime.datetime.fromisoformat(val)
+                except ValueError:
+                    pass
+    return node.created_at
 
 
 def _build_timeline_events(
@@ -187,12 +201,17 @@ def build_customer_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(customer_id, int) or customer_id <= 0 or customer_id > 2**63 - 1:
+        raise GraphValidationError("customer_id must be a positive integer at most 9223372036854775807")
 
     cust = models.Customer.objects.filter(pk=customer_id).first()
     if cust is None:
         raise GraphNotFoundError(f"Customer #{customer_id} does not exist.")
     if cust.business_id != business_id:
         raise GraphScopeError(f"Customer #{customer_id} belongs to business {cust.business_id}, not {business_id}.")
+
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
 
     cust_node = models.GraphNode.objects.filter(
         business_id=business_id,
@@ -201,7 +220,7 @@ def build_customer_journey(
     ).first()
 
     if cust_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Customer #{customer_id} has not been projected into business {business_id} graph."
         )
 
@@ -267,12 +286,17 @@ def build_order_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(order_id, int) or order_id <= 0 or order_id > 2**63 - 1:
+        raise GraphValidationError("order_id must be a positive integer at most 9223372036854775807")
 
     order = models.Order.objects.filter(pk=order_id).first()
     if order is None:
         raise GraphNotFoundError(f"Order #{order_id} does not exist.")
     if order.business_id != business_id:
         raise GraphScopeError(f"Order #{order_id} belongs to business {order.business_id}, not {business_id}.")
+
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
 
     order_node = models.GraphNode.objects.filter(
         business_id=business_id,
@@ -281,7 +305,7 @@ def build_order_journey(
     ).first()
 
     if order_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Order #{order_id} has not been projected into business {business_id} graph."
         )
 
@@ -301,15 +325,23 @@ def build_order_journey(
 
     # Categorize nodes
     customer_node: models.GraphNode | None = None
+    candidate_customer_nodes: list[models.GraphNode] = []
     product_nodes: list[models.GraphNode] = []
     payment_nodes: list[models.GraphNode] = []
     shipment_nodes: list[models.GraphNode] = []
     marketing_nodes: list[models.GraphNode] = []
     comm_nodes: list[models.GraphNode] = []
 
+    # Find the placing customer edge if present
+    placing_customer_node_id = None
+    for e in edges:
+        if e.target_node_id == order_node.pk and e.relationship_type == "PLACED_ORDER":
+            placing_customer_node_id = e.source_node_id
+            break
+
     for n in nodes:
         if n.entity_type == "CUSTOMER":
-            customer_node = n
+            candidate_customer_nodes.append(n)
         elif n.entity_type in ("PRODUCT", "PRODUCT_VARIANT"):
             product_nodes.append(n)
         elif n.entity_type == "PAYMENT":
@@ -320,6 +352,13 @@ def build_order_journey(
             marketing_nodes.append(n)
         elif n.entity_type in ("CONVERSATION", "MESSAGE", "CALL"):
             comm_nodes.append(n)
+
+    if placing_customer_node_id is not None:
+        customer_node = next((n for n in candidate_customer_nodes if n.pk == placing_customer_node_id), None)
+    elif order.customer_id is not None:
+        customer_node = next((n for n in candidate_customer_nodes if n.entity_id == order.customer_id), None)
+    else:
+        customer_node = candidate_customer_nodes[0] if candidate_customer_nodes else None
 
     timeline = _build_timeline_events(nodes, edges)
 
@@ -363,12 +402,17 @@ def build_product_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(product_id, int) or product_id <= 0 or product_id > 2**63 - 1:
+        raise GraphValidationError("product_id must be a positive integer at most 9223372036854775807")
 
     product = models.Product.objects.filter(pk=product_id).first()
     if product is None:
         raise GraphNotFoundError(f"Product #{product_id} does not exist.")
     if product.business_id != business_id:
         raise GraphScopeError(f"Product #{product_id} belongs to business {product.business_id}, not {business_id}.")
+
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
 
     product_node = models.GraphNode.objects.filter(
         business_id=business_id,
@@ -377,7 +421,7 @@ def build_product_journey(
     ).first()
 
     if product_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Product #{product_id} has not been projected into business {business_id} graph."
         )
 
@@ -466,12 +510,17 @@ def build_campaign_journey(
     """
     if not isinstance(business_id, int) or business_id <= 0:
         raise GraphValidationError("business_id must be a positive integer")
+    if not isinstance(campaign_id, int) or campaign_id <= 0 or campaign_id > 2**63 - 1:
+        raise GraphValidationError("campaign_id must be a positive integer at most 9223372036854775807")
 
     camp = models.Campaign.objects.filter(pk=campaign_id).first()
     if camp is None:
         raise GraphNotFoundError(f"Campaign #{campaign_id} does not exist.")
     if camp.business_id != business_id:
         raise GraphScopeError(f"Campaign #{campaign_id} belongs to business {camp.business_id}, not {business_id}.")
+
+    if not models.GraphNode.objects.filter(business_id=business_id).exists():
+        raise GraphNotBuiltError("The business graph has not been built yet. Rebuild it first.")
 
     camp_node = models.GraphNode.objects.filter(
         business_id=business_id,
@@ -480,7 +529,7 @@ def build_campaign_journey(
     ).first()
 
     if camp_node is None:
-        raise GraphValidationError(
+        raise GraphNotFoundError(
             f"Campaign #{campaign_id} has not been projected into business {business_id} graph."
         )
 
