@@ -121,6 +121,7 @@ def process_tracking_event(
 
     if not is_live:
         # Prepared-only execution (default: zero network calls)
+        # Limitation: OperationAttempt.status choices are fixed without migrations, so SUCCEEDED is kept with sent=False.
         attempt = OperationAttempt.objects.create(
             business_id=connection.business_id,
             connection=connection,
@@ -132,6 +133,7 @@ def process_tracking_event(
             result=safe_details(
                 {
                     "mode": "PREPARED",
+                    "sent": False,
                     "provider": provider_type,
                     "endpoint_url": endpoint_url,
                     "event_id": f"bizora_we_{event.pk}",
@@ -140,22 +142,6 @@ def process_tracking_event(
             ),
             created_at=now_dt,
             completed_at=now_dt,
-        )
-
-        record_observation(
-            business_id=connection.business_id,
-            connection_id=connection.pk,
-            key=f"{op_key}:prepared",
-            kind="provider_request",
-            data={
-                "http_status": 200,
-                "outcome": "SUCCESS",
-                "capability": f"tracking.{provider_type}",
-                "target": f"CONNECTION:{connection.pk}",
-                "latency_ms": 0,
-            },
-            observed_at=now_dt,
-            received_at=now_dt,
         )
 
         return attempt
