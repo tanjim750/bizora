@@ -64,6 +64,8 @@ import {
   traversalPath,
   buildGraphView,
   graphErrorKind,
+  journeyPath,
+  buildJourneyView,
 } from '@/lib/intelligence/graph'
 
 // Sample data for demo mode (SIMULATED)
@@ -187,7 +189,7 @@ export default function Intelligence({
   const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState(null)
 
-  // Context Graph state (FE-W4)
+  // Context Graph state (FE-W4, FE-W5)
   const [graphKind, setGraphKind] = useState('customer')
   const [graphEntityId, setGraphEntityId] = useState('1')
   const [graphData, setGraphData] = useState(null)
@@ -195,6 +197,10 @@ export default function Intelligence({
   const [graphError, setGraphError] = useState('')
   const [graphErrorKindVal, setGraphErrorKindVal] = useState('')
   const [rebuildingGraphInTab, setRebuildingGraphInTab] = useState(false)
+  const [journeyData, setJourneyData] = useState(null)
+  const [loadingJourney, setLoadingJourney] = useState(false)
+  const [journeyError, setJourneyError] = useState('')
+  const [journeyErrorKindVal, setJourneyErrorKindVal] = useState('')
 
   // Metrics Tab State (FE-W1)
   const [metricsList, setMetricsList] = useState([])
@@ -311,25 +317,60 @@ export default function Intelligence({
     setGraphErrorKindVal('')
     setGraphData(null)
 
-    try {
-      // Calls businesses/<id>/graph/traversal/ via traversalPath
-      const path = traversalPath(businessId, graphKind, trimmed)
-      const data = await clientApi(path)
-      const view = buildGraphView(data)
-      setGraphData(view)
-    } catch (err) {
-      const kind = graphErrorKind(err)
-      setGraphErrorKindVal(kind)
-      if (kind === 'not_built') {
-        setGraphError('The business graph has not been built yet.')
-      } else if (kind === 'not_found') {
-        setGraphError('This entity is not in the graph. Rebuild the graph if it is new.')
-      } else {
-        setGraphError(err.detail || err.message || 'Failed to inspect graph.')
-      }
-    } finally {
-      setLoadingGraph(false)
+    // Reset journey state
+    setJourneyData(null)
+    setJourneyError('')
+    setJourneyErrorKindVal('')
+    const isJourneySupported = graphKind === 'customer' || graphKind === 'order'
+    if (isJourneySupported) {
+      setLoadingJourney(true)
     }
+
+    const traversalTask = (async () => {
+      try {
+        // Calls businesses/<id>/graph/traversal/ via traversalPath
+        const path = traversalPath(businessId, graphKind, trimmed)
+        const data = await clientApi(path)
+        const view = buildGraphView(data)
+        setGraphData(view)
+      } catch (err) {
+        const kind = graphErrorKind(err)
+        setGraphErrorKindVal(kind)
+        if (kind === 'not_built') {
+          setGraphError('The business graph has not been built yet.')
+        } else if (kind === 'not_found') {
+          setGraphError('This entity is not in the graph. Rebuild the graph if it is new.')
+        } else {
+          setGraphError(err.detail || err.message || 'Failed to inspect graph.')
+        }
+      } finally {
+        setLoadingGraph(false)
+      }
+    })()
+
+    const journeyTask = (async () => {
+      if (!isJourneySupported) return
+      try {
+        const jPath = journeyPath(businessId, graphKind, trimmed)
+        const jRaw = await clientApi(jPath)
+        const jView = buildJourneyView(jRaw)
+        setJourneyData(jView)
+      } catch (err) {
+        const kind = graphErrorKind(err)
+        setJourneyErrorKindVal(kind)
+        if (kind === 'not_built') {
+          setJourneyError('The business graph has not been built yet.')
+        } else if (kind === 'not_found') {
+          setJourneyError('This entity is not in the graph. Rebuild the graph if it is new.')
+        } else {
+          setJourneyError(err.detail || err.message || 'Failed to load journey.')
+        }
+      } finally {
+        setLoadingJourney(false)
+      }
+    })()
+
+    await Promise.all([traversalTask, journeyTask])
   }
 
   const handleRebuildGraphInTab = async () => {
@@ -342,6 +383,7 @@ export default function Intelligence({
       await handleInspectGraph()
     } catch (err) {
       setGraphError(err.detail || err.message || 'Failed to rebuild graph.')
+      setJourneyError(err.detail || err.message || 'Failed to rebuild graph.')
     } finally {
       setRebuildingGraphInTab(false)
     }
@@ -858,7 +900,125 @@ export default function Intelligence({
             )}
           </div>
 
-          {/* Customer and Order Journeys placeholder (FE-W5) */}
+          {/* Journey timeline section (FE-W5) */}
+          <div className="surface card-padding stack-sm">
+            <div className="section-header">
+              <div>
+                <h3 className="section-title">Journey timeline</h3>
+                <p className="section-desc">
+                  Chronological lifecycle stages and domain events connecting customer and order milestones.
+                </p>
+              </div>
+            </div>
+
+            {graphKind !== 'customer' && graphKind !== 'order' ? (
+              <UnavailableState
+                owner="Business Graph"
+                reason="Journeys are available for customers and orders."
+              />
+            ) : loadingJourney ? (
+              <div style={{ padding: 'var(--space-6)', textAlign: 'center' }} className="text-secondary">
+                Loading journey timeline...
+              </div>
+            ) : journeyError ? (
+              <div className="stack-md">
+                <UnavailableState owner="Business Graph" reason={journeyError} />
+                {journeyErrorKindVal === 'not_built' && canManage && (
+                  <div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleRebuildGraphInTab}
+                      loading={rebuildingGraphInTab}
+                    >
+                      Rebuild graph
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : journeyData ? (
+              <div className="stack-md">
+                {/* Headline summary chips */}
+                {journeyData.headline?.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 'var(--space-2)',
+                    }}
+                  >
+                    {journeyData.headline.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="surface-secondary"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--space-2)',
+                          padding: 'var(--space-1) var(--space-3)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--font-caption)',
+                        }}
+                      >
+                        <span className="text-secondary">{item.label}:</span>
+                        <strong className="font-mono">{String(item.value)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Timeline ordered list */}
+                {journeyData.timeline?.length > 0 ? (
+                  <ol
+                    className="stack-xs"
+                    style={{
+                      margin: 0,
+                      padding: 0,
+                      listStyle: 'none',
+                    }}
+                  >
+                    {journeyData.timeline.map((item, idx) => (
+                      <li
+                        key={idx}
+                        className="surface-secondary"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: 'var(--space-2)',
+                          padding: 'var(--space-2) var(--space-3)',
+                          borderRadius: 'var(--radius-sm)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                          <span className="badge badge-neutral" style={{ fontSize: 'var(--font-caption)' }}>
+                            {item.stage}
+                          </span>
+                          <span className="font-semibold text-body">{item.label}</span>
+                          <span className="font-mono text-muted text-caption">
+                            [{item.entityType} #{item.entityId}]
+                          </span>
+                        </div>
+
+                        {item.timestamp && (
+                          <span className="font-mono text-caption text-secondary">
+                            {dateTime(item.timestamp, timezone)}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="text-muted text-caption" style={{ padding: 'var(--space-3)' }}>
+                    No journey timeline events found.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <UnavailableState owner="Business Graph" reason="No journey data available for this entity." />
+            )}
+          </div>
         </div>
       )}
 

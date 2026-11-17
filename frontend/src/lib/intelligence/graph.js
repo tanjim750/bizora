@@ -95,3 +95,68 @@ export function graphErrorKind(error) {
   }
   return 'other'
 }
+
+export function journeyPath(businessId, kind, entityId) {
+  if (kind !== 'customer' && kind !== 'order') {
+    throw new Error('Journeys exist for customers and orders only.')
+  }
+  let idBig
+  try {
+    idBig = BigInt(entityId)
+  } catch {
+    throw new Error('Invalid entity ID')
+  }
+  if (idBig <= 0n || idBig > MAX_BIGINT) {
+    throw new Error('Invalid entity ID')
+  }
+  return businessApiPath(businessId, `graph/journeys/${kind}/${entityId}/`)
+}
+
+const HEADLINE_SPECS = [
+  { key: 'customer_id', label: 'Customer ID' },
+  { key: 'canonical_identity_id', label: 'Canonical Identity ID' },
+  { key: 'order_id', label: 'Order ID' },
+  { key: 'status', label: 'Status' },
+  { key: 'total_amount', label: 'Total Amount' },
+  { key: 'customer_node_id', label: 'Customer Node ID' },
+  { key: 'node_count', label: 'Nodes' },
+  { key: 'edge_count', label: 'Edges' },
+  { key: 'product_count', label: 'Products' },
+  { key: 'payment_count', label: 'Payments' },
+  { key: 'shipment_count', label: 'Shipments' },
+  { key: 'summary', label: 'Summary' },
+]
+
+export function buildJourneyView(data) {
+  if (!data || typeof data !== 'object') {
+    return { headline: [], timeline: [] }
+  }
+
+  const headline = []
+  for (const { key, label } of HEADLINE_SPECS) {
+    if (data[key] != null) {
+      headline.push({
+        label,
+        value: key === 'total_amount' ? String(data[key]) : data[key],
+      })
+    }
+  }
+
+  const rawTimeline = Array.isArray(data.timeline) ? data.timeline : []
+  const timeline = []
+
+  for (const entry of rawTimeline) {
+    if (!entry || !entry.entity_type) continue
+    const stage = entry.stage || entry.entity_type
+    const label = entry.label || `${entry.entity_type} #${entry.entity_id}`
+    timeline.push({
+      stage,
+      label,
+      entityType: entry.entity_type,
+      entityId: entry.entity_id,
+      timestamp: entry.timestamp,
+    })
+  }
+
+  return { headline, timeline }
+}
