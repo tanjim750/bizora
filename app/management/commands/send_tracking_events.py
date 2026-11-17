@@ -16,7 +16,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from app.integrations.tracking.builder import identify_provider
-from app.integrations.tracking.service import get_tracking_config, process_tracking_event
+from app.integrations.tracking.config import get_tracking_config
+from app.integrations.tracking.service import process_tracking_event
 from app.models import Business, IntegrationConnection, WebsiteEvent
 from app.observability.models import OperationAttempt
 

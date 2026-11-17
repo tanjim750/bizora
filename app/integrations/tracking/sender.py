@@ -30,7 +30,7 @@ from app.observability.models import OperationAttempt
 from app.observability.policies import safe_details
 from app.observability.services import record_observation
 
-from .service import get_tracking_config
+from .config import get_tracking_config
 
 
 def sanitize_url(url: str) -> str:

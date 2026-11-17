@@ -20,14 +20,8 @@ from app.observability.policies import safe_details
 from app.observability.services import record_observation
 
 from .builder import build_tracking_payload, identify_provider
+from .config import get_tracking_config
 from .vocabulary import normalize_event_stage
-
-
-def get_tracking_config(connection: IntegrationConnection) -> Dict[str, Any]:
-    """Extract tracking configuration section from connection config."""
-    config = connection.config if isinstance(connection.config, dict) else {}
-    t_cfg = config.get("tracking")
-    return t_cfg if isinstance(t_cfg, dict) else {}
 
 
 def is_event_allowed(event_type: str, tracking_config: Dict[str, Any]) -> bool:

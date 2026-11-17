@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.models import IntegrationConnection, OrderItem, WebsiteEvent
 
+from .config import get_tracking_config
 from .ga4 import Ga4EventMapper
 from .meta import MetaEventMapper
 from .tiktok import TikTokEventMapper
@@ -115,11 +116,7 @@ def build_tracking_payload(
             f"{session.business_id}, not connection business {connection.business_id}."
         )
 
-    t_cfg = tracking_config or (
-        connection.config.get("tracking", {})
-        if isinstance(connection.config, dict) and isinstance(connection.config.get("tracking"), dict)
-        else {}
-    )
+    t_cfg = tracking_config if tracking_config is not None else get_tracking_config(connection)
 
     provider_type = identify_provider(connection)
     event_id = f"bizora_we_{event.pk}"
