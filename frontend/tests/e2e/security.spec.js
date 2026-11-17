@@ -9,7 +9,10 @@ async function signIn(page, username) {
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/workspace$/)
-  await page.locator('.workspace-card').first().click()
+  await page
+    .getByRole('link', { name: /Open workspace for/ })
+    .first()
+    .click()
   await expect(page).toHaveURL(/\/business\/\d+\/overview$/)
   return new URL(page.url()).pathname.split('/')[2]
 }
@@ -17,10 +20,10 @@ async function signIn(page, username) {
 test('viewer sees scoped records but cannot write or open manager screens', async ({ page }) => {
   test.skip(!password || !process.env.BIZORA_E2E_VIEWER_USERNAME || !foreignBusinessId)
   const businessId = await signIn(page, process.env.BIZORA_E2E_VIEWER_USERNAME)
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Identity review' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Executive Overview' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Identity', exact: true })).toHaveCount(0)
   await page.goto(`/business/${businessId}/identity`)
-  await expect(page.getByRole('heading', { name: '404' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Record or Section Not Found' })).toBeVisible()
 
   const base = `/api/backend/businesses/${businessId}`
   expect((await page.request.get(`${base}/products`)).status()).toBe(200)
@@ -53,5 +56,5 @@ test('session writes require CSRF and logout removes access', async ({ page }) =
   })
   expect(logout.status()).toBe(200)
   await page.goto(`/business/${businessId}/overview`)
-  await expect(page).toHaveURL(/\/login$/)
+  await expect(page).toHaveURL(/\/login\?next=/)
 })

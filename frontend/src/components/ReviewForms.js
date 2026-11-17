@@ -68,18 +68,22 @@ function ReviewForm({ path, idField, id, decisions, detail }) {
   )
 }
 
-export function ActionReview({ business, actions }) {
+export function ActionReview({ business, actions, hideHeading = false }) {
   const rows = Array.isArray(actions) ? actions : actions?.results || []
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <p className="page-context">Assistance</p>
-          <h1>AI proposals</h1>
-          <p>Suggestions are advisory. Approval records a human decision; provider execution is separate.</p>
+      {!hideHeading && (
+        <div className="page-heading">
+          <div>
+            <p className="page-context">Assistance</p>
+            <h1>AI proposals</h1>
+            <p>
+              Suggestions are advisory. Approval records a human decision; provider execution is separate.
+            </p>
+          </div>
+          <StatusBadge text="AI suggestion" />
         </div>
-        <StatusBadge text="AI suggestion" />
-      </div>
+      )}
       <div className="card-stack">
         {rows.map((action) => (
           <article className="surface review-card" key={action.id}>
@@ -212,19 +216,21 @@ function IdentityCard({ business, row, kind }) {
   )
 }
 
-export function IdentityReview({ business, conflicts, candidates }) {
+export function IdentityReview({ business, conflicts, candidates, hideHeading = false }) {
   const conflictRows = conflicts?.results || []
   const candidateRows = candidates?.results || []
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <p className="page-context">Administration</p>
-          <h1>Identity review</h1>
-          <p>Review evidence and impact before changing identity decisions.</p>
+      {!hideHeading && (
+        <div className="page-heading">
+          <div>
+            <p className="page-context">Administration</p>
+            <h1>Identity review</h1>
+            <p>Review evidence and impact before changing identity decisions.</p>
+          </div>
+          <StatusBadge text="Review required" />
         </div>
-        <StatusBadge text="Review required" />
-      </div>
+      )}
       <div className="alert alert-warning">
         <strong>Merge execution is blocked.</strong> An impact plan and candidate approval do not consolidate
         records.

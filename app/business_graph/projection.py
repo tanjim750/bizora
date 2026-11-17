@@ -31,8 +31,7 @@ from decimal import Decimal
 from typing import Any
 import datetime
 
-from django.db import transaction
-from django.db.models import Model
+from django.db import models as db_models, transaction
 from django.utils import timezone
 
 from app import models
@@ -59,7 +58,7 @@ class GraphNotBuiltError(GraphValidationError):
 
 
 # Supported canonical entity models and their business resolution paths
-SUPPORTED_ENTITY_MODELS: dict[str, type[Model]] = {
+SUPPORTED_ENTITY_MODELS: dict[str, type[db_models.Model]] = {
     "CUSTOMER": models.Customer,
     "PRODUCT": models.Product,
     "PRODUCT_VARIANT": models.ProductVariant,
@@ -157,7 +156,7 @@ def get_entity_business_filter(entity_type: str, business_id: int) -> dict[str, 
     return {lookup: business_id}
 
 
-def _resolve_entity_business_id(entity_type: str, entity: Model) -> int:
+def _resolve_entity_business_id(entity_type: str, entity: db_models.Model) -> int:
     """Resolve the authoritative business ID for a canonical entity."""
     lookup = ENTITY_BUSINESS_LOOKUPS.get(entity_type)
     if lookup == "session__business_id":
@@ -177,7 +176,7 @@ def _resolve_entity_business_id(entity_type: str, entity: Model) -> int:
     raise GraphValidationError(f"Cannot resolve business_id for entity type {entity_type}")
 
 
-def _build_node_label(entity_type: str, entity: Model) -> str:
+def _build_node_label(entity_type: str, entity: db_models.Model) -> str:
     """Construct human-readable node label (BG §1 Node Labels)."""
     raw_label: str
     if entity_type == "CUSTOMER":
@@ -215,7 +214,7 @@ def _build_node_label(entity_type: str, entity: Model) -> str:
     return str(raw_label)[:255]
 
 
-def _build_node_properties(entity_type: str, entity: Model) -> dict[str, Any]:
+def _build_node_properties(entity_type: str, entity: db_models.Model) -> dict[str, Any]:
     """Selective graph properties (BG §1 Node Properties / BG §4 Selective Properties)."""
     props: dict[str, Any] = {}
     for attr in ("status", "channel", "priority", "currency", "provider", "event_type", "direction", "total_amount"):
@@ -246,7 +245,7 @@ ENTITY_TIMESTAMP_FIELDS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 }
 
 
-def _get_entity_timestamps(entity: Model, entity_type: str | None = None) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+def _get_entity_timestamps(entity: db_models.Model, entity_type: str | None = None) -> tuple[datetime.datetime | None, datetime.datetime | None]:
     """Extract first_seen_at and last_seen_at for graph nodes (BG §1 Node Activity Tracking)."""
     if entity_type and entity_type in ENTITY_TIMESTAMP_FIELDS:
         first_fields, last_fields = ENTITY_TIMESTAMP_FIELDS[entity_type]

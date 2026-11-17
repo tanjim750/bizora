@@ -105,7 +105,7 @@ Connects Business Brain with advertising and marketing platforms to collect camp
   Receives or retrieves conversion information that can later be connected with customers, website sessions, and orders.
 
 * **Tracking Event Connectivity**
-  Supports provider-side event mechanisms such as pixels, conversion APIs, or equivalent event interfaces where applicable.
+  Supports provider-side event mechanisms such as pixels, conversion APIs, or equivalent event interfaces where applicable. Server-side outbound tracking event connectivity is implemented for Meta Conversions API (`meta_ads`) and TikTok Events API (`tiktok_ads`), mapping canonical `WebsiteEvent` rows to standard provider funnel stages (`PageView`, `ViewContent`, `AddToCart`, `InitiateCheckout`, `Purchase`/`CompletePayment`). Executes in prepared-only mode by default for mock connections; live sending uses bounded `urllib.request` with server-side credential references (`resolve_credentials`), strict PII suppression, idempotent `OperationAttempt` logging, and observability receipts via `record_observation(kind='provider_request')`. Driven via the `send_tracking_events` management command.
 
 * **Marketing Data Routing**
   Passes collected marketing information to the Marketing domain for canonical normalization instead of treating provider schemas as the internal business model.
@@ -119,7 +119,7 @@ Connects website analytics and behavior-tracking platforms with Business Brain t
 **Features:**
 
 * **GA4 Integration**
-  Retrieves or receives supported Google Analytics 4 visitor, session, traffic, event, and conversion information.
+  Retrieves or receives supported Google Analytics 4 visitor, session, traffic, event, and conversion information. Supports outbound server-side event transmission via the GA4 Measurement Protocol (`/mp/collect` for live collection, `/debug/mp/collect` for validation in test mode) using credentials resolved server-side from `api_key` (`api_secret`).
 
 * **Microsoft Clarity Integration**
   Provides access to supported website experience and behavioral signals collected through Microsoft Clarity.

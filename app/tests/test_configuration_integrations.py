@@ -56,6 +56,17 @@ class IntegrationConfigurationTests(TestCase):
         self.assertEqual(self.create(credentials={'api_key': 'literal-secret'}).status_code, 400)
         self.assertEqual(self.create(credentials={'api_key': f'env:BIZORA_BUSINESS_{self.other_business.pk}_TOKEN'}).status_code, 400)
 
+    def test_steadfast_secret_key_uses_business_scoped_reference(self, _):
+        prefix = f'env:BIZORA_BUSINESS_{self.business.pk}_'
+        result = self.create(credentials={'api_key': prefix + 'STEADFAST_API',
+                                          'secret_key': prefix + 'STEADFAST_SECRET'})
+        self.assertEqual(result.status_code, 201, result.data)
+        row = IntegrationConnection.objects.get(pk=result.data['id'])
+        with patch.dict(os.environ, {prefix[4:] + 'STEADFAST_API': 'api-value',
+                                          prefix[4:] + 'STEADFAST_SECRET': 'secret-value'}):
+            self.assertEqual(resolve_credentials(row)['secret_key'], 'secret-value')
+        self.assertNotIn('secret-value', str(row.config))
+
     def test_provider_scope_entity_and_unknown_secret_settings_are_rejected(self, _):
         for changes in ({'provider_id': 999999}, {'entities': ['DOCUMENT']}, {'scopes': ['DELETE_ALL']},
                         {'entities': ['PRODUCT'], 'scopes': ['READ_ORDERS']},
