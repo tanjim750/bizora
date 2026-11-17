@@ -22,6 +22,7 @@ from app.views import (
 
 urlpatterns = [
     path('businesses/<int:business_id>/integrations/steadfast/<int:connection_id>/', include('app.integrations.steadfast.urls')),
+    path('businesses/<int:business_id>/integrations/tracking/', include('app.integrations.tracking.urls')),
     path('businesses/<int:business_id>/overview/', include('app.overview.urls')),
     path('businesses/<int:business_id>/configuration/', include('app.configuration.urls')),
     path('businesses/<int:business_id>/observability/', include('app.observability.urls')),
