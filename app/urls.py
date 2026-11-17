@@ -27,6 +27,7 @@ urlpatterns = [
     path('businesses/<int:business_id>/observability/', include('app.observability.urls')),
     path('businesses/<int:business_id>/intelligence/', include('app.business_intelligence.urls')),
     path('businesses/<int:business_id>/graph/', include('app.business_graph.urls')),
+    path('businesses/<int:business_id>/knowledge/', include('app.knowledge_api.urls')),
     path('frontend/session/', frontend_auth.frontend_session, name='frontend-session'),
     path('frontend/login/', frontend_auth.frontend_login, name='frontend-login'),
     path('frontend/logout/', frontend_auth.frontend_logout, name='frontend-logout'),
