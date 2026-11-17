@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { getSession } from '@/lib/serverApi'
 import { businessApiPath } from '@/lib/catalog'
 import { serverApi } from '@/lib/serverApi'
+import { FACTS_PATH, ISSUES_PATH } from '@/lib/intelligence/facts'
 import Intelligence from '@/components/Intelligence'
 
 export const dynamic = 'force-dynamic'
@@ -24,10 +25,18 @@ export default async function IntelligenceWorkspacePage({ params, searchParams }
 
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'facts'
 
-  // Pre-fetch real open issues from E12
-  const issuesRes = await serverApi(businessApiPath(businessId, 'issues/?page_size=50')).catch(() => ({
-    data: { count: 0, results: [] },
-  }))
+  const loadErrors = {}
+
+  // Pre-fetch real facts and issues from Business Intelligence
+  const factsRes = await serverApi(FACTS_PATH(businessId, { limit: 50 })).catch((err) => {
+    loadErrors.facts = err?.detail || err?.message || 'Failed to load facts.'
+    return { data: { total_count: 0, results: [] } }
+  })
+
+  const issuesRes = await serverApi(ISSUES_PATH(businessId, { limit: 50 })).catch((err) => {
+    loadErrors.issues = err?.detail || err?.message || 'Failed to load issues.'
+    return { data: { total_count: 0, results: [] } }
+  })
 
   return (
     <div className="workspace-page stack-lg">
@@ -46,7 +55,9 @@ export default async function IntelligenceWorkspacePage({ params, searchParams }
         business={business}
         businessId={businessId}
         activeTab={currentTab}
+        factsData={factsRes.data}
         issuesData={issuesRes.data}
+        loadErrors={loadErrors}
       />
     </div>
   )
