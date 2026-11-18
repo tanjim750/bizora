@@ -67,6 +67,7 @@ import {
   journeyPath,
   buildJourneyView,
 } from '@/lib/intelligence/graph'
+import GraphExplorerPanel from './GraphExplorerPanel'
 
 // Sample data for demo mode (SIMULATED)
 const SAMPLE_FACTS = [
@@ -1019,6 +1020,8 @@ export default function Intelligence({
               <UnavailableState owner="Business Graph" reason="No journey data available for this entity." />
             )}
           </div>
+
+          <GraphExplorerPanel businessId={businessId} timezone={timezone} />
         </div>
       )}
 
