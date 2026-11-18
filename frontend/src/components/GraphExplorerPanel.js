@@ -4,10 +4,12 @@ import React, { useState } from 'react'
 import { Tabs } from '@/components/ui'
 import GraphPathFinder from './GraphPathFinder'
 import GraphQueryForm from './GraphQueryForm'
+import GraphSnapshots from './GraphSnapshots'
 
 const EXPLORER_VIEWS = [
   { id: 'paths', label: 'Find a path' },
   { id: 'query', label: 'Query' },
+  { id: 'snapshots', label: 'Snapshots' },
 ]
 
 export default function GraphExplorerPanel({ businessId, timezone }) {
@@ -28,6 +30,7 @@ export default function GraphExplorerPanel({ businessId, timezone }) {
       <div role="tabpanel" id={`tabpanel-${view}`} aria-labelledby={`tab-${view}`}>
         {view === 'paths' && <GraphPathFinder businessId={businessId} timezone={timezone} />}
         {view === 'query' && <GraphQueryForm businessId={businessId} />}
+        {view === 'snapshots' && <GraphSnapshots businessId={businessId} timezone={timezone} />}
       </div>
     </section>
   )
