@@ -64,26 +64,6 @@ import ConfigRulesPolicies from './ConfigRulesPolicies'
 import ConfigHistory from './ConfigHistory'
 import ConfigConnections from './ConfigConnections'
 
-// Sample identity candidate for testing dry-run plan
-const SAMPLE_MERGE_CANDIDATE = {
-  id: 1,
-  source_identity: 4,
-  target_identity: 1,
-  confidence: 0.94,
-  status: 'PENDING_REVIEW',
-  rule_key: 'CROSS_CHANNEL_EMAIL_MATCH',
-  created_at: '2026-11-10T13:36:46Z',
-}
-
-const SAMPLE_CONFLICT = {
-  id: 1,
-  entity_type: 'CUSTOMER',
-  rule_key: 'PHONE_NUMBER_COLLISION',
-  status: 'OPEN',
-  conflict_details: 'External phone +8801711000000 linked to multiple canonical identities (ID #1 and ID #2)',
-  created_at: '2026-11-10T13:36:46Z',
-}
-
 const CONFIG_VIEWS = [
   { key: 'effective', label: 'Effective settings' },
   { key: 'sections', label: 'Edit settings' },
@@ -132,6 +112,7 @@ export default function Admin({
 
   // Review Conflict Dialog (D14)
   const [selectedConflict, setSelectedConflict] = useState(null)
+  const [identityReviewError, setIdentityReviewError] = useState('')
   const [conflictReviewStatus, setConflictReviewStatus] = useState('RESOLVED')
   const [conflictReviewReason, setConflictReviewReason] = useState('')
   const [isReviewingConflict, setIsReviewingConflict] = useState(false)
@@ -160,6 +141,7 @@ export default function Admin({
   // Execute D24 Merge Dry-Run
   const handleRunMergeDryRun = async (candidateId) => {
     setIsDryRunLoading(true)
+    setDryRunPlan(null)
     setDryRunError(null)
 
     try {
@@ -172,29 +154,8 @@ export default function Admin({
       )
       setDryRunPlan(res)
     } catch (err) {
-      // Fallback plan matching backend contract D24 if candidate is unmounted or in dev
-      setDryRunPlan({
-        plan_id: `merge-${candidateId}-a7b93c8f12d4`,
-        fingerprint: 'sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        execution: 'BLOCKED',
-        execution_reason: 'BI_GRAPH_AI_MERGE_CONTRACT',
-        readiness: 'WAITING_FOR_OWNERS',
-        executed: false,
-        dependencies: [
-          'Business Operations',
-          'Commerce Ledger',
-          'Business Graph',
-          'Business Intelligence',
-          'Platform Messaging',
-          'Support Queue',
-          'AI Assistant',
-        ],
-        acknowledgements: [
-          { owner: 'Business Operations', status: 'UNAVAILABLE', reason: 'No owner adapter configured.' },
-          { owner: 'Business Graph', status: 'UNAVAILABLE', reason: 'No owner adapter configured.' },
-          { owner: 'Business Intelligence', status: 'UNAVAILABLE', reason: 'No owner adapter configured.' },
-        ],
-      })
+      setDryRunPlan(null)
+      setDryRunError(err.message || 'Merge planner unavailable. Please try again.')
     } finally {
       setIsDryRunLoading(false)
     }
@@ -203,20 +164,22 @@ export default function Admin({
   // Handle Review Conflict (D14)
   const handleSubmitConflictReview = async (e) => {
     e.preventDefault()
+    setIdentityReviewError('')
     setIsReviewingConflict(true)
 
     try {
-      await clientApi(`businesses/${businessId}/identity/conflicts/${selectedConflict.id}/review`, {
+      await clientApi(`businesses/${businessId}/identity/review-conflict`, {
         method: 'POST',
         body: {
-          status: conflictReviewStatus,
+          conflict_id: selectedConflict.id,
+          decision: conflictReviewStatus,
           reason: conflictReviewReason,
         },
       })
       setSelectedConflict(null)
       router.refresh()
     } catch (err) {
-      console.error('Failed to review conflict', err)
+      setIdentityReviewError(err.message || 'Conflict review failed. Please try again.')
     } finally {
       setIsReviewingConflict(false)
     }
@@ -225,23 +188,22 @@ export default function Admin({
   // Handle Review Merge (D14)
   const handleSubmitMergeReview = async (e) => {
     e.preventDefault()
+    setIdentityReviewError('')
     setIsReviewingMerge(true)
 
     try {
-      await clientApi(
-        `businesses/${businessId}/identity/merge-candidates/${selectedMergeCandidate.id}/review`,
-        {
-          method: 'POST',
-          body: {
-            decision: mergeReviewDecision,
-            reason: mergeReviewReason,
-          },
+      await clientApi(`businesses/${businessId}/identity/review-merge`, {
+        method: 'POST',
+        body: {
+          candidate_id: selectedMergeCandidate.id,
+          decision: mergeReviewDecision,
+          reason: mergeReviewReason,
         },
-      )
+      })
       setSelectedMergeCandidate(null)
       router.refresh()
     } catch (err) {
-      console.error('Failed to review merge candidate', err)
+      setIdentityReviewError(err.message || 'Merge review failed. Please try again.')
     } finally {
       setIsReviewingMerge(false)
     }
@@ -303,39 +265,7 @@ export default function Admin({
   }
 
   // Effective Configuration Data
-  const effectiveSections = initialConfiguration?.sections || {
-    profile: {
-      version: 1,
-      settings: {
-        currency: 'BDT',
-        timezone: 'Asia/Dhaka',
-        operating_regions: ['Dhaka Metro', 'Chittagong Tier-1', 'Sylhet'],
-      },
-    },
-    general: {
-      version: 1,
-      settings: {
-        locale: 'en-US',
-        language: 'en',
-        date_format: 'YYYY-MM-DD',
-      },
-    },
-    ai: {
-      version: 1,
-      settings: {
-        autonomous_actions_enabled: false,
-        advisory_threshold_confidence: 0.85,
-        model_tier: 'claude-3-5-sonnet',
-      },
-    },
-    rules: {
-      version: 1,
-      settings: {
-        strict_idempotency_enforced: true,
-        order_refund_approval_required: true,
-      },
-    },
-  }
+  const effectiveSections = initialConfiguration?.sections || null
 
   return (
     <div className="workspace-page">
@@ -402,6 +332,8 @@ export default function Admin({
               Audit History ({initialHistory.length})
             </button>
           </div>
+
+          {dryRunError && <Banner variant="danger">{dryRunError}</Banner>}
 
           {/* D24 Merge Dry-Run Plan Card Display */}
           {dryRunPlan && (
@@ -612,41 +544,25 @@ export default function Admin({
           {identitySubTab === 'conflicts' && (
             <div>
               {initialConflicts.length === 0 ? (
-                <div className="stack-sm">
-                  <EmptyState
-                    title="No open conflicts"
-                    description="The identity resolution graph is clean. No cross-channel identity collisions are open."
-                  />
-                  <div className="journey-card mt-3">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <SimulatedBadge />
-                        <span className="font-medium text-body">Sample Verification Conflict (Demo)</span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedConflict(SAMPLE_CONFLICT)}
-                      >
-                        Review Conflict (D14)
-                      </Button>
-                    </div>
-                    <p className="text-caption text-secondary mt-1">{SAMPLE_CONFLICT.conflict_details}</p>
-                  </div>
-                </div>
+                <EmptyState
+                  title="No identity conflicts"
+                  description="No identity conflicts require review."
+                />
               ) : (
                 <DataTable
                   rows={initialConflicts}
                   columns={[
                     {
-                      key: 'entity_type',
-                      label: 'Entity Type',
-                      render: (row) => <StatusChip status={row.entity_type} size="sm" />,
+                      key: 'conflict_type',
+                      label: 'Conflict Type',
+                      render: (row) => <StatusChip status={row.conflict_type} size="sm" />,
                     },
                     {
-                      key: 'rule_key',
-                      label: 'Rule Key',
-                      render: (row) => <span className="font-mono text-caption">{row.rule_key}</span>,
+                      key: 'description',
+                      label: 'Description',
+                      render: (row) => (
+                        <span className="font-mono text-caption">{row.description || '—'}</span>
+                      ),
                     },
                     {
                       key: 'status',
@@ -673,65 +589,23 @@ export default function Admin({
           {identitySubTab === 'merge-candidates' && (
             <div>
               {initialMergeCandidates.length === 0 ? (
-                <div className="stack-sm">
-                  <EmptyState
-                    title="No merge candidates"
-                    description="No duplicate identities have been queued for merge consolidation."
-                  />
-                  <div className="journey-card mt-3">
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: 'var(--space-2)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <SimulatedBadge />
-                        <span className="font-medium text-body">
-                          Sample Merge Candidate: Identity #{SAMPLE_MERGE_CANDIDATE.source_identity} into #
-                          {SAMPLE_MERGE_CANDIDATE.target_identity}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={GitMerge}
-                          loading={isDryRunLoading}
-                          onClick={() => handleRunMergeDryRun(SAMPLE_MERGE_CANDIDATE.id)}
-                        >
-                          Dry-Run Plan (D24)
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setSelectedMergeCandidate(SAMPLE_MERGE_CANDIDATE)}
-                        >
-                          Review Candidate (D14)
-                        </Button>
-                      </div>
-                    </div>
-                    <span className="text-caption text-secondary mt-1">
-                      Rule: {SAMPLE_MERGE_CANDIDATE.rule_key} · Match Confidence: 94%
-                    </span>
-                  </div>
-                </div>
+                <EmptyState
+                  title="No merge candidates"
+                  description="No duplicate identities have been queued for merge consolidation."
+                />
               ) : (
                 <DataTable
                   rows={initialMergeCandidates}
                   columns={[
                     {
-                      key: 'source_identity',
+                      key: 'candidate_identity',
                       label: 'Source Identity',
-                      render: (row) => <span className="font-mono">#{row.source_identity}</span>,
+                      render: (row) => <span className="font-mono">#{row.candidate_identity}</span>,
                     },
                     {
-                      key: 'target_identity',
+                      key: 'primary_identity',
                       label: 'Target Identity',
-                      render: (row) => <span className="font-mono">#{row.target_identity}</span>,
+                      render: (row) => <span className="font-mono">#{row.primary_identity}</span>,
                     },
                     {
                       key: 'confidence',
@@ -1039,7 +913,7 @@ export default function Admin({
       {/* =========================================================================
           TAB 3: CONFIGURATION & POLICIES
           ========================================================================= */}
-      {currentTab === 'configuration' && configView === 'effective' && (
+      {currentTab === 'configuration' && configView === 'effective' && effectiveSections && (
         <div className="stack section-gap">
           <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
           {/* Version chip & 409 stale banner toggle */}
@@ -1142,6 +1016,17 @@ export default function Admin({
         </div>
       )}
 
+      {currentTab === 'configuration' && configView === 'effective' && !effectiveSections && (
+        <div className="stack section-gap">
+          <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
+          <UnavailableState
+            title="Configuration unavailable"
+            owner="Business Configuration"
+            reason="The configuration service could not be loaded. Reload to try again."
+          />
+        </div>
+      )}
+
       {currentTab === 'configuration' && configView !== 'effective' && (
         <div className="stack section-gap">
           <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
@@ -1192,13 +1077,17 @@ export default function Admin({
       {selectedConflict && (
         <Dialog
           isOpen={true}
-          onClose={() => setSelectedConflict(null)}
+          onClose={() => {
+            setSelectedConflict(null)
+            setIdentityReviewError('')
+          }}
           title={`Review Identity Conflict #${selectedConflict.id}`}
           confirmLabel="Submit Resolution"
           onConfirm={handleSubmitConflictReview}
           isLoading={isReviewingConflict}
         >
           <form onSubmit={handleSubmitConflictReview} className="stack-sm">
+            {identityReviewError && <Banner variant="danger">{identityReviewError}</Banner>}
             <Field label="Resolution Action" required htmlFor="conflict-review-status">
               <Select
                 id="conflict-review-status"
@@ -1234,13 +1123,17 @@ export default function Admin({
       {selectedMergeCandidate && (
         <Dialog
           isOpen={true}
-          onClose={() => setSelectedMergeCandidate(null)}
+          onClose={() => {
+            setSelectedMergeCandidate(null)
+            setIdentityReviewError('')
+          }}
           title={`Review Merge Candidate #${selectedMergeCandidate.id}`}
           confirmLabel="Record Decision"
           onConfirm={handleSubmitMergeReview}
           isLoading={isReviewingMerge}
         >
           <form onSubmit={handleSubmitMergeReview} className="stack-sm">
+            {identityReviewError && <Banner variant="danger">{identityReviewError}</Banner>}
             <Field label="Review Decision" required htmlFor="merge-review-decision">
               <Select
                 id="merge-review-decision"

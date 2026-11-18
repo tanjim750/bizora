@@ -55,7 +55,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from app.models import (
     Business, BusinessMembership, IntegrationSource, IntegrationConnection,
-    Product, Customer, Order, Payment, ConfigurationRecord
+    Product, Customer, Order, Payment, ConfigurationRecord, IdentityConflict, IdentityMergeCandidate
 )
 from app.domains import identity
 
@@ -81,6 +81,14 @@ Payment.objects.create(business=business, customer=customer, order=order, integr
 canon = identity.canonical(business, manager, 'CUSTOMER', customer.pk)
 ext, _ = identity.register(business, manager, connection.pk, 'CUSTOMER', 'EMAIL', 'buyer@example.com', external_id='ext-cust-1', verified=True)
 identity.link(business, manager, ext.pk, canon.pk, 'E2E identity test link')
+other_customer = Customer.objects.create(business=business, display_name='Second identity fixture')
+other_canon = identity.canonical(business, manager, 'CUSTOMER', other_customer.pk)
+merge_candidate = IdentityMergeCandidate.objects.create(
+    business=business, primary_identity=canon, candidate_identity=other_canon,
+    match_reason='Browser review fixture', detected_at=timezone.now())
+conflict = IdentityConflict.objects.create(
+    business=business, canonical_identity=canon, conflict_type='BROWSER_REVIEW_FIXTURE',
+    detected_at=timezone.now())
 
 steadfast_source, _ = IntegrationSource.objects.get_or_create(
     key='steadfast', defaults={'name': 'Steadfast', 'category': 'COURIER', 'connection_type': 'API_KEY'}
@@ -103,7 +111,8 @@ ConfigurationRecord.objects.create(
 
 print(json.dumps({
     'business': business.pk, 'foreign': foreign.pk, 'connection': connection.pk,
-    'product': product.pk, 'steadfast_connection': steadfast_conn.pk
+    'product': product.pk, 'steadfast_connection': steadfast_conn.pk,
+    'merge_candidate': merge_candidate.pk, 'conflict': conflict.pk
 }))
 """
         result = subprocess.run(
@@ -128,6 +137,8 @@ print(json.dumps({
             "BIZORA_E2E_FOREIGN_BUSINESS_ID": str(ids["foreign"]),
             "BIZORA_E2E_STEADFAST_CONNECTION_ID": str(ids["steadfast_connection"]),
             "BIZORA_E2E_STEADFAST_WEBHOOK_SECRET": "test-webhook-secret",
+            "BIZORA_E2E_MERGE_CANDIDATE_ID": str(ids["merge_candidate"]),
+            "BIZORA_E2E_CONFLICT_ID": str(ids["conflict"]),
         })
         with open(Path(temporary) / "django.log", "w") as django_log, open(
             Path(temporary) / "next.log", "w"

@@ -51,8 +51,8 @@ test('admin identity review actions match D14 and D24 contracts', () => {
   // D24 merge dry run
   assert.ok(content.includes('dry-run'), 'Admin must include D24 dry-run plan trigger')
   assert.ok(
-    content.includes('BI_GRAPH_AI_MERGE_CONTRACT'),
-    'Admin plan must cite BI_GRAPH_AI_MERGE_CONTRACT reason',
+    content.includes('dryRunPlan.execution_reason'),
+    'Admin plan must display the backend execution reason',
   )
 })
 

@@ -15,6 +15,8 @@ test('manager can inspect canonical, external, and linked identities', async ({ 
   await page.goto(`/business/${businessId}/admin/identity`)
 
   await expect(page.getByRole('heading', { name: 'Administration & Controls' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Entity Type', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: /customer/i }).first()).toBeVisible()
   await page.getByRole('button', { name: /^External \(/ }).click()
   await expect(page.getByRole('table')).toBeVisible()
   await page.getByRole('button', { name: /^Links \(/ }).click()
