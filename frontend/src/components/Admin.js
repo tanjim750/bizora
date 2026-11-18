@@ -58,6 +58,8 @@ import TrackingIntegration from './TrackingIntegration'
 import ConfigViewNav from './ConfigViewNav'
 import ConfigSectionsEditor from './ConfigSectionsEditor'
 import ConfigRulesPolicies from './ConfigRulesPolicies'
+import ConfigHistory from './ConfigHistory'
+import ConfigConnections from './ConfigConnections'
 
 // Sample identity candidate for testing dry-run plan
 const SAMPLE_MERGE_CANDIDATE = {
@@ -83,6 +85,8 @@ const CONFIG_VIEWS = [
   { key: 'effective', label: 'Effective settings' },
   { key: 'sections', label: 'Edit settings' },
   { key: 'rules', label: 'Rules & policies' },
+  { key: 'connections', label: 'Connections' },
+  { key: 'history', label: 'Change history' },
 ]
 
 export default function Admin({
@@ -1157,6 +1161,12 @@ export default function Admin({
               role={business?.role}
               timezone={business?.timezone}
             />
+          )}
+          {configView === 'connections' && (
+            <ConfigConnections businessId={businessId} role={business?.role} timezone={business?.timezone} />
+          )}
+          {configView === 'history' && (
+            <ConfigHistory businessId={businessId} timezone={business?.timezone} />
           )}
         </div>
       )}
