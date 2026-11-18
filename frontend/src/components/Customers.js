@@ -375,7 +375,7 @@ export default function Customers({
             date: sh.created_at,
             timestamp: sh.created_at,
             title: `Shipment Consignment (#${sh.id})`,
-            description: `Carrier: ${sh.provider || 'Carrier'} · Tracking: ${sh.tracking_number || 'Pending'}`,
+            description: `Carrier: ${sh.provider || 'Carrier'} · Tracking: ${sh.tracking_code || 'Pending'}`,
             status: sh.status === 'DELIVERED' ? 'COMPLETED' : 'ACTIVE',
           })
         })
@@ -730,11 +730,11 @@ export default function Customers({
                         render: (row) => <span>{row.provider || 'Carrier Service'}</span>,
                       },
                       {
-                        key: 'tracking_number',
+                        key: 'tracking_code',
                         label: 'Tracking Number',
                         render: (row) =>
-                          row.tracking_number ? (
-                            <CopyableCode value={row.tracking_number} />
+                          row.tracking_code ? (
+                            <CopyableCode value={row.tracking_code} />
                           ) : (
                             <span className="text-muted">—</span>
                           ),
