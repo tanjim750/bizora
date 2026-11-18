@@ -54,6 +54,7 @@ import { dateTime, relativeTime } from '../lib/format/index.js'
 import { clientApi, newIdempotencyKey } from '../lib/clientApi'
 import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
+import { FailedRecordsList, WebhooksList } from './IntegrationRecordLists'
 import TrackingIntegration from './TrackingIntegration'
 import ConfigViewNav from './ConfigViewNav'
 import ConfigSectionsEditor from './ConfigSectionsEditor'
@@ -1017,18 +1018,12 @@ export default function Admin({
 
           {/* Sub-view: Failed Records */}
           {integrationsSubTab === 'failed-records' && (
-            <EmptyState
-              title="No failed ingestion records"
-              description="No data records are quarantined in the error staging tables."
-            />
+            <FailedRecordsList businessId={businessId} role={business?.role} timezone={business?.timezone} />
           )}
 
           {/* Sub-view: Inbound Webhooks */}
           {integrationsSubTab === 'webhooks' && (
-            <EmptyState
-              title="No inbound webhook traffic"
-              description="Authoritative webhook listener has not received provider webhook envelopes."
-            />
+            <WebhooksList businessId={businessId} role={business?.role} timezone={business?.timezone} />
           )}
 
           {/* Sub-view: Dialyra Telephony & SIP Trunks */}
