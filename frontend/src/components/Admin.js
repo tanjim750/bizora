@@ -57,6 +57,7 @@ import DialyraTelephony from './DialyraTelephony'
 import TrackingIntegration from './TrackingIntegration'
 import ConfigViewNav from './ConfigViewNav'
 import ConfigSectionsEditor from './ConfigSectionsEditor'
+import ConfigRulesPolicies from './ConfigRulesPolicies'
 
 // Sample identity candidate for testing dry-run plan
 const SAMPLE_MERGE_CANDIDATE = {
@@ -81,6 +82,7 @@ const SAMPLE_CONFLICT = {
 const CONFIG_VIEWS = [
   { key: 'effective', label: 'Effective settings' },
   { key: 'sections', label: 'Edit settings' },
+  { key: 'rules', label: 'Rules & policies' },
 ]
 
 export default function Admin({
@@ -1144,6 +1146,13 @@ export default function Admin({
           <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
           {configView === 'sections' && (
             <ConfigSectionsEditor
+              businessId={businessId}
+              role={business?.role}
+              timezone={business?.timezone}
+            />
+          )}
+          {configView === 'rules' && (
+            <ConfigRulesPolicies
               businessId={businessId}
               role={business?.role}
               timezone={business?.timezone}
