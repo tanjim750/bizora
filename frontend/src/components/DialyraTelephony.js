@@ -238,27 +238,36 @@ export default function DialyraTelephony({ businessId }) {
       {/* KPI Tiles */}
       <div className="grid-kpi">
         <KpiTile
-          label="Dialyra Gateway"
+          title="Dialyra Gateway"
           value={statusData?.configured ? 'CONNECTED' : 'NOT CONFIGURED'}
           subtext={statusData?.base_url || 'https://api.dialyra.com'}
           icon={Activity}
         />
         <KpiTile
-          label="SIP Trunks"
+          title="SIP Trunks"
           value={String(trunks.length)}
           subtext="Active telephony trunks"
           icon={Server}
         />
-        <KpiTile label="IVR Flows" value={String(flows.length)} subtext="Voice journey flows" icon={Radio} />
+        <KpiTile title="IVR Flows" value={String(flows.length)} subtext="Voice journey flows" icon={Radio} />
         <KpiTile
-          label="Runtime Engine"
+          title="Runtime Engine"
           value="v3 Ready"
           subtext="Asterisk PJSIP Realtime"
           icon={ShieldCheck}
         />
       </div>
 
-      {actionMessage && <Banner tone={actionMessage.tone} title={actionMessage.text} />}
+      {actionMessage && (
+        <Banner
+          variant={
+            ['info', 'success', 'warning', 'danger'].includes(actionMessage.tone)
+              ? actionMessage.tone
+              : 'info'
+          }
+          title={actionMessage.text}
+        />
+      )}
 
       {/* Sub-nav buttons */}
       <div
@@ -409,13 +418,13 @@ export default function DialyraTelephony({ businessId }) {
 
           {originateError && (
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Banner tone="danger" title={originateError} />
+              <Banner variant="danger" title={originateError} />
             </div>
           )}
 
           {originateSuccess && (
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Banner tone="success" title={`Call #${originateSuccess.call_id} successfully initiated!`}>
+              <Banner variant="success" title={`Call #${originateSuccess.call_id} successfully initiated!`}>
                 <div style={{ marginTop: 'var(--space-1)', fontSize: 'var(--text-caption)' }}>
                   External UUID:{' '}
                   <span className="font-mono">{originateSuccess.dialyra?.call_log_uuid || '—'}</span>
@@ -534,7 +543,7 @@ export default function DialyraTelephony({ businessId }) {
         ) : selectedTrunkStatus ? (
           <div className="stack card-padding">
             {selectedTrunkStatus.error ? (
-              <Banner tone="danger" title={selectedTrunkStatus.error} />
+              <Banner variant="danger" title={selectedTrunkStatus.error} />
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -607,7 +616,7 @@ export default function DialyraTelephony({ businessId }) {
         title="Create SIP Trunk (Dialyra v3)"
       >
         <form onSubmit={handleCreateTrunk} className="stack">
-          {createError && <Banner tone="danger" title={createError} />}
+          {createError && <Banner variant="danger" title={createError} />}
 
           <Field id="trunk-name" label="Trunk Name" required>
             <Input

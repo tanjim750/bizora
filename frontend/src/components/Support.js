@@ -1494,8 +1494,8 @@ export default function Support({
         title="Start Outbound Call (Dialyra v3 Gateway)"
       >
         <form onSubmit={handleDialyraOriginate} className="stack">
-          {dialyraError && <Banner tone="danger" title={dialyraError} />}
-          {dialyraSuccess && <Banner tone="success" title={dialyraSuccess} />}
+          {dialyraError && <Banner variant="danger" title={dialyraError} />}
+          {dialyraSuccess && <Banner variant="success" title={dialyraSuccess} />}
 
           <Field
             label="Recipient Phone Number"

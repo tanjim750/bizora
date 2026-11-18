@@ -426,7 +426,7 @@ export default function Growth({
       />
 
       {sampleMode && (
-        <Banner tone="info" className="mb-4">
+        <Banner variant="info" className="mb-4">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <SimulatedBadge />
             <span>
@@ -447,19 +447,19 @@ export default function Growth({
           {/* Executive KPI Summary */}
           <div className="grid-kpi">
             <KpiTile
-              label="Platform Spend (Platform-reported)"
+              title="Platform Spend (Platform-reported)"
               value={money(summaryMetrics.totalSpend)}
               subtext="Aggregated ad provider spend"
               icon={DollarSign}
             />
             <KpiTile
-              label="Platform Clicks (Platform-reported)"
+              title="Platform Clicks (Platform-reported)"
               value={summaryMetrics.totalClicks.toLocaleString()}
               subtext="Total inbound ad clicks"
               icon={MousePointer}
             />
             <KpiTile
-              label="Conversions (Platform-reported)"
+              title="Conversions (Platform-reported)"
               value={summaryMetrics.totalConversions.toLocaleString()}
               subtext="First-party & provider tags"
               icon={CheckCircle2}
@@ -873,7 +873,7 @@ export default function Growth({
           {/* Sub-view 4: Performance Analytics (D7) */}
           {websiteSubTab === 'analytics' && (
             <div className="stack section-gap">
-              <Banner tone="neutral">
+              <Banner variant="info">
                 <span>
                   Authoritative web performance models and funnel drop-off metrics are computed by Business
                   Intelligence provider contracts.
@@ -937,17 +937,17 @@ export default function Growth({
             {/* Quick KPI row */}
             <div className="grid-kpi">
               <KpiTile
-                label="Budget"
+                title="Budget"
                 value={money(selectedCampaign.budget)}
                 subtext="Campaign allocated total"
               />
               <KpiTile
-                label="Spend (Platform-reported)"
+                title="Spend (Platform-reported)"
                 value={money(selectedCampaign.spend)}
                 subtext="Ad provider aggregated"
               />
               <KpiTile
-                label="Clicks (Platform-reported)"
+                title="Clicks (Platform-reported)"
                 value={(selectedCampaign.clicks || 0).toLocaleString()}
                 subtext="Total inbound clicks"
               />
@@ -1026,7 +1026,7 @@ export default function Growth({
               </div>
 
               {explainError && (
-                <Banner tone="danger" className="mt-3">
+                <Banner variant="danger" className="mt-3">
                   <span>{explainError}</span>
                 </Banner>
               )}
@@ -1042,17 +1042,17 @@ export default function Growth({
 
                   <div className="grid-kpi mt-2">
                     <KpiTile
-                      label="Calculated ROAS"
+                      title="Calculated ROAS"
                       value={`${explainResult.calculated_roas}x`}
                       subtext={`Target ROAS: ${explainResult.target_roas}x`}
                     />
                     <KpiTile
-                      label="Attributed Orders"
+                      title="Attributed Orders"
                       value={explainResult.attributed_orders_count?.toString() || '0'}
                       subtext={`Net Rev: ${money(explainResult.net_revenue)}`}
                     />
                     <KpiTile
-                      label="Repeat Customer Rate"
+                      title="Repeat Customer Rate"
                       value={`${explainResult.customer_repeat_rate_pct}%`}
                       subtext="Attributed buyer repeat rate"
                     />
@@ -1187,12 +1187,12 @@ export default function Growth({
 
             <div className="grid-kpi">
               <KpiTile
-                label="First Seen"
+                title="First Seen"
                 value={selectedVisitor.first_seen_at ? dateTime(selectedVisitor.first_seen_at) : '—'}
                 subtext="Initial session entry"
               />
               <KpiTile
-                label="Last Seen"
+                title="Last Seen"
                 value={selectedVisitor.last_seen_at ? dateTime(selectedVisitor.last_seen_at) : '—'}
                 subtext="Most recent touchpoint"
               />
@@ -1228,7 +1228,7 @@ export default function Growth({
       >
         <form onSubmit={handleCreateSubmit} className="stack-sm">
           {createError && (
-            <Banner tone="danger">
+            <Banner variant="danger">
               <span>{createError}</span>
             </Banner>
           )}

@@ -407,13 +407,13 @@ export default function Admin({
 
               <div className="grid-kpi mt-2">
                 <KpiTile
-                  label="Execution Status"
+                  title="Execution Status"
                   value={dryRunPlan.execution}
                   subtext={dryRunPlan.execution_reason}
                 />
-                <KpiTile label="Readiness" value={dryRunPlan.readiness} subtext="Adapter contract state" />
+                <KpiTile title="Readiness" value={dryRunPlan.readiness} subtext="Adapter contract state" />
                 <KpiTile
-                  label="Dependencies"
+                  title="Dependencies"
                   value={String(dryRunPlan.dependencies?.length || 7)}
                   subtext="Owner services required"
                 />
@@ -802,25 +802,25 @@ export default function Admin({
           {/* Health Summary Band */}
           <div className="grid-kpi">
             <KpiTile
-              label="Integration Health"
+              title="Integration Health"
               value={initialObservabilitySummary?.status || 'UNKNOWN'}
               subtext={`As of ${dateTime(initialObservabilitySummary?.as_of || new Date())}`}
               icon={Activity}
             />
             <KpiTile
-              label="Connected Adapters"
+              title="Connected Adapters"
               value={String(initialObservabilitySummary?.connection_count || initialConnections.length)}
               subtext="Authorized data providers"
               icon={Server}
             />
             <KpiTile
-              label="Active Error Groups"
+              title="Active Error Groups"
               value={String(initialObservabilitySummary?.active_error_groups || 0)}
               subtext="Aggregated ingestion issues"
               icon={AlertTriangle}
             />
             <KpiTile
-              label="Failed Webhooks"
+              title="Failed Webhooks"
               value={String(initialObservabilitySummary?.failed_webhooks || 0)}
               subtext="Replayable inbound hooks"
               icon={Zap}
@@ -828,7 +828,13 @@ export default function Admin({
           </div>
 
           {operationResult && (
-            <Banner tone={operationResult.tone}>
+            <Banner
+              variant={
+                ['info', 'success', 'warning', 'danger'].includes(operationResult.tone)
+                  ? operationResult.tone
+                  : 'info'
+              }
+            >
               <span>{operationResult.status}</span>
             </Banner>
           )}
@@ -1041,7 +1047,7 @@ export default function Admin({
           </div>
 
           {show409Banner && (
-            <Banner tone="warning">
+            <Banner variant="warning">
               <span>Someone else changed this configuration. Reload to continue.</span>
             </Banner>
           )}
