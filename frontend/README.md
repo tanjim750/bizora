@@ -34,3 +34,12 @@ Playwright uses `/usr/bin/google-chrome` by default. Set `PLAYWRIGHT_CHROME_EXEC
 The optional Steadfast browser test needs a signed test connection in the isolated business. Set `BIZORA_E2E_STEADFAST_CONNECTION_ID` and `BIZORA_E2E_STEADFAST_WEBHOOK_SECRET`; the Django process must have the same secret under the connection's configured environment reference. The test creates its own shipment and sends signed webhooks to `http://127.0.0.1:8000` (override with `BIZORA_E2E_DJANGO_URL`).
 
 The current endpoint coverage and remaining work are recorded in [`frontend-progress.md`](../docs/implementations/frontend-progress.md).
+
+The layout uses the font stacks in `src/styles/tokens.css`, including installed-font and system
+fallbacks. Production builds do not download Google Fonts. Exact typography depends on fonts
+installed on the client; bundled fonts can be added later if identical typography is required.
+
+`python tests/run_full_stack.py` from the repository root creates disposable manager/viewer,
+commerce, courier, and identity-review fixtures, builds Next.js, and runs the browser suite.
+The identity-review tests need its `BIZORA_E2E_MERGE_CANDIDATE_ID` and `BIZORA_E2E_CONFLICT_ID`
+environment variables when run separately against an equivalent isolated fixture.

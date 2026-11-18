@@ -7,8 +7,8 @@ The as-built [Software Requirements Specification](docs/requirements/SRS.md) and
 [Use Case Specification](docs/requirements/USE_CASES.md) describe the current product scope,
 reachable interfaces, actor permissions, workflows, and known integration gaps.
 This increment includes a replaceable Django operational UI at `/ops/` for all thirteen
-operations groups. Provider transport requires owner adapters; the BI, Graph, Configuration,
-Observability, and expanded Overview URL modules are present but are not mounted in the root URL map.
+operations groups. Provider transport requires owner adapters. BI, Graph, Configuration,
+Observability, Overview, and Knowledge API modules are mounted under business-scoped API routes.
 The dedicated [Next.js frontend](frontend/README.md) uses the mounted Django APIs and the
 [Clean Teal design system](docs/requirements/DESIGN.md). Its [progress ledger](docs/implementations/frontend-progress.md)
 records endpoint coverage and unfinished screens.
@@ -85,3 +85,16 @@ The [298-requirement audit](docs/implementations/my-domains-requirements-audit.m
 full documented behavior from backend contracts and remaining external dependencies. Rebuild
 the reviewed inventory with `python scripts/audit_domain_requirements.py`; this validates
 evidence symbols and does not infer completion from passing tests.
+
+## Dialyra callbacks
+
+Configure a different random `BIZORA_BUSINESS_<ID>_DIALYRA_WEBHOOK_SECRET` for each business.
+Point that business's Dialyra webhook to `/api/businesses/<ID>/dialyra/webhook/` over HTTPS,
+with the custom header `Authorization: Bearer <that business's secret>`. Dialyra supports
+custom webhook headers; do not reuse its outbound API access token as the callback secret.
+Callbacks can update only calls belonging to that business's Dialyra connection.
+The previous `/api/dialyra/webhook/` URL returns HTTP 410 and must be replaced in provider settings.
+Without a configured callback secret the business endpoint returns HTTP 503.
+
+The [19 November audit report](tests/AUDIT_REPORT_2026-11-19.md) records local test results,
+the fixes on the audit branch, and remaining product and release gaps.
