@@ -51,7 +51,8 @@ import {
   Tooltip,
 } from './ui'
 import { dateTime, relativeTime } from '../lib/format/index.js'
-import { clientApi } from '../lib/clientApi'
+import { clientApi, newIdempotencyKey } from '../lib/clientApi'
+import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
 
 // Sample identity candidate for testing dry-run plan
@@ -228,7 +229,7 @@ export default function Admin({
     }
   }
 
-  // Handle Connection Test
+  // Handle Connection Test (Attempt recorded — Succeeded / Attempt recorded — Failed)
   const handleTestConnection = async (connId) => {
     setTestingConnectionId(connId)
     setOperationResult(null)
@@ -236,17 +237,18 @@ export default function Admin({
     try {
       const res = await clientApi(`businesses/${businessId}/observability/connections/${connId}/test`, {
         method: 'POST',
-        body: {},
+        body: operationBody(newIdempotencyKey()),
       })
+      const outcome = describeAttempt('connection_test', res)
       setOperationResult({
         connId,
-        status: res?.status === 'SUCCESS' ? 'Attempt recorded — Succeeded' : 'Attempt recorded — Succeeded',
-        tone: 'success',
+        status: outcome.text,
+        tone: outcome.tone,
       })
     } catch (err) {
       setOperationResult({
         connId,
-        status: 'Attempt recorded — Failed',
+        status: operationErrorText(err),
         tone: 'danger',
       })
     } finally {
@@ -260,19 +262,20 @@ export default function Admin({
     setIsRetryingSync(true)
 
     try {
-      await clientApi(`businesses/${businessId}/observability/syncs/${selectedSyncId}/retry`, {
+      const res = await clientApi(`businesses/${businessId}/observability/syncs/${selectedSyncId}/retry`, {
         method: 'POST',
-        body: {},
+        body: operationBody(newIdempotencyKey()),
       })
+      const outcome = describeAttempt('sync_retry', res)
       setOperationResult({
         connId: selectedSyncId,
-        status: 'Attempt recorded — Succeeded',
-        tone: 'success',
+        status: outcome.text,
+        tone: outcome.tone,
       })
     } catch (err) {
       setOperationResult({
         connId: selectedSyncId,
-        status: 'Attempt recorded — Failed',
+        status: operationErrorText(err),
         tone: 'danger',
       })
     } finally {
