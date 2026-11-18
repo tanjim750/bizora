@@ -4,6 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   summaryPath,
   attemptsPath,
+  settingsPatchBody,
+  settingsPath,
+  ALLOWED_EVENTS,
   normalizeSummary,
   normalizeAttempts,
   providerLabel,
@@ -11,12 +14,16 @@ import {
   attemptTone,
 } from '@/lib/tracking/api'
 import { clientApi } from '@/lib/clientApi'
+import { MANAGER_ROLES } from '@/lib/catalog'
 import {
   Banner,
   Button,
   DataTable,
   EmptyState,
   Field,
+  Input,
+  Checkbox,
+  Dialog,
   KpiTile,
   Select,
   StatusChip,
@@ -24,7 +31,7 @@ import {
   Skeleton,
 } from '@/components/ui'
 import { dateTime } from '../lib/format/index.js'
-import { RefreshCw, Radio, CheckCircle2, XCircle, Info, Activity } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 
 export default function TrackingIntegration({ businessId, role }) {
   const [summary, setSummary] = useState(null)
@@ -32,6 +39,7 @@ export default function TrackingIntegration({ businessId, role }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [liveAnnouncement, setLiveAnnouncement] = useState('')
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState(null)
 
   // Filters
   const [connectionFilter, setConnectionFilter] = useState('ALL')
@@ -39,6 +47,22 @@ export default function TrackingIntegration({ businessId, role }) {
   const [modeFilter, setModeFilter] = useState('ALL')
   const [offset, setOffset] = useState(0)
   const limit = 25
+
+  // Editing state for managers
+  const [editingConnection, setEditingConnection] = useState(null)
+  const [draft, setDraft] = useState({
+    enabled: false,
+    test_mode: false,
+    events: [],
+    test_event_code: '',
+    measurement_id: '',
+    api_version: '',
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const [dialogError, setDialogError] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  const isManager = Boolean(role && MANAGER_ROLES.has(role))
 
   const loadData = useCallback(async () => {
     if (!businessId) return
@@ -99,7 +123,74 @@ export default function TrackingIntegration({ businessId, role }) {
     setOffset((newPage - 1) * limit)
   }
 
-  const isManager = role === 'OWNER' || role === 'MANAGER'
+  const openEditModal = (conn) => {
+    setEditingConnection(conn)
+    setDraft({
+      enabled: Boolean(conn.settings?.enabled),
+      test_mode: Boolean(conn.settings?.test_mode),
+      events: Array.isArray(conn.settings?.events) ? [...conn.settings.events] : [],
+      test_event_code: conn.settings?.test_event_code ?? '',
+      measurement_id: conn.settings?.measurement_id ?? '',
+      api_version: conn.settings?.api_version ?? '',
+    })
+    setDialogError(null)
+    setFieldErrors({})
+  }
+
+  const closeEditModal = () => {
+    setEditingConnection(null)
+    setDialogError(null)
+    setFieldErrors({})
+  }
+
+  // Compute diff to determine if Save should be enabled
+  let patchBody = {}
+  let clientValidationError = null
+  if (editingConnection) {
+    try {
+      patchBody = settingsPatchBody(editingConnection, draft)
+    } catch (err) {
+      clientValidationError = err.message
+    }
+  }
+  const hasChanges = Object.keys(patchBody).length > 0 && !clientValidationError
+
+  const handleSaveSettings = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!editingConnection) return
+
+    let body
+    try {
+      body = settingsPatchBody(editingConnection, draft)
+    } catch (err) {
+      setDialogError(err.message)
+      return
+    }
+
+    if (Object.keys(body).length === 0) return
+
+    setIsSaving(true)
+    setDialogError(null)
+    setFieldErrors({})
+
+    try {
+      const url = settingsPath(businessId, editingConnection.id)
+      await clientApi(url, {
+        method: 'PATCH',
+        body,
+      })
+      setEditingConnection(null)
+      setSaveSuccessMessage('Settings saved.')
+      await loadData()
+    } catch (err) {
+      if (err.fieldErrors) {
+        setFieldErrors(err.fieldErrors)
+      }
+      setDialogError(err.detail || err.message || 'Failed to update tracking settings.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   if (error && !summary) {
     return (
@@ -166,6 +257,12 @@ export default function TrackingIntegration({ businessId, role }) {
       <div aria-live="polite" className="sr-only">
         {liveAnnouncement}
       </div>
+
+      {saveSuccessMessage && (
+        <Banner variant="success">
+          <span>{saveSuccessMessage}</span>
+        </Banner>
+      )}
 
       {/* Top calm informational banner */}
       <Banner variant="info">
@@ -236,11 +333,18 @@ export default function TrackingIntegration({ businessId, role }) {
                     <span className="text-caption text-secondary font-mono">{providerLabel(c.provider)}</span>
                     <h5 className="text-card font-semibold">{c.name}</h5>
                   </div>
-                  <StatusChip
-                    status={c.mode === 'LIVE' ? 'ACTIVE' : 'INACTIVE'}
-                    label={c.mode === 'LIVE' ? 'Live' : 'Prepared, not sent'}
-                    size="sm"
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <StatusChip
+                      status={c.mode === 'LIVE' ? 'ACTIVE' : 'INACTIVE'}
+                      label={c.mode === 'LIVE' ? 'Live' : 'Prepared, not sent'}
+                      size="sm"
+                    />
+                    {isManager && (
+                      <Button variant="secondary" size="sm" onClick={() => openEditModal(c)}>
+                        Edit settings
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Status indicator badges */}
@@ -373,6 +477,159 @@ export default function TrackingIntegration({ businessId, role }) {
           }}
         />
       </section>
+
+      {/* Edit Settings Dialog (TUI-F3) */}
+      {editingConnection && (
+        <Dialog
+          isOpen={Boolean(editingConnection)}
+          onClose={closeEditModal}
+          title={`Tracking settings: ${editingConnection.name}`}
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)' }}>
+              <Button type="button" variant="secondary" onClick={closeEditModal} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveSettings}
+                disabled={!hasChanges || isSaving}
+                loading={isSaving}
+              >
+                Save Settings
+              </Button>
+            </div>
+          }
+        >
+          <div className="stack section-gap">
+            {dialogError && <Banner variant="danger">{dialogError}</Banner>}
+
+            {/* Tracking enabled */}
+            <div className="stack-xs">
+              <Checkbox
+                id="draft-enabled"
+                label="Tracking enabled"
+                checked={draft.enabled}
+                onChange={(e) => setDraft((d) => ({ ...d, enabled: e.target.checked }))}
+              />
+              {draft.enabled && (
+                <p className="text-caption text-secondary" style={{ paddingLeft: 'var(--space-4)' }}>
+                  Enabling tracking does not send anything by itself. Events are sent live only for a real
+                  (non-mock) connection with credentials.
+                </p>
+              )}
+            </div>
+
+            {/* Test mode */}
+            <div>
+              <Checkbox
+                id="draft-test-mode"
+                label="Test mode"
+                checked={draft.test_mode}
+                onChange={(e) => setDraft((d) => ({ ...d, test_mode: e.target.checked }))}
+              />
+            </div>
+
+            {/* Allowed events group */}
+            <div className="stack-xs">
+              <span className="text-caption font-semibold">Allowed Events</span>
+              <p className="text-caption text-secondary">
+                Leave all unchecked to allow every supported event.
+              </p>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 'var(--space-1)',
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                  border: '1px solid var(--border-subtle)',
+                  padding: 'var(--space-2)',
+                  borderRadius: 'var(--radius-control)',
+                }}
+              >
+                {ALLOWED_EVENTS.map((ev) => (
+                  <Checkbox
+                    key={ev}
+                    id={`draft-event-${ev}`}
+                    label={ev}
+                    checked={draft.events.includes(ev)}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setDraft((d) => {
+                        const newEvents = checked ? [...d.events, ev] : d.events.filter((x) => x !== ev)
+                        return { ...d, events: newEvents }
+                      })
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Provider-specific fields */}
+            {(editingConnection.provider === 'meta' || editingConnection.provider === 'tiktok') && (
+              <Field
+                label="Test Event Code"
+                htmlFor="draft-test-event-code"
+                hint="Up to 64 characters (Meta and TikTok)"
+                error={fieldErrors.test_event_code}
+              >
+                <Input
+                  id="draft-test-event-code"
+                  placeholder="e.g. TEST12345"
+                  value={draft.test_event_code}
+                  onChange={(e) => setDraft((d) => ({ ...d, test_event_code: e.target.value }))}
+                />
+              </Field>
+            )}
+
+            {editingConnection.provider === 'ga4' && (
+              <Field
+                label="Measurement ID"
+                htmlFor="draft-measurement-id"
+                hint="Google Analytics 4 Measurement ID"
+                error={fieldErrors.measurement_id}
+              >
+                <Input
+                  id="draft-measurement-id"
+                  placeholder="G-XXXXXXX"
+                  value={draft.measurement_id}
+                  onChange={(e) => setDraft((d) => ({ ...d, measurement_id: e.target.value }))}
+                />
+              </Field>
+            )}
+
+            {editingConnection.provider === 'meta' && (
+              <Field
+                label="API Version"
+                htmlFor="draft-api-version"
+                hint="Meta Graph API Version"
+                error={fieldErrors.api_version}
+              >
+                <Input
+                  id="draft-api-version"
+                  placeholder="v18.0"
+                  value={draft.api_version}
+                  onChange={(e) => setDraft((d) => ({ ...d, api_version: e.target.value }))}
+                />
+              </Field>
+            )}
+
+            {/* Read-only fact text */}
+            <div
+              className="surface card-padding text-caption stack-xs"
+              style={{ background: 'var(--bg-subtle)', borderRadius: 'var(--radius-control)' }}
+            >
+              <div className="font-semibold text-primary">Personal identifiers are never sent.</div>
+              <div className="text-secondary">
+                Events are only sent live when the connection is not a mock, tracking is enabled and
+                credentials are available. Right now: mock {editingConnection.is_mock ? 'yes' : 'no'},
+                credentials {editingConnection.credentials_available ? 'available' : 'missing'}.
+              </div>
+            </div>
+          </div>
+        </Dialog>
+      )}
     </div>
   )
 }
