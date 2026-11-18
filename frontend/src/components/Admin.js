@@ -54,6 +54,7 @@ import { dateTime, relativeTime } from '../lib/format/index.js'
 import { clientApi, newIdempotencyKey } from '../lib/clientApi'
 import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
+import TrackingIntegration from './TrackingIntegration'
 
 // Sample identity candidate for testing dry-run plan
 const SAMPLE_MERGE_CANDIDATE = {
@@ -879,6 +880,13 @@ export default function Admin({
             >
               Dialyra Telephony & SIP
             </button>
+            <button
+              type="button"
+              className={`admin-subnav-btn ${integrationsSubTab === 'tracking' ? 'is-active' : ''}`}
+              onClick={() => setIntegrationsSubTab('tracking')}
+            >
+              Tracking
+            </button>
           </div>
 
           {/* Sub-view: Connections */}
@@ -1011,6 +1019,9 @@ export default function Admin({
 
           {/* Sub-view: Dialyra Telephony & SIP Trunks */}
           {integrationsSubTab === 'dialyra' && <DialyraTelephony businessId={businessId} />}
+          {integrationsSubTab === 'tracking' && (
+            <TrackingIntegration businessId={businessId} role={business?.role} />
+          )}
         </div>
       )}
 
