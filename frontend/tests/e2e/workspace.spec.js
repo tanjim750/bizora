@@ -24,6 +24,11 @@ test('session login, live overview, and mobile navigation', async ({ page }) => 
   await page.goto(`/business/${businessId}/overview`)
   await page.setViewportSize({ width: 320, height: 700 })
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  const switcher = await page.locator('.business-switcher-select-wrap').boundingBox()
+  const search = await page
+    .getByRole('button', { name: 'Search records, customers, orders... (Ctrl+K)' })
+    .boundingBox()
+  expect(switcher.x + switcher.width).toBeLessThanOrEqual(search.x)
   await page.getByRole('button', { name: 'Open navigation menu' }).click()
   await expect(page.getByRole('link', { name: 'Customers', exact: true })).toBeVisible()
   await page.keyboard.press('Escape')

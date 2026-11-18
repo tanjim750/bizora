@@ -522,6 +522,7 @@
 
 .business-switcher-select-wrap {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-2);
@@ -533,6 +534,7 @@
 
 .business-switcher-select {
   border: 0;
+  min-width: 0;
   background: transparent;
   color: var(--color-text);
   font-size: var(--text-body);
