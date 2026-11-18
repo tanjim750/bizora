@@ -54,6 +54,7 @@ import { dateTime, relativeTime } from '../lib/format/index.js'
 import { clientApi, newIdempotencyKey } from '../lib/clientApi'
 import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
+import KnowledgeBase from './KnowledgeBase'
 import { FailedRecordsList, WebhooksList } from './IntegrationRecordLists'
 import TrackingIntegration from './TrackingIntegration'
 import ConfigViewNav from './ConfigViewNav'
@@ -1167,13 +1168,13 @@ export default function Admin({
       )}
 
       {/* =========================================================================
-          TAB 4: KNOWLEDGE BASE (UNMOUNTED)
+          TAB 4: KNOWLEDGE BASE (READ ONLY)
           ========================================================================= */}
       {currentTab === 'knowledge' && (
-        <UnavailableState
+        <KnowledgeBase
+          businessId={businessId}
+          timezone={business?.timezone}
           title="Memory & Knowledge Base"
-          owner="Memory Knowledge"
-          reason="Vector knowledge repository and business semantic memory are unmounted in this environment."
         />
       )}
 
