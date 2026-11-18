@@ -55,6 +55,7 @@ import { clientApi, newIdempotencyKey } from '../lib/clientApi'
 import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
 import KnowledgeBase from './KnowledgeBase'
+import SimulationSandbox from './SimulationSandbox'
 import { FailedRecordsList, WebhooksList } from './IntegrationRecordLists'
 import TrackingIntegration from './TrackingIntegration'
 import ConfigViewNav from './ConfigViewNav'
@@ -1179,14 +1180,10 @@ export default function Admin({
       )}
 
       {/* =========================================================================
-          TAB 5: SIMULATION & SANDBOX (UNMOUNTED)
+          TAB 5: SIMULATION & SANDBOX (READ ONLY)
           ========================================================================= */}
       {currentTab === 'simulation' && (
-        <UnavailableState
-          title="Prototype Simulation & Sandbox"
-          owner="Prototype Simulation"
-          reason="What-if simulation engine and scenario sandbox are unmounted in this environment."
-        />
+        <SimulationSandbox connections={initialConnections} title="Prototype Simulation & Sandbox" />
       )}
 
       {/* =========================================================================
