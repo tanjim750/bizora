@@ -3,8 +3,12 @@
 import React, { useState } from 'react'
 import { Tabs } from '@/components/ui'
 import GraphPathFinder from './GraphPathFinder'
+import GraphQueryForm from './GraphQueryForm'
 
-const EXPLORER_VIEWS = [{ id: 'paths', label: 'Find a path' }]
+const EXPLORER_VIEWS = [
+  { id: 'paths', label: 'Find a path' },
+  { id: 'query', label: 'Query' },
+]
 
 export default function GraphExplorerPanel({ businessId, timezone }) {
   const [view, setView] = useState('paths')
@@ -23,6 +27,7 @@ export default function GraphExplorerPanel({ businessId, timezone }) {
       <Tabs tabs={EXPLORER_VIEWS} activeTab={view} onChange={setView} ariaLabel="Graph exploration tools" />
       <div role="tabpanel" id={`tabpanel-${view}`} aria-labelledby={`tab-${view}`}>
         {view === 'paths' && <GraphPathFinder businessId={businessId} timezone={timezone} />}
+        {view === 'query' && <GraphQueryForm businessId={businessId} />}
       </div>
     </section>
   )
