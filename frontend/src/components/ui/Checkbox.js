@@ -8,6 +8,7 @@ import React, { forwardRef, useId } from 'react'
 export const Checkbox = forwardRef(function Checkbox(
   {
     label,
+    children,
     hint,
     id: explicitId,
     checked,
@@ -41,9 +42,9 @@ export const Checkbox = forwardRef(function Checkbox(
         />
       </div>
       <div className="checkbox-text">
-        {label && (
+        {(label || children) && (
           <label htmlFor={id} className="checkbox-label">
-            {label}
+            {label || children}
           </label>
         )}
         {hint && (
