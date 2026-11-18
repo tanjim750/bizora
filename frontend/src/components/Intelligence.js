@@ -58,6 +58,8 @@ import {
   issuePatchBody,
   confidencePercent,
 } from '@/lib/intelligence/facts'
+import { isFactIdOpenable } from '@/lib/intelligence/factDetail'
+import FactDetailDrawer from './FactDetailDrawer'
 import {
   ENTITY_KINDS,
   REBUILD_BODY,
@@ -189,6 +191,7 @@ export default function Intelligence({
   // Evidence Drawer state
   const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState(null)
+  const [factDetailId, setFactDetailId] = useState(null)
 
   // Context Graph state (FE-W4, FE-W5)
   const [graphKind, setGraphKind] = useState('customer')
@@ -645,15 +648,17 @@ export default function Intelligence({
                   },
                   {
                     key: 'actions',
-                    label: 'Evidence',
+                    label: 'Details',
                     render: (row) => (
                       <Button
                         variant="secondary"
                         size="sm"
-                        icon={Eye}
-                        onClick={() => handleOpenEvidence(row)}
+                        icon={FileText}
+                        disabled={!isFactIdOpenable(row.id)}
+                        aria-label={`Open details for fact ${row.id}`}
+                        onClick={() => setFactDetailId(row.id)}
                       >
-                        View
+                        Details
                       </Button>
                     ),
                   },
@@ -1414,6 +1419,13 @@ export default function Intelligence({
           </div>
         )}
       </Drawer>
+
+      <FactDetailDrawer
+        businessId={businessId}
+        factId={factDetailId}
+        timezone={timezone}
+        onClose={() => setFactDetailId(null)}
+      />
     </div>
   )
 }
