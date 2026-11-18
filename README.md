@@ -38,6 +38,31 @@ endpoint remains `/api/`; business endpoints require explicit membership. Use th
 `BIZORA_DATA_DIR` and secret when restarting the local server.
 Open `http://127.0.0.1:8000/ops/`, sign in with the demo user and select the business.
 
+## Demo login for every teammate (frontend)
+
+There is no shared username or password: the users live in each person's own local database, which is not in git.
+One command creates yours and turns on the "Continue as demo owner" button on the frontend login page.
+With the project virtualenv active (`pip install -r requirements.txt`):
+
+```bash
+bash scripts/demo-login.sh setup
+```
+
+It creates the local user `demo-owner` with a random password, loads the demo business (the existing
+`demo_completion` command) and writes the demo settings into `frontend/.env.local` (git-ignored, never commit it).
+Then start the two servers and open `http://localhost:3000/login`:
+
+```bash
+bash scripts/demo-login.sh run
+```
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+The button exists only in a development build, with the backend on your own machine. Running `setup` again is safe
+(same password, nothing duplicated). The data lives in `~/.bizora-dev-data` (change it with `BIZORA_DATA_DIR`).
+
 ## Verification
 
 ```bash
