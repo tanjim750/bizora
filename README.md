@@ -41,27 +41,28 @@ Open `http://127.0.0.1:8000/ops/`, sign in with the demo user and select the bus
 ## Demo login for every teammate (frontend)
 
 There is no shared username or password: the users live in each person's own local database, which is not in git.
-One command creates yours and turns on the "Continue as demo owner" button on the frontend login page.
-With the project virtualenv active (`pip install -r requirements.txt`):
+One command prepares everything and starts both servers (Python 3.12 and Node.js 20 or newer must be installed):
 
 ```bash
-bash scripts/demo-login.sh setup
+bash scripts/demo-login.sh start
 ```
 
-It creates the local user `demo-owner` with a random password, loads the demo business (the existing
-`demo_completion` command) and writes the demo settings into `frontend/.env.local` (git-ignored, never commit it).
-Then start the two servers and open `http://localhost:3000/login`:
+The first run creates the Python virtualenv `.venv`, installs the requirements and the frontend packages, creates the
+local user `demo-owner` with a random password, loads the demo business and writes the demo settings into
+`frontend/.env.local` (git-ignored, never commit it). Then it runs the backend and the frontend. When it says the backend
+is up, open `http://localhost:3000/login` and click "Continue as demo owner". Ctrl+C stops both servers.
+
+Other forms: `bash scripts/demo-login.sh setup` (only the one-time setup) and `bash scripts/demo-login.sh run` (only the
+backend). The user is created by the new management command, which you can also run yourself in an isolated local
+database (it refuses the tracked `db.sqlite3` and any non-SQLite database):
 
 ```bash
-bash scripts/demo-login.sh run
+python manage.py create_demo_user --username demo-owner --with-demo-data
 ```
 
-```bash
-cd frontend && npm install && npm run dev
-```
-
-The button exists only in a development build, with the backend on your own machine. Running `setup` again is safe
-(same password, nothing duplicated). The data lives in `~/.bizora-dev-data` (change it with `BIZORA_DATA_DIR`).
+The button exists only in a development build, with the backend on your own machine. Running the script again is safe
+(same password, nothing duplicated). The data lives in `~/.bizora-dev-data` (change it with `BIZORA_DATA_DIR`; ports with
+`BIZORA_BACKEND_PORT` and `BIZORA_FRONTEND_PORT`).
 
 ## Verification
 
