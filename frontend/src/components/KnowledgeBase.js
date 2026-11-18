@@ -5,6 +5,7 @@ import { Banner, Button, DataTable, KpiTile, StatusChip, UnavailableState } from
 import { clientApi } from '@/lib/clientApi'
 import { dateTime, enumLabel } from '@/lib/format/index.js'
 import { RefreshCw } from 'lucide-react'
+import KnowledgeDocuments from './KnowledgeDocuments'
 import {
   SOURCES_PAGE_LIMIT,
   sourcesPath,
@@ -20,10 +21,13 @@ export default function KnowledgeBase({ businessId, timezone, title = 'Memory & 
   const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [documentsSourceId, setDocumentsSourceId] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
   const reqSeq = useRef(0)
 
   const handleRefresh = useCallback(() => {
     setReloadKey((k) => k + 1)
+    setRefreshKey((k) => k + 1)
   }, [])
 
   useEffect(() => {
@@ -111,6 +115,20 @@ export default function KnowledgeBase({ businessId, timezone, title = 'Memory & 
       label: 'Updated',
       render: (row) => dateTime(row.updated_at, timezone),
     },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label={`View documents of ${row.name || 'Unnamed source'}`}
+          onClick={() => setDocumentsSourceId(String(row.id))}
+        >
+          View documents
+        </Button>
+      ),
+    },
   ]
 
   let liveStatus = ''
@@ -195,7 +213,14 @@ export default function KnowledgeBase({ businessId, timezone, title = 'Memory & 
             </p>
           )}
 
-          {/* KNOWLEDGE_DOCUMENTS_MOUNT */}
+          <KnowledgeDocuments
+            businessId={businessId}
+            timezone={timezone}
+            sources={results}
+            sourceId={documentsSourceId}
+            onSourceChange={setDocumentsSourceId}
+            refreshKey={refreshKey}
+          />
         </>
       )}
     </div>
