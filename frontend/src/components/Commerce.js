@@ -43,6 +43,7 @@ import { businessPath, businessApiPath, WRITER_ROLES } from '@/lib/catalog'
 import { money, dateTime, relativeTime } from '@/lib/format'
 import { clientApi, newIdempotencyKey } from '@/lib/clientApi'
 import SteadfastSendOrder from './SteadfastSendOrder'
+import SteadfastRefreshShipment from './SteadfastRefreshShipment'
 
 // Legal lifecycle transitions per D4 (matching states.py and RecordCommands.js)
 const TRANSITIONS = {
@@ -448,11 +449,11 @@ export default function Commerce({
       render: (row) => <span className="font-medium text-body">{row.provider || 'Carrier Service'}</span>,
     },
     {
-      key: 'tracking_number',
+      key: 'tracking_code',
       label: 'Tracking Number',
       render: (row) =>
-        row.tracking_number ? (
-          <CopyableCode value={row.tracking_number} />
+        row.tracking_code ? (
+          <CopyableCode value={row.tracking_code} />
         ) : (
           <span className="text-muted">—</span>
         ),
@@ -970,8 +971,8 @@ export default function Commerce({
                     <div className="drawer-prop-item">
                       <dt>Tracking Number</dt>
                       <dd>
-                        {currentRecord.tracking_number ? (
-                          <CopyableCode value={currentRecord.tracking_number} />
+                        {currentRecord.tracking_code ? (
+                          <CopyableCode value={currentRecord.tracking_code} />
                         ) : (
                           '—'
                         )}
@@ -979,6 +980,19 @@ export default function Commerce({
                     </div>
                   </dl>
                 </div>
+
+                <SteadfastRefreshShipment
+                  businessId={businessId}
+                  role={business?.role}
+                  shipment={currentRecord}
+                  timezone={timezone}
+                  onRefreshed={(updated) => {
+                    setActiveRecord((prev) =>
+                      prev ? { ...prev, record: { ...prev.record, status: updated.status } } : prev,
+                    )
+                    router.refresh()
+                  }}
+                />
 
                 {/* Outbound Carrier Operation Panel */}
                 <div className="drawer-section">
