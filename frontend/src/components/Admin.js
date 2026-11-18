@@ -55,6 +55,8 @@ import { clientApi, newIdempotencyKey } from '../lib/clientApi'
 import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
 import TrackingIntegration from './TrackingIntegration'
+import ConfigViewNav from './ConfigViewNav'
+import ConfigSectionsEditor from './ConfigSectionsEditor'
 
 // Sample identity candidate for testing dry-run plan
 const SAMPLE_MERGE_CANDIDATE = {
@@ -75,6 +77,11 @@ const SAMPLE_CONFLICT = {
   conflict_details: 'External phone +8801711000000 linked to multiple canonical identities (ID #1 and ID #2)',
   created_at: '2026-11-10T13:36:46Z',
 }
+
+const CONFIG_VIEWS = [
+  { key: 'effective', label: 'Effective settings' },
+  { key: 'sections', label: 'Edit settings' },
+]
 
 export default function Admin({
   businessId,
@@ -101,6 +108,7 @@ export default function Admin({
   // Configuration section selector
   const [configSection, setConfigSection] = useState('profile')
   const [show409Banner, setShow409Banner] = useState(false)
+  const [configView, setConfigView] = useState('effective')
 
   // Merge Dry-Run Plan Card (D24)
   const [dryRunPlan, setDryRunPlan] = useState(null)
@@ -1028,8 +1036,9 @@ export default function Admin({
       {/* =========================================================================
           TAB 3: CONFIGURATION & POLICIES
           ========================================================================= */}
-      {currentTab === 'configuration' && (
+      {currentTab === 'configuration' && configView === 'effective' && (
         <div className="stack section-gap">
+          <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
           {/* Version chip & 409 stale banner toggle */}
           <div
             style={{
@@ -1051,7 +1060,7 @@ export default function Admin({
                   borderRadius: 'var(--radius-sm)',
                 }}
               >
-                Version: v1
+                {configSection.toUpperCase()} version: v{effectiveSections[configSection]?.version ?? 0}
               </span>
             </div>
 
@@ -1127,6 +1136,19 @@ export default function Admin({
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {currentTab === 'configuration' && configView !== 'effective' && (
+        <div className="stack section-gap">
+          <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
+          {configView === 'sections' && (
+            <ConfigSectionsEditor
+              businessId={businessId}
+              role={business?.role}
+              timezone={business?.timezone}
+            />
+          )}
         </div>
       )}
 
