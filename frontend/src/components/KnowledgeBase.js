@@ -6,6 +6,7 @@ import { clientApi } from '@/lib/clientApi'
 import { dateTime, enumLabel } from '@/lib/format/index.js'
 import { RefreshCw } from 'lucide-react'
 import KnowledgeDocuments from './KnowledgeDocuments'
+import KnowledgeSearch from './KnowledgeSearch'
 import {
   SOURCES_PAGE_LIMIT,
   sourcesPath,
@@ -194,7 +195,7 @@ export default function KnowledgeBase({ businessId, timezone, title = 'Memory & 
             <KpiTile title="Text chunks" value={totals?.chunks ?? null} isLoading={loading && !hasLoaded} />
           </div>
 
-          {/* KNOWLEDGE_SEARCH_MOUNT */}
+          <KnowledgeSearch businessId={businessId} />
 
           <DataTable
             title="Sources"
