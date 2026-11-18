@@ -28,7 +28,7 @@ from app.models import (
     WebsiteSession,
     WebsiteVisitor,
 )
-from app.observability.models import ObservationReceipt, OperationAttempt
+from app.observability.models import ObservationReceipt, OperationAttempt, ProviderRequest
 
 from ..builder import build_tracking_payload, extract_event_contents, identify_provider
 from ..service import is_event_allowed, process_tracking_event, should_send_live
@@ -186,13 +186,10 @@ class TrackingServicePreparedTests(TestCase):
         self.assertEqual(item["event_id"], f"bizora_we_{event.pk}")
         self.assertEqual(item["event_source_url"], "https://bizora.shop/home")
 
-        # Verify observation receipt created
-        receipt = ObservationReceipt.objects.filter(
-            connection=self.conn_meta,
-            key=f"tracking:event:{event.pk}:prepared",
-        ).first()
-        self.assertIsNotNone(receipt)
-        self.assertEqual(receipt.kind, "provider_request")
+        # Verify no observation receipt or provider request created for prepared run
+        self.assertIs(attempt.result.get("sent"), False)
+        self.assertFalse(ObservationReceipt.objects.filter(connection=self.conn_meta).exists())
+        self.assertFalse(ProviderRequest.objects.filter(connection=self.conn_meta).exists())
 
     @patch("urllib.request.urlopen")
     def test_prepared_mock_tiktok_view_content_with_product(self, mock_urlopen):
@@ -213,7 +210,10 @@ class TrackingServicePreparedTests(TestCase):
         mock_urlopen.assert_not_called()
         self.assertEqual(attempt.status, "SUCCEEDED")
         self.assertEqual(attempt.result["mode"], "PREPARED")
+        self.assertIs(attempt.result.get("sent"), False)
         self.assertEqual(attempt.result["provider"], "tiktok")
+        self.assertFalse(ObservationReceipt.objects.filter(connection=self.conn_tiktok).exists())
+        self.assertFalse(ProviderRequest.objects.filter(connection=self.conn_tiktok).exists())
 
         payload = attempt.result["payload"]
         self.assertIn("data", payload)
@@ -267,7 +267,11 @@ class TrackingServicePreparedTests(TestCase):
 
         mock_urlopen.assert_not_called()
         self.assertEqual(attempt.status, "SUCCEEDED")
+        self.assertEqual(attempt.result["mode"], "PREPARED")
+        self.assertIs(attempt.result.get("sent"), False)
         self.assertEqual(attempt.result["provider"], "ga4")
+        self.assertFalse(ObservationReceipt.objects.filter(connection=self.conn_ga4).exists())
+        self.assertFalse(ProviderRequest.objects.filter(connection=self.conn_ga4).exists())
 
         payload = attempt.result["payload"]
         self.assertEqual(payload["client_id"], "vis_key_001")

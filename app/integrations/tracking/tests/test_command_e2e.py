@@ -184,15 +184,19 @@ class TrackingCommandE2ETests(TestCase):
         result = json.loads(out.getvalue())
 
         self.assertEqual(result["total_processed"], 3)
-        self.assertEqual(result["total_succeeded"], 3)
+        self.assertEqual(result["total_succeeded"], 0)
+        self.assertEqual(result["total_prepared"], 3)
         self.assertEqual(result["total_failed"], 0)
+        self.assertEqual(result["connections"][0]["prepared_count"], 3)
+        self.assertEqual(result["connections"][0]["succeeded_count"], 0)
 
-        # Verify 3 OperationAttempt records were created with mode=PREPARED
+        # Verify 3 OperationAttempt records were created with mode=PREPARED and sent=False
         attempts = OperationAttempt.objects.filter(connection=self.conn_mock_meta)
         self.assertEqual(attempts.count(), 3)
         for att in attempts:
             self.assertEqual(att.status, "SUCCEEDED")
             self.assertEqual(att.result["mode"], "PREPARED")
+            self.assertIs(att.result.get("sent"), False)
 
         # Second run should find 0 pending events (idempotent / bounded)
         out2 = io.StringIO()

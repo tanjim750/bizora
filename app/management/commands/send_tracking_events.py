@@ -16,7 +16,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from app.integrations.tracking.builder import identify_provider
-from app.integrations.tracking.service import get_tracking_config, process_tracking_event
+from app.integrations.tracking.config import get_tracking_config
+from app.integrations.tracking.service import process_tracking_event
 from app.models import Business, IntegrationConnection, WebsiteEvent
 from app.observability.models import OperationAttempt
 
@@ -139,6 +140,7 @@ class Command(BaseCommand):
                 "is_mock": conn.is_mock,
                 "pending_count": len(pending_events),
                 "processed_count": 0,
+                "prepared_count": 0,
                 "succeeded_count": 0,
                 "failed_count": 0,
                 "unsupported_count": 0,
@@ -153,7 +155,10 @@ class Command(BaseCommand):
                 try:
                     attempt = process_tracking_event(conn, event, now=now)
                     conn_summary["processed_count"] += 1
-                    if attempt.status == "SUCCEEDED":
+                    is_prepared = isinstance(attempt.result, dict) and attempt.result.get("mode") == "PREPARED"
+                    if is_prepared:
+                        conn_summary["prepared_count"] += 1
+                    elif attempt.status == "SUCCEEDED":
                         conn_summary["succeeded_count"] += 1
                     elif attempt.status == "UNSUPPORTED":
                         conn_summary["unsupported_count"] += 1
@@ -174,6 +179,7 @@ class Command(BaseCommand):
 
         # Output results
         total_processed = sum(r["processed_count"] for r in results)
+        total_prepared = sum(r["prepared_count"] for r in results)
         total_succeeded = sum(r["succeeded_count"] for r in results)
         total_failed = sum(r["failed_count"] for r in results)
         total_pending = sum(r["pending_count"] for r in results)
@@ -183,6 +189,7 @@ class Command(BaseCommand):
             "dry_run": dry_run,
             "total_pending": total_pending,
             "total_processed": total_processed,
+            "total_prepared": total_prepared,
             "total_succeeded": total_succeeded,
             "total_failed": total_failed,
             "connections": results,
@@ -195,6 +202,6 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(
                     f"[{mode_label}] Processed {total_processed} events across {len(results)} "
-                    f"connection(s) for '{business.slug}' (Succeeded: {total_succeeded}, Failed: {total_failed})."
+                    f"connection(s) for '{business.slug}' (prepared (not sent): {total_prepared}, sent and accepted: {total_succeeded}, Failed: {total_failed})."
                 )
             )
