@@ -12,7 +12,7 @@ const EXPLORER_VIEWS = [
   { id: 'snapshots', label: 'Snapshots' },
 ]
 
-export default function GraphExplorerPanel({ businessId, timezone }) {
+export default function GraphExplorerPanel({ businessId, timezone, canManage = false }) {
   const [view, setView] = useState('paths')
   return (
     <section className="surface card-padding stack" aria-labelledby="graph-explorer-title">
@@ -30,7 +30,9 @@ export default function GraphExplorerPanel({ businessId, timezone }) {
       <div role="tabpanel" id={`tabpanel-${view}`} aria-labelledby={`tab-${view}`}>
         {view === 'paths' && <GraphPathFinder businessId={businessId} timezone={timezone} />}
         {view === 'query' && <GraphQueryForm businessId={businessId} />}
-        {view === 'snapshots' && <GraphSnapshots businessId={businessId} timezone={timezone} />}
+        {view === 'snapshots' && (
+          <GraphSnapshots businessId={businessId} timezone={timezone} canManage={canManage} />
+        )}
       </div>
     </section>
   )

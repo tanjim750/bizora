@@ -1026,7 +1026,7 @@ export default function Intelligence({
             )}
           </div>
 
-          <GraphExplorerPanel businessId={businessId} timezone={timezone} />
+          <GraphExplorerPanel businessId={businessId} timezone={timezone} canManage={canManage} />
         </div>
       )}
 

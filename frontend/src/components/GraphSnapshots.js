@@ -1,7 +1,18 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Button, Banner, EmptyState, Skeleton, DataTable, Drawer } from '@/components/ui'
+import {
+  Button,
+  Banner,
+  EmptyState,
+  Skeleton,
+  DataTable,
+  Drawer,
+  Dialog,
+  Field,
+  Input,
+  Select,
+} from '@/components/ui'
 import { clientApi } from '@/lib/clientApi'
 import { dateTime, enumLabel } from '@/lib/format'
 import { graphErrorMessage } from '@/lib/intelligence/graphExplore'
@@ -14,11 +25,15 @@ import {
   normalizeSnapshotDetail,
 } from '@/lib/intelligence/graphSnapshots'
 
-export default function GraphSnapshots({ businessId, timezone }) {
+export default function GraphSnapshots({ businessId, timezone, canManage = false }) {
   const [snapshots, setSnapshots] = useState([])
   const [listLoading, setListLoading] = useState(true)
   const [listError, setListError] = useState(null)
   const [statusText, setStatusText] = useState('')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createBusy, setCreateBusy] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const [snapshotType, setSnapshotType] = useState('BUSINESS')
 
   const [openId, setOpenId] = useState(null)
   const [detail, setDetail] = useState(null)
@@ -28,6 +43,37 @@ export default function GraphSnapshots({ businessId, timezone }) {
   const handleCloseDrawer = useCallback(() => {
     setOpenId(null)
   }, [])
+
+  const handleCreateSnapshot = async (event) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const body = {
+      snapshot_type: snapshotType,
+      name: String(form.get('name') || '').trim(),
+    }
+    if (snapshotType !== 'BUSINESS') {
+      const rootId = Number(form.get('root_entity_id'))
+      if (!Number.isSafeInteger(rootId) || rootId < 1) {
+        setCreateError('Enter a valid positive record ID.')
+        return
+      }
+      body.root_entity_type = snapshotType
+      body.root_entity_id = rootId
+    }
+
+    setCreateBusy(true)
+    setCreateError('')
+    try {
+      await clientApi(snapshotListPath(businessId), { method: 'POST', body })
+      setCreateOpen(false)
+      setSnapshotType('BUSINESS')
+      await loadSnapshots()
+    } catch (err) {
+      setCreateError(graphErrorMessage(err))
+    } finally {
+      setCreateBusy(false)
+    }
+  }
 
   const loadSnapshots = useCallback(async () => {
     setListLoading(true)
@@ -127,12 +173,20 @@ export default function GraphSnapshots({ businessId, timezone }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h4 className="section-title">Saved snapshots</h4>
-            <p className="muted">
-              A snapshot is a stored copy of part of the graph. This screen only lists and opens them; it does
-              not create or change any.
-            </p>
+            <p className="muted">Save a stable copy of the current business graph or an individual journey.</p>
           </div>
-          <div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            {canManage && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setCreateError('')
+                  setCreateOpen(true)
+                }}
+              >
+                Create snapshot
+              </Button>
+            )}
             <Button variant="secondary" size="sm" onClick={loadSnapshots}>
               Refresh
             </Button>
@@ -164,7 +218,7 @@ export default function GraphSnapshots({ businessId, timezone }) {
       ) : snapshots.length === 0 ? (
         <EmptyState
           title="No snapshots yet"
-          description="No snapshot has been saved for this business. Owners and managers can create snapshots through the API."
+          description="Create a snapshot to preserve the current business graph or a customer, order, product, or campaign journey."
         />
       ) : (
         <div className="stack-sm">
@@ -215,6 +269,70 @@ export default function GraphSnapshots({ businessId, timezone }) {
           )}
         </div>
       )}
+
+      <Dialog
+        isOpen={createOpen}
+        title="Create graph snapshot"
+        subtitle="The saved copy will not change when the live graph changes."
+        onClose={() => !createBusy && setCreateOpen(false)}
+        maxWidth="32rem"
+      >
+        <form className="stack-sm" onSubmit={handleCreateSnapshot}>
+          <Field label="Snapshot type" htmlFor="snapshot-type" required>
+            <Select
+              id="snapshot-type"
+              value={snapshotType}
+              onChange={(event) => setSnapshotType(event.target.value)}
+              disabled={createBusy}
+              options={[
+                { value: 'BUSINESS', label: 'Whole business graph' },
+                { value: 'CUSTOMER', label: 'Customer journey' },
+                { value: 'ORDER', label: 'Order journey' },
+                { value: 'PRODUCT', label: 'Product journey' },
+                { value: 'CAMPAIGN', label: 'Campaign journey' },
+              ]}
+            />
+          </Field>
+          <Field
+            label="Name"
+            htmlFor="snapshot-name"
+            hint="Optional. A descriptive name makes saved snapshots easier to find."
+          >
+            <Input id="snapshot-name" name="name" maxLength={255} disabled={createBusy} />
+          </Field>
+          {snapshotType !== 'BUSINESS' && (
+            <Field
+              label={`${snapshotType.charAt(0)}${snapshotType.slice(1).toLowerCase()} record ID`}
+              htmlFor="snapshot-root-id"
+              hint="Use the record ID in this business."
+              required
+            >
+              <Input
+                id="snapshot-root-id"
+                name="root_entity_id"
+                type="number"
+                min="1"
+                step="1"
+                required
+                disabled={createBusy}
+              />
+            </Field>
+          )}
+          {createError && (
+            <Banner variant="danger" title="Snapshot could not be created">
+              {createError}
+            </Banner>
+          )}
+          <div className="button-row" style={{ justifyContent: 'flex-end' }}>
+            <Button type="button" variant="secondary" disabled={createBusy} onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createBusy} isLoading={createBusy}>
+              {createBusy ? 'Creating…' : 'Create snapshot'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
 
       <Drawer
         isOpen={openId !== null}
