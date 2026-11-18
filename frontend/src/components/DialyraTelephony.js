@@ -525,7 +525,7 @@ export default function DialyraTelephony({ businessId }) {
 
       {/* PJSIP Status Drawer */}
       <Drawer
-        open={statusDrawerOpen}
+        isOpen={statusDrawerOpen}
         onClose={() => setStatusDrawerOpen(false)}
         title="Asterisk PJSIP Realtime Status"
       >
@@ -602,7 +602,7 @@ export default function DialyraTelephony({ businessId }) {
 
       {/* Create Trunk Dialog */}
       <Dialog
-        open={createModalOpen}
+        isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Create SIP Trunk (Dialyra v3)"
       >

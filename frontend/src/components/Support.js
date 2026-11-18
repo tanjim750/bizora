@@ -1162,7 +1162,7 @@ export default function Support({
       {/* CALL DETAIL DRAWER                                             */}
       {/* ============================================================== */}
       <Drawer
-        open={callDrawerOpen}
+        isOpen={callDrawerOpen}
         onClose={() => setCallDrawerOpen(false)}
         title={selectedCall ? `Call #${selectedCall.id} Log` : 'Call Details'}
       >
@@ -1260,7 +1260,7 @@ export default function Support({
       {/* ============================================================== */}
       {/* DIALOG 1: ASSIGN CONVERSATION (D11)                            */}
       {/* ============================================================== */}
-      <Dialog open={assignModalOpen} onClose={() => setAssignModalOpen(false)} title="Assign Support Case">
+      <Dialog isOpen={assignModalOpen} onClose={() => setAssignModalOpen(false)} title="Assign Support Case">
         <form onSubmit={handleAssignSubmit} className="stack">
           <Field label="Assignee Type" htmlFor="assignee-type">
             <Select id="assignee-type" value={assigneeType} onChange={(e) => setAssigneeType(e.target.value)}>
@@ -1311,7 +1311,7 @@ export default function Support({
       {/* DIALOG 2: HANDOVER TO HUMAN OR AI (D12)                        */}
       {/* ============================================================== */}
       <Dialog
-        open={handoverModalOpen}
+        isOpen={handoverModalOpen}
         onClose={() => setHandoverModalOpen(false)}
         title="Hand Over Conversation"
       >
@@ -1393,7 +1393,7 @@ export default function Support({
       {/* DIALOG 3: UPDATE PRIORITY (D17)                                */}
       {/* ============================================================== */}
       <Dialog
-        open={priorityModalOpen}
+        isOpen={priorityModalOpen}
         onClose={() => setPriorityModalOpen(false)}
         title="Adjust Case Priority"
       >
@@ -1441,7 +1441,7 @@ export default function Support({
       {/* DIALOG 4: SCHEDULE CALLBACK (D23)                              */}
       {/* ============================================================== */}
       <Dialog
-        open={callbackModalOpen}
+        isOpen={callbackModalOpen}
         onClose={() => setCallbackModalOpen(false)}
         title="Schedule Telephone Callback"
       >
@@ -1489,7 +1489,7 @@ export default function Support({
       {/* DIALOG 5: DIALYRA OUTBOUND CALL                                */}
       {/* ============================================================== */}
       <Dialog
-        open={dialyraCallOpen}
+        isOpen={dialyraCallOpen}
         onClose={() => setDialyraCallOpen(false)}
         title="Start Outbound Call (Dialyra v3 Gateway)"
       >

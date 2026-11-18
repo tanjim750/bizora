@@ -1352,7 +1352,7 @@ export default function Intelligence({
       {/* EVIDENCE DRAWER                                                */}
       {/* ============================================================== */}
       <Drawer
-        open={evidenceDrawerOpen}
+        isOpen={evidenceDrawerOpen}
         onClose={() => setEvidenceDrawerOpen(false)}
         title={
           selectedEvidence
