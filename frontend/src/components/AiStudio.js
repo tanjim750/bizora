@@ -43,6 +43,7 @@ import {
 import { businessPath, businessApiPath, WRITER_ROLES } from '@/lib/catalog'
 import { dateTime, relativeTime } from '@/lib/format'
 import { clientApi } from '@/lib/clientApi'
+import AiActionExecute from './AiActionExecute'
 
 export default function AiStudio({
   business = {},
@@ -128,7 +129,7 @@ export default function AiStudio({
       const endpoint = decision === 'APPROVED' ? `actions/${actionId}/approve` : `actions/${actionId}/reject`
       const res = await clientApi(endpoint, {
         method: 'POST',
-        body: { note: reviewNote.trim() },
+        body: { approval_note: reviewNote.trim() },
       })
 
       setReviewSuccess(`Action marked as ${decision}. Note recorded. Execution is simulated.`)
@@ -390,7 +391,7 @@ export default function AiStudio({
           >
             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               <span className="font-semibold text-caption text-secondary">Status:</span>
-              {['ALL', 'SUGGESTED', 'APPROVED', 'REJECTED', 'EXECUTED'].map((st) => (
+              {['ALL', 'SUGGESTED', 'APPROVED', 'REJECTED', 'EXECUTED', 'FAILED'].map((st) => (
                 <button
                   key={st}
                   type="button"
@@ -539,6 +540,13 @@ export default function AiStudio({
                         )}
                       </div>
                     )}
+
+                    <AiActionExecute
+                      action={act}
+                      role={business?.role}
+                      timezone={timezone}
+                      onDone={() => router.refresh()}
+                    />
                   </div>
                 )
               })}

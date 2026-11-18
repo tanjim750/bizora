@@ -31,6 +31,8 @@ import {
 import { ChartCard, TrendLine, BarCompare } from '@/components/ui/charts'
 import { businessPath, MANAGER_ROLES } from '@/lib/catalog'
 import { dateTime, relativeTime } from '@/lib/format'
+import OverviewEntityDrawer from './OverviewEntityDrawer'
+import { overviewEntityRef, overviewEntityTypeLabel } from '@/lib/overview/entities'
 
 const PERIOD_OPTIONS = [
   { id: 'day', label: 'Day' },
@@ -58,6 +60,7 @@ export default function Overview({
   const [period, setPeriod] = useState('month')
   const [compare, setCompare] = useState(false)
   const [domainFilter, setDomainFilter] = useState('ALL')
+  const [openEntity, setOpenEntity] = useState(null)
 
   const allAudits = data?.recent_activity?.results || []
 
@@ -104,6 +107,23 @@ export default function Overview({
     })
   }, [allAudits, domainFilter])
 
+  const renderEntityButton = (rawType, rawId) => {
+    const ref = overviewEntityRef(rawType, rawId)
+    if (!ref) {
+      return <span className="muted">No details</span>
+    }
+    return (
+      <Button
+        variant="secondary"
+        size="sm"
+        aria-label={`Open details for ${overviewEntityTypeLabel(ref.type)} ${ref.id}`}
+        onClick={() => setOpenEntity(ref)}
+      >
+        Details
+      </Button>
+    )
+  }
+
   // Columns for Audit Log table
   const auditColumns = [
     {
@@ -138,6 +158,11 @@ export default function Overview({
           {dateTime(row.created_at, business?.timezone)}
         </span>
       ),
+    },
+    {
+      key: 'entity_details',
+      label: 'Details',
+      render: (row) => renderEntityButton(row.entity_type, row.entity_id),
     },
   ]
 
@@ -324,6 +349,11 @@ export default function Overview({
           {dateTime(row.detected_at, business?.timezone)}
         </span>
       ),
+    },
+    {
+      key: 'subject_details',
+      label: 'Details',
+      render: (row) => renderEntityButton(row.subject_entity_type, row.subject_entity_id),
     },
   ]
 
@@ -725,6 +755,13 @@ export default function Overview({
           </section>
         </div>
       )}
+
+      <OverviewEntityDrawer
+        businessId={business?.id}
+        entity={openEntity}
+        timezone={business?.timezone}
+        onClose={() => setOpenEntity(null)}
+      />
     </div>
   )
 }

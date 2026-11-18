@@ -51,8 +51,18 @@ import {
   Tooltip,
 } from './ui'
 import { dateTime, relativeTime } from '../lib/format/index.js'
-import { clientApi } from '../lib/clientApi'
+import { clientApi, newIdempotencyKey } from '../lib/clientApi'
+import { operationBody, describeAttempt, operationErrorText } from '../lib/observability/operations'
 import DialyraTelephony from './DialyraTelephony'
+import KnowledgeBase from './KnowledgeBase'
+import SimulationSandbox from './SimulationSandbox'
+import { FailedRecordsList, WebhooksList } from './IntegrationRecordLists'
+import TrackingIntegration from './TrackingIntegration'
+import ConfigViewNav from './ConfigViewNav'
+import ConfigSectionsEditor from './ConfigSectionsEditor'
+import ConfigRulesPolicies from './ConfigRulesPolicies'
+import ConfigHistory from './ConfigHistory'
+import ConfigConnections from './ConfigConnections'
 
 // Sample identity candidate for testing dry-run plan
 const SAMPLE_MERGE_CANDIDATE = {
@@ -73,6 +83,14 @@ const SAMPLE_CONFLICT = {
   conflict_details: 'External phone +8801711000000 linked to multiple canonical identities (ID #1 and ID #2)',
   created_at: '2026-11-10T13:36:46Z',
 }
+
+const CONFIG_VIEWS = [
+  { key: 'effective', label: 'Effective settings' },
+  { key: 'sections', label: 'Edit settings' },
+  { key: 'rules', label: 'Rules & policies' },
+  { key: 'connections', label: 'Connections' },
+  { key: 'history', label: 'Change history' },
+]
 
 export default function Admin({
   businessId,
@@ -99,6 +117,7 @@ export default function Admin({
   // Configuration section selector
   const [configSection, setConfigSection] = useState('profile')
   const [show409Banner, setShow409Banner] = useState(false)
+  const [configView, setConfigView] = useState('effective')
 
   // Merge Dry-Run Plan Card (D24)
   const [dryRunPlan, setDryRunPlan] = useState(null)
@@ -228,7 +247,7 @@ export default function Admin({
     }
   }
 
-  // Handle Connection Test
+  // Handle Connection Test (Attempt recorded — Succeeded / Attempt recorded — Failed)
   const handleTestConnection = async (connId) => {
     setTestingConnectionId(connId)
     setOperationResult(null)
@@ -236,17 +255,18 @@ export default function Admin({
     try {
       const res = await clientApi(`businesses/${businessId}/observability/connections/${connId}/test`, {
         method: 'POST',
-        body: {},
+        body: operationBody(newIdempotencyKey()),
       })
+      const outcome = describeAttempt('connection_test', res)
       setOperationResult({
         connId,
-        status: res?.status === 'SUCCESS' ? 'Attempt recorded — Succeeded' : 'Attempt recorded — Succeeded',
-        tone: 'success',
+        status: outcome.text,
+        tone: outcome.tone,
       })
     } catch (err) {
       setOperationResult({
         connId,
-        status: 'Attempt recorded — Failed',
+        status: operationErrorText(err),
         tone: 'danger',
       })
     } finally {
@@ -260,19 +280,20 @@ export default function Admin({
     setIsRetryingSync(true)
 
     try {
-      await clientApi(`businesses/${businessId}/observability/syncs/${selectedSyncId}/retry`, {
+      const res = await clientApi(`businesses/${businessId}/observability/syncs/${selectedSyncId}/retry`, {
         method: 'POST',
-        body: {},
+        body: operationBody(newIdempotencyKey()),
       })
+      const outcome = describeAttempt('sync_retry', res)
       setOperationResult({
         connId: selectedSyncId,
-        status: 'Attempt recorded — Succeeded',
-        tone: 'success',
+        status: outcome.text,
+        tone: outcome.tone,
       })
     } catch (err) {
       setOperationResult({
         connId: selectedSyncId,
-        status: 'Attempt recorded — Failed',
+        status: operationErrorText(err),
         tone: 'danger',
       })
     } finally {
@@ -407,13 +428,13 @@ export default function Admin({
 
               <div className="grid-kpi mt-2">
                 <KpiTile
-                  label="Execution Status"
+                  title="Execution Status"
                   value={dryRunPlan.execution}
                   subtext={dryRunPlan.execution_reason}
                 />
-                <KpiTile label="Readiness" value={dryRunPlan.readiness} subtext="Adapter contract state" />
+                <KpiTile title="Readiness" value={dryRunPlan.readiness} subtext="Adapter contract state" />
                 <KpiTile
-                  label="Dependencies"
+                  title="Dependencies"
                   value={String(dryRunPlan.dependencies?.length || 7)}
                   subtext="Owner services required"
                 />
@@ -802,25 +823,25 @@ export default function Admin({
           {/* Health Summary Band */}
           <div className="grid-kpi">
             <KpiTile
-              label="Integration Health"
+              title="Integration Health"
               value={initialObservabilitySummary?.status || 'UNKNOWN'}
               subtext={`As of ${dateTime(initialObservabilitySummary?.as_of || new Date())}`}
               icon={Activity}
             />
             <KpiTile
-              label="Connected Adapters"
+              title="Connected Adapters"
               value={String(initialObservabilitySummary?.connection_count || initialConnections.length)}
               subtext="Authorized data providers"
               icon={Server}
             />
             <KpiTile
-              label="Active Error Groups"
+              title="Active Error Groups"
               value={String(initialObservabilitySummary?.active_error_groups || 0)}
               subtext="Aggregated ingestion issues"
               icon={AlertTriangle}
             />
             <KpiTile
-              label="Failed Webhooks"
+              title="Failed Webhooks"
               value={String(initialObservabilitySummary?.failed_webhooks || 0)}
               subtext="Replayable inbound hooks"
               icon={Zap}
@@ -828,7 +849,13 @@ export default function Admin({
           </div>
 
           {operationResult && (
-            <Banner tone={operationResult.tone}>
+            <Banner
+              variant={
+                ['info', 'success', 'warning', 'danger'].includes(operationResult.tone)
+                  ? operationResult.tone
+                  : 'info'
+              }
+            >
               <span>{operationResult.status}</span>
             </Banner>
           )}
@@ -869,6 +896,13 @@ export default function Admin({
               onClick={() => setIntegrationsSubTab('dialyra')}
             >
               Dialyra Telephony & SIP
+            </button>
+            <button
+              type="button"
+              className={`admin-subnav-btn ${integrationsSubTab === 'tracking' ? 'is-active' : ''}`}
+              onClick={() => setIntegrationsSubTab('tracking')}
+            >
+              Tracking
             </button>
           </div>
 
@@ -986,30 +1020,28 @@ export default function Admin({
 
           {/* Sub-view: Failed Records */}
           {integrationsSubTab === 'failed-records' && (
-            <EmptyState
-              title="No failed ingestion records"
-              description="No data records are quarantined in the error staging tables."
-            />
+            <FailedRecordsList businessId={businessId} role={business?.role} timezone={business?.timezone} />
           )}
 
           {/* Sub-view: Inbound Webhooks */}
           {integrationsSubTab === 'webhooks' && (
-            <EmptyState
-              title="No inbound webhook traffic"
-              description="Authoritative webhook listener has not received provider webhook envelopes."
-            />
+            <WebhooksList businessId={businessId} role={business?.role} timezone={business?.timezone} />
           )}
 
           {/* Sub-view: Dialyra Telephony & SIP Trunks */}
           {integrationsSubTab === 'dialyra' && <DialyraTelephony businessId={businessId} />}
+          {integrationsSubTab === 'tracking' && (
+            <TrackingIntegration businessId={businessId} role={business?.role} />
+          )}
         </div>
       )}
 
       {/* =========================================================================
           TAB 3: CONFIGURATION & POLICIES
           ========================================================================= */}
-      {currentTab === 'configuration' && (
+      {currentTab === 'configuration' && configView === 'effective' && (
         <div className="stack section-gap">
+          <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
           {/* Version chip & 409 stale banner toggle */}
           <div
             style={{
@@ -1031,7 +1063,7 @@ export default function Admin({
                   borderRadius: 'var(--radius-sm)',
                 }}
               >
-                Version: v1
+                {configSection.toUpperCase()} version: v{effectiveSections[configSection]?.version ?? 0}
               </span>
             </div>
 
@@ -1041,7 +1073,7 @@ export default function Admin({
           </div>
 
           {show409Banner && (
-            <Banner tone="warning">
+            <Banner variant="warning">
               <span>Someone else changed this configuration. Reload to continue.</span>
             </Banner>
           )}
@@ -1110,26 +1142,48 @@ export default function Admin({
         </div>
       )}
 
+      {currentTab === 'configuration' && configView !== 'effective' && (
+        <div className="stack section-gap">
+          <ConfigViewNav views={CONFIG_VIEWS} value={configView} onChange={setConfigView} />
+          {configView === 'sections' && (
+            <ConfigSectionsEditor
+              businessId={businessId}
+              role={business?.role}
+              timezone={business?.timezone}
+            />
+          )}
+          {configView === 'rules' && (
+            <ConfigRulesPolicies
+              businessId={businessId}
+              role={business?.role}
+              timezone={business?.timezone}
+            />
+          )}
+          {configView === 'connections' && (
+            <ConfigConnections businessId={businessId} role={business?.role} timezone={business?.timezone} />
+          )}
+          {configView === 'history' && (
+            <ConfigHistory businessId={businessId} timezone={business?.timezone} />
+          )}
+        </div>
+      )}
+
       {/* =========================================================================
-          TAB 4: KNOWLEDGE BASE (UNMOUNTED)
+          TAB 4: KNOWLEDGE BASE (READ ONLY)
           ========================================================================= */}
       {currentTab === 'knowledge' && (
-        <UnavailableState
+        <KnowledgeBase
+          businessId={businessId}
+          timezone={business?.timezone}
           title="Memory & Knowledge Base"
-          owner="Memory Knowledge"
-          reason="Vector knowledge repository and business semantic memory are unmounted in this environment."
         />
       )}
 
       {/* =========================================================================
-          TAB 5: SIMULATION & SANDBOX (UNMOUNTED)
+          TAB 5: SIMULATION & SANDBOX (READ ONLY)
           ========================================================================= */}
       {currentTab === 'simulation' && (
-        <UnavailableState
-          title="Prototype Simulation & Sandbox"
-          owner="Prototype Simulation"
-          reason="What-if simulation engine and scenario sandbox are unmounted in this environment."
-        />
+        <SimulationSandbox connections={initialConnections} title="Prototype Simulation & Sandbox" />
       )}
 
       {/* =========================================================================

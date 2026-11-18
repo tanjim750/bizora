@@ -47,6 +47,7 @@ import {
 import { businessPath, businessApiPath, WRITER_ROLES } from '@/lib/catalog'
 import { money, dateTime, relativeTime } from '@/lib/format'
 import { clientApi } from '@/lib/clientApi'
+import RetargetingContext from './RetargetingContext'
 
 // Legal transitions for Customer lifecycle per D4
 const CUSTOMER_TRANSITIONS = {
@@ -63,6 +64,7 @@ const SUB_TABS_360 = [
   { id: 'deliveries', label: 'Deliveries', icon: Truck },
   { id: 'website', label: 'Website & Events', icon: Globe },
   { id: 'graph', label: 'Context Graph', icon: Share2 },
+  { id: 'retargeting', label: 'Retargeting Signals', icon: Layers },
   { id: 'identity', label: 'Identities & Links', icon: Shield },
 ]
 
@@ -375,7 +377,7 @@ export default function Customers({
             date: sh.created_at,
             timestamp: sh.created_at,
             title: `Shipment Consignment (#${sh.id})`,
-            description: `Carrier: ${sh.provider || 'Carrier'} · Tracking: ${sh.tracking_number || 'Pending'}`,
+            description: `Carrier: ${sh.provider || 'Carrier'} · Tracking: ${sh.tracking_code || 'Pending'}`,
             status: sh.status === 'DELIVERED' ? 'COMPLETED' : 'ACTIVE',
           })
         })
@@ -730,11 +732,11 @@ export default function Customers({
                         render: (row) => <span>{row.provider || 'Carrier Service'}</span>,
                       },
                       {
-                        key: 'tracking_number',
+                        key: 'tracking_code',
                         label: 'Tracking Number',
                         render: (row) =>
-                          row.tracking_number ? (
-                            <CopyableCode value={row.tracking_number} />
+                          row.tracking_code ? (
+                            <CopyableCode value={row.tracking_code} />
                           ) : (
                             <span className="text-muted">—</span>
                           ),
@@ -831,6 +833,16 @@ export default function Customers({
                     />
                   )}
                 </div>
+              )}
+
+              {/* SUB-TAB: RETARGETING SIGNALS (read only) */}
+              {active360SubTab === 'retargeting' && (
+                <RetargetingContext
+                  businessId={businessId}
+                  customerId={selectedCustomer.id}
+                  timezone={timezone}
+                  currency={currency}
+                />
               )}
 
               {/* SUB-TAB 7: IDENTITIES & LINKS */}
