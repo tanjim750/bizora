@@ -270,7 +270,9 @@ class DialyraService:
         Validates payload per Dialyra v3 schema, executes call origination,
         and saves a canonical Call record in the Bizora database.
         """
-        clean_phone = (phone or "").strip()
+        if not isinstance(phone, str):
+            raise DialyraValidationError("Phone number must be a string.")
+        clean_phone = phone.strip()
         if not clean_phone:
             raise DialyraValidationError("Phone number is required to originate a call.")
 
@@ -415,6 +417,8 @@ class DialyraService:
         Processes inbound Dialyra call webhooks and synchronizes
         state to Bizora Call, CallEvent, and CallTranscript models.
         """
+        if self.business is None:
+            raise DialyraValidationError("A business is required to process Dialyra webhooks.")
         event_type = (event_data.get("event") or event_data.get("type") or "call.updated").upper()
         call_uuid = (
             event_data.get("call_log_uuid")
@@ -426,16 +430,16 @@ class DialyraService:
         if not call_uuid:
             return {"status": "ignored", "reason": "No call identifier in payload"}
 
-        call = Call.objects.filter(external_call_id=str(call_uuid)).first()
-        if not call:
-            # Check by source_metadata
-            call = Call.objects.filter(
-                source_metadata__dialyra_response__call_log_uuid=str(call_uuid)
-            ).first()
-
         now = timezone.now()
 
         with transaction.atomic():
+            calls = Call.objects.select_for_update().filter(
+                business=self.business,
+                integration_connection=self.get_or_create_connection(self.business),
+            )
+            call = calls.filter(external_call_id=str(call_uuid)).first()
+            if not call:
+                call = calls.filter(source_metadata__dialyra_response__call_log_uuid=str(call_uuid)).first()
             if call:
                 # Update status
                 new_status = event_data.get("status") or event_type

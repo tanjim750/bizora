@@ -10,6 +10,8 @@ Provides authenticated endpoints for:
 """
 
 import logging
+import os
+from secrets import compare_digest
 from typing import Any
 
 from django.views.decorators.csrf import csrf_exempt
@@ -137,6 +139,7 @@ class DialyraOriginateCallView(DialyraBaseView):
         service = self.get_service(business)
 
         data = request.data or {}
+        require(isinstance(data, dict), "INVALID_DATA", "Payload must be a JSON object.")
         phone = data.get("phone")
         require(bool(phone), "INVALID_PHONE", "Phone number is required.")
 
@@ -243,17 +246,29 @@ class DialyraFlowListView(DialyraBaseView):
 @method_decorator(csrf_exempt, name="dispatch")
 class DialyraWebhookView(APIView):
     """
-    POST /api/dialyra/webhook/
-    Public webhook receiver for Dialyra real-time call lifecycle events.
+    POST /api/businesses/:business_id/dialyra/webhook/
+    Provider callback authenticated by a business-specific bearer secret.
     """
 
     permission_classes = [AllowAny]
+    authentication_classes = []
 
-    def post(self, request):
+    def post(self, request, business_id=None):
+        if business_id is None:
+            return Response({"error": "Use the business-scoped Dialyra webhook URL."}, status=410)
+        secret = os.environ.get(f"BIZORA_BUSINESS_{business_id}_DIALYRA_WEBHOOK_SECRET")
+        if not secret:
+            return Response({"error": "Dialyra webhook is not configured."}, status=503)
+        authorization = request.headers.get("Authorization", "")
+        if not compare_digest(authorization.encode(), f"Bearer {secret}".encode()):
+            return Response({"error": "Invalid webhook authentication."}, status=401)
+        business = m.Business.objects.filter(pk=business_id).first()
+        if business is None:
+            return Response({"error": "Business not found."}, status=404)
         payload = request.data
         if not isinstance(payload, dict):
             return Response({"error": "Payload must be a JSON object."}, status=status.HTTP_400_BAD_REQUEST)
 
-        service = DialyraService()
+        service = DialyraService(business=business)
         result = service.handle_webhook_event(payload)
         return Response(result, status=status.HTTP_200_OK)

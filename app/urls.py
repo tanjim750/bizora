@@ -143,6 +143,7 @@ urlpatterns += [
     path('businesses/<int:business_id>/dialyra/trunks/<int:trunk_id>/test/', dialyra.DialyraSipTrunkTestView.as_view(), name='dialyra-trunk-test'),
     path('businesses/<int:business_id>/dialyra/trunks/<int:trunk_id>/reload/', dialyra.DialyraSipTrunkReloadView.as_view(), name='dialyra-trunk-reload'),
     path('businesses/<int:business_id>/dialyra/flows/', dialyra.DialyraFlowListView.as_view(), name='dialyra-flows'),
+    path('businesses/<int:business_id>/dialyra/webhook/', dialyra.DialyraWebhookView.as_view(), name='dialyra-business-webhook'),
     path('dialyra/webhook/', dialyra.DialyraWebhookView.as_view(), name='dialyra-webhook'),
 ]
 

@@ -5,6 +5,7 @@ with mocked external HTTP responses per Dialyra-docs v2/v3 schemas.
 """
 
 import json
+import os
 from unittest.mock import MagicMock, patch
 import urllib.error
 
@@ -261,6 +262,7 @@ class DialyraServiceTestCase(TestCase):
         # Create an existing Call
         call = Call.objects.create(
             business=self.business,
+            integration_connection=DialyraService.get_or_create_connection(self.business),
             customer=self.customer,
             external_call_id="call-uuid-12345",
             direction="OUTGOING",
@@ -336,6 +338,15 @@ class DialyraViewsTestCase(TestCase):
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @patch("urllib.request.urlopen")
+    def test_originate_call_rejects_malformed_inputs_without_transport(self, mock_urlopen):
+        url = reverse("dialyra-originate-call", kwargs={"business_id": self.business.pk})
+        for payload in (["phone"], {"phone": 123}, {"phone": {"number": "01711223344"}}):
+            with self.subTest(payload=payload):
+                response = self.client.post(url, payload, format="json")
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mock_urlopen.assert_not_called()
+
     @patch("app.services.dialyra_service.DialyraService.list_sip_trunks")
     def test_trunks_list_endpoint(self, mock_list):
         """GET /api/businesses/:id/dialyra/trunks/"""
@@ -347,16 +358,17 @@ class DialyraViewsTestCase(TestCase):
 
     @patch("app.services.dialyra_service.DialyraService.handle_webhook_event")
     def test_webhook_endpoint(self, mock_handle):
-        """POST /api/dialyra/webhook/ handles unauthenticated webhook events."""
+        """Provider callbacks require the secret belonging to the URL business."""
         self.client.logout()  # Unauthenticated webhook caller
         mock_handle.return_value = {"status": "processed", "call_id": 42}
 
-        url = reverse("dialyra-webhook")
-        response = self.client.post(
-            url,
-            {"event": "call.completed", "call_log_uuid": "ext-123", "status": "COMPLETED"},
-            format="json",
-        )
+        url = reverse("dialyra-business-webhook", kwargs={"business_id": self.business.pk})
+        with patch.dict(os.environ, {f"BIZORA_BUSINESS_{self.business.pk}_DIALYRA_WEBHOOK_SECRET": "test-secret"}):
+            response = self.client.post(
+                url,
+                {"event": "call.completed", "call_log_uuid": "ext-123", "status": "COMPLETED"},
+                format="json", HTTP_AUTHORIZATION="Bearer test-secret",
+            )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "processed")
         mock_handle.assert_called_once()
