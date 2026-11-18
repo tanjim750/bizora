@@ -47,6 +47,7 @@ import {
 import { businessPath, businessApiPath, WRITER_ROLES } from '@/lib/catalog'
 import { money, dateTime, relativeTime } from '@/lib/format'
 import { clientApi } from '@/lib/clientApi'
+import RetargetingContext from './RetargetingContext'
 
 // Legal transitions for Customer lifecycle per D4
 const CUSTOMER_TRANSITIONS = {
@@ -63,6 +64,7 @@ const SUB_TABS_360 = [
   { id: 'deliveries', label: 'Deliveries', icon: Truck },
   { id: 'website', label: 'Website & Events', icon: Globe },
   { id: 'graph', label: 'Context Graph', icon: Share2 },
+  { id: 'retargeting', label: 'Retargeting Signals', icon: Layers },
   { id: 'identity', label: 'Identities & Links', icon: Shield },
 ]
 
@@ -831,6 +833,16 @@ export default function Customers({
                     />
                   )}
                 </div>
+              )}
+
+              {/* SUB-TAB: RETARGETING SIGNALS (read only) */}
+              {active360SubTab === 'retargeting' && (
+                <RetargetingContext
+                  businessId={businessId}
+                  customerId={selectedCustomer.id}
+                  timezone={timezone}
+                  currency={currency}
+                />
               )}
 
               {/* SUB-TAB 7: IDENTITIES & LINKS */}
