@@ -42,6 +42,7 @@ import {
 import { businessPath, businessApiPath, WRITER_ROLES } from '@/lib/catalog'
 import { money, dateTime, relativeTime } from '@/lib/format'
 import { clientApi, newIdempotencyKey } from '@/lib/clientApi'
+import SteadfastSendOrder from './SteadfastSendOrder'
 
 // Legal lifecycle transitions per D4 (matching states.py and RecordCommands.js)
 const TRANSITIONS = {
@@ -897,6 +898,15 @@ export default function Commerce({
                     </Button>
                   </div>
                 )}
+
+                <SteadfastSendOrder
+                  businessId={businessId}
+                  role={business?.role}
+                  order={currentRecord}
+                  customer={activeRecord?.customer}
+                  shipments={activeRecord?.shipments?.results}
+                  onSent={() => router.refresh()}
+                />
               </>
             )}
 
