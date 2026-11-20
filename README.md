@@ -68,6 +68,13 @@ The button exists only in a development build, with the backend on your own mach
 
 ## Verification
 
+For a larger synthetic Bangladesh retail demo in an isolated local database, create an owner
+with `create_demo_user` and run `seed_bangladesh_demo --username <owner>`. The seed is
+repeatable and creates Nokshi Lifestyle Bangladesh with 20 products, 100 customers, 240
+orders, payments, shipments, campaign history, and support conversations. It uses fake
+contact details and mock integrations. Set `DJANGO_SETTINGS_MODULE=bizora.local_settings`
+and `BIZORA_DATA_DIR` to a directory outside this checkout before both commands.
+
 ```bash
 python manage.py check
 python manage.py makemigrations --check --dry-run
