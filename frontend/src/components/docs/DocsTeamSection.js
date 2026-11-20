@@ -36,7 +36,7 @@ export function DocsTeamSection({ teamName, members = [] }) {
               color: 'var(--color-primary)',
             }}
           >
-            Core Engineering & Leadership
+            The team behind the system
           </span>
           <h3
             style={{
@@ -57,7 +57,7 @@ export function DocsTeamSection({ teamName, members = [] }) {
           const isCopied = copiedId === member.id
 
           return (
-            <div key={member.id} className="docs-team-card">
+            <article key={member.id} className="docs-team-card">
               {/* Profile Picture with Uniform Frame & Fallback Avatar */}
               <div className="docs-team-avatar-frame" aria-label={`Profile photo of ${member.name}`}>
                 {!hasImageError ? (
@@ -110,7 +110,7 @@ export function DocsTeamSection({ teamName, members = [] }) {
                   ))}
                 </div>
               )}
-            </div>
+            </article>
           )
         })}
       </div>

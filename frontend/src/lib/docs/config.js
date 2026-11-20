@@ -10,7 +10,7 @@ export const DEFAULT_SCHEDULE = {
   timezone: 'Asia/Dhaka',
   title: 'Bizora — Autonomous Enterprise Business Brain',
   tagline: 'Live YC Pitch Deck & Technical Documentation System',
-  teamName: 'Bizora Core Architecture & Engineering Team',
+  teamName: 'The People Building Bizora',
   contactEmail: 'founders@bizora.app',
   updatedAt: '2026-11-20T16:00:00+06:00',
   updatedBy: 'system-admin',

@@ -459,7 +459,7 @@ export function DocsPitchDeck({ pitchSections = [], teamMembers = [], teamName, 
         </div>
 
         <DocsTeamSection
-          teamName={teamName || 'Bizora Core Architecture & Engineering Team'}
+          teamName={teamName || 'The People Building Bizora'}
           members={teamMembers}
         />
       </section>
