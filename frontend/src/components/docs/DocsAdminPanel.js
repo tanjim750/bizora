@@ -29,7 +29,7 @@ export function DocsAdminPanel({ isOpen, onClose, config, onUpdateConfig, conten
   const [startDate, setStartDate] = useState(config?.startDate?.slice(0, 16) || '2026-06-10T00:00')
   const [endDate, setEndDate] = useState(config?.endDate?.slice(0, 16) || '2026-06-14T23:59')
   const [timezone, setTimezone] = useState(config?.timezone || 'Asia/Dhaka')
-  const [teamName, setTeamName] = useState(config?.teamName || 'Bizora Core Architecture & Engineering Team')
+  const [teamName, setTeamName] = useState(config?.teamName || 'The People Building Bizora')
 
   // Content form state
   const [pitchSections, setPitchSections] = useState(content?.pitchSections || [])
