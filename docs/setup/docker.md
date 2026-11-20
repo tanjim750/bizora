@@ -1,5 +1,7 @@
 # Docker Setup
 
+This setup is for development. See the [VPS installation review](vps.md) for a private rehearsal and the production deployment requirements.
+
 Build and start Django with Postgres:
 
 ```bash

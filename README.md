@@ -12,6 +12,7 @@ Observability, and expanded Overview URL modules are present but are not mounted
 The dedicated [Next.js frontend](frontend/README.md) uses the mounted Django APIs and the
 [Clean Teal design system](docs/requirements/DESIGN.md). Its [progress ledger](docs/implementations/frontend-progress.md)
 records endpoint coverage and unfinished screens.
+For a fresh Linux server, see the [VPS installation review](docs/setup/vps.md).
 See the [team-lead handoff](docs/implementations/TEAM_LEAD_HANDOFF.md) and
 [versioned contracts](docs/implementations/contracts/README.md) before integration.
 
@@ -76,8 +77,8 @@ python scripts/verify_domains_postgres.py
 The PostgreSQL verifier requires Docker. It uses a newly created local PostgreSQL 16/pgvector
 container, tmpfs data, random credentials and a random localhost port, then removes only
 its own temporary container. It includes real concurrent replay/refund, product/variant deduplication
-and identity lifecycle tests. The existing
-Compose setup is not the isolated verifier and does not bootstrap the vector extension.
+and identity lifecycle tests. The regular Compose setup uses a persistent volume and installs
+the vector extension through Django's initial migration.
 
 Domain requirements are in [docs/implementations/domain.md](docs/implementations/domain.md)
 and [docs/implementations/features/](docs/implementations/features/).
