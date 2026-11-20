@@ -15,6 +15,16 @@ export const TEAM_MEMBERS = [
     focusAreas: ['Team Leadership', 'Product Delivery', 'System Planning'],
   },
   {
+    id: 'ismail-hossen',
+    name: 'Ismail Hossen',
+    role: 'AI/ML Engineer',
+    email: 'ismail.hossen.work@gmail.com',
+    avatar: '/team/ismail-hossen.webp',
+    initials: 'IH',
+    bio: 'Designs AI and machine-learning capabilities that turn verified business context into useful decision support.',
+    focusAreas: ['Machine Learning', 'Applied AI', 'Decision Intelligence'],
+  },
+  {
     id: 'jihad-mia',
     name: 'Jihad Mia',
     role: 'Backend Engineer',
@@ -43,16 +53,6 @@ export const TEAM_MEMBERS = [
     initials: 'KR',
     bio: 'Develops core backend capabilities with a focus on reliable data flows and maintainable service boundaries.',
     focusAreas: ['Backend Architecture', 'Data Workflows', 'Service Reliability'],
-  },
-  {
-    id: 'ismail-hossen',
-    name: 'Ismail Hossen',
-    role: 'AI/ML Engineer',
-    email: 'ismail.hossen.work@gmail.com',
-    avatar: '/team/ismail-hossen.webp',
-    initials: 'IH',
-    bio: 'Designs AI and machine-learning capabilities that turn verified business context into useful decision support.',
-    focusAreas: ['Machine Learning', 'Applied AI', 'Decision Intelligence'],
   },
 ]
 
