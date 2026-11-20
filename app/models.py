@@ -54,30 +54,15 @@ class Business(models.Model):
         to protect background workers from hanging indefinitely.
         """
         # Keep the provider boundary in one place. Deployments can point this at
-        # an internal model gateway without adding a provider SDK to the domain.
-        import json
-        import os
-        import urllib.request
+        # an internal model gateway, Groq, or fallback without adding a provider SDK.
+        from app.services.llm_gateway import execute_llm
 
-        endpoint = os.environ.get("BIZORA_LLM_URL")
-        if not endpoint:
-            return {**(fallback_response or {"content": "No AI provider is configured."}),
-                    "provider_status": "unavailable", "model": "fallback"}
-        try:
-            request = urllib.request.Request(
-                endpoint,
-                data=json.dumps({"prompt": prompt, "business_id": self.id}).encode(),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(request, timeout=max(1, timeout_seconds)) as response:
-                payload = json.loads(response.read().decode())
-            if not isinstance(payload, dict) or not isinstance(payload.get("content"), str):
-                raise TypeError("LLM gateway returned an invalid response")
-            return payload | {"provider_status": "ok"}
-        except Exception as exc:  # noqa: BLE001 - provider failure must not crash a request
-            return {**(fallback_response or {"content": "AI provider unavailable; no conclusion is available."}),
-                    "provider_status": "error", "provider_error": str(exc), "model": "fallback"}
+        return execute_llm(
+            prompt=prompt,
+            business_id=self.id,
+            timeout_seconds=timeout_seconds,
+            fallback_response=fallback_response,
+        )
 
     class Meta:
         db_table = 'businesses'
