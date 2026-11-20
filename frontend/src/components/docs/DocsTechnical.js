@@ -19,7 +19,6 @@ import { DocsArchitectureDiagram, DocsDataFlowDiagram } from './DocsDiagrams'
 
 export function DocsTechnical({ technicalSections = [], liveFeatureMatrix = [] }) {
   const [selectedFeatureFilter, setSelectedFeatureFilter] = useState('ALL')
-  const [expandedEndpoint, setExpandedEndpoint] = useState(null)
 
   const getSection = (id) => technicalSections.find((s) => s.id === id) || {}
 
@@ -340,15 +339,10 @@ export function DocsTechnical({ technicalSections = [], liveFeatureMatrix = [] }
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {apiDocs.endpoints?.map((ep, idx) => {
-            const isExpanded = expandedEndpoint === idx
+          {apiDocs.endpoints?.map((ep) => {
             return (
               <div key={ep.path} className="docs-api-card">
-                <div
-                  className="docs-api-header"
-                  onClick={() => setExpandedEndpoint(isExpanded ? null : idx)}
-                  style={{ cursor: 'pointer' }}
-                >
+                <div className="docs-api-header">
                   <span
                     className={`docs-method-badge ${ep.method === 'GET' ? 'docs-method-get' : 'docs-method-post'}`}
                   >
@@ -376,35 +370,6 @@ export function DocsTechnical({ technicalSections = [], liveFeatureMatrix = [] }
                       Header: <code>{ep.headers}</code>
                     </span>
                   )}
-                </div>
-
-                {/* Response Preview */}
-                <div style={{ marginTop: 'var(--space-3)' }}>
-                  <div
-                    style={{
-                      fontSize: 'var(--text-caption)',
-                      fontWeight: 600,
-                      color: 'var(--color-text-muted)',
-                      marginBottom: 4,
-                    }}
-                  >
-                    SAMPLE JSON RESPONSE
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      padding: 'var(--space-3)',
-                      background: 'var(--color-surface)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: 'var(--text-caption)',
-                      fontFamily: 'var(--font-plex-mono)',
-                      color: 'var(--color-text)',
-                      overflowX: 'auto',
-                    }}
-                  >
-                    {ep.response}
-                  </pre>
                 </div>
               </div>
             )

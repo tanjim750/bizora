@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
-  FileText,
   Download,
   Share2,
   Printer,
@@ -11,13 +10,9 @@ import {
   Lock,
   Sliders,
   Check,
-  Layers,
-  Sparkles,
-  ExternalLink,
   ChevronRight,
-  Shield,
   Activity,
-  ArrowRight,
+  BookOpen,
 } from 'lucide-react'
 import BizoraLogo from '../ui/BizoraLogo'
 import { DocsPitchDeck } from './DocsPitchDeck'
@@ -39,7 +34,7 @@ export function DocsPortal({
   access,
   session,
 }) {
-  const [activeView, setActiveView] = useState('ALL') // 'ALL' | 'DECK' | 'TECH' | 'LIVE'
+  const [activeView, setActiveView] = useState('DECK') // 'DECK' | 'TECH' | 'LIVE'
   const [searchQuery, setSearchQuery] = useState('')
   const [activeAnchor, setActiveAnchor] = useState('problem')
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false)
@@ -119,14 +114,16 @@ export function DocsPortal({
       {/* Top Sticky Bar */}
       <header className="docs-topbar docs-no-print">
         <div className="docs-topbar-left">
-          <Link href="/workspace" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Link
+            href="/workspace"
+            aria-label="Go to workspace"
+            style={{ display: 'flex', alignItems: 'center', minHeight: 40, textDecoration: 'none' }}
+          >
             <BizoraLogo />
           </Link>
           <div className="docs-topbar-title">
-            <h1 className="docs-brand-heading" style={{ fontSize: 'var(--text-body)', fontWeight: 600 }}>
-              Live System Docs & Pitch Deck
-            </h1>
-            <span className="docs-brand-badge">YC W26 / Enterprise</span>
+            <div className="docs-brand-heading">Bizora Docs</div>
+            <span className="docs-brand-badge">Product & Engineering</span>
           </div>
         </div>
 
@@ -134,31 +131,24 @@ export function DocsPortal({
         <div className="docs-topbar-center">
           <button
             type="button"
-            className={`docs-mode-tab ${activeView === 'ALL' ? 'active' : ''}`}
-            onClick={() => setActiveView('ALL')}
-          >
-            Overview (All)
-          </button>
-          <button
-            type="button"
             className={`docs-mode-tab ${activeView === 'DECK' ? 'active' : ''}`}
             onClick={() => setActiveView('DECK')}
           >
-            YC Pitch Deck
+            Pitch
           </button>
           <button
             type="button"
             className={`docs-mode-tab ${activeView === 'TECH' ? 'active' : ''}`}
             onClick={() => setActiveView('TECH')}
           >
-            Technical Whitepaper
+            Engineering
           </button>
           <button
             type="button"
             className={`docs-mode-tab ${activeView === 'LIVE' ? 'active' : ''}`}
             onClick={() => setActiveView('LIVE')}
           >
-            Live System View
+            System
           </button>
         </div>
 
@@ -179,6 +169,7 @@ export function DocsPortal({
             />
             <input
               type="text"
+              aria-label="Search documentation"
               placeholder="Search /docs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -272,7 +263,7 @@ export function DocsPortal({
       <div className="docs-layout">
         {/* Sticky Sidebar Navigation Rail */}
         <aside className="docs-sidebar docs-no-print" aria-label="Table of Contents">
-          {(activeView === 'ALL' || activeView === 'DECK') && (
+          {activeView === 'DECK' && (
             <div className="docs-sidebar-section">
               <div className="docs-sidebar-heading">YC Pitch Deck</div>
               <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -303,7 +294,7 @@ export function DocsPortal({
             </div>
           )}
 
-          {(activeView === 'ALL' || activeView === 'TECH') && (
+          {activeView === 'TECH' && (
             <div className="docs-sidebar-section">
               <div className="docs-sidebar-heading">Technical Whitepaper</div>
               <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -338,8 +329,8 @@ export function DocsPortal({
           <div className="docs-hero">
             <div className="docs-hero-badge-row">
               <span className="docs-brand-badge">
-                <Sparkles size={12} style={{ marginRight: 4 }} aria-hidden="true" />
-                Live Whitepaper & Pitch System
+                <BookOpen size={12} style={{ marginRight: 4 }} aria-hidden="true" />
+                Bizora product brief
               </span>
               <span
                 style={{
@@ -355,7 +346,7 @@ export function DocsPortal({
                 }}
               >
                 <Activity size={12} />
-                Live Telemetry Synced
+                System status synced
               </span>
             </div>
 
@@ -367,41 +358,43 @@ export function DocsPortal({
                 'The operating system for emerging market commerce intelligence. Unifying Customer Identity, Steadfast Logistics, and Dialyra Voice Telephony with Deterministic AI Guardrails.'}
             </p>
 
-            {/* Quick Hero Numbers */}
-            <div className="docs-telemetry-grid">
-              <div className="docs-telemetry-tile">
-                <span className="docs-telemetry-label">Processed GMV</span>
-                <div className="docs-telemetry-value">
-                  {liveStats?.grossMerchandiseValue || 'BDT 48,290,400.00'}
+            {/* Keep system metrics focused in the System view. */}
+            {activeView === 'LIVE' && (
+              <div className="docs-telemetry-grid">
+                <div className="docs-telemetry-tile">
+                  <span className="docs-telemetry-label">Processed GMV</span>
+                  <div className="docs-telemetry-value">
+                    {liveStats?.grossMerchandiseValue || 'BDT 48,290,400.00'}
+                  </div>
+                  <div className="docs-telemetry-sub">Authoritative Volume</div>
                 </div>
-                <div className="docs-telemetry-sub">Authoritative Volume</div>
-              </div>
-              <div className="docs-telemetry-tile">
-                <span className="docs-telemetry-label">Customer Profiles</span>
-                <div className="docs-telemetry-value">
-                  {Number(liveStats?.verifiedCustomersCount || 24190).toLocaleString()}
+                <div className="docs-telemetry-tile">
+                  <span className="docs-telemetry-label">Customer Profiles</span>
+                  <div className="docs-telemetry-value">
+                    {Number(liveStats?.verifiedCustomersCount || 24190).toLocaleString()}
+                  </div>
+                  <div className="docs-telemetry-sub">98.4% Resolution Rate</div>
                 </div>
-                <div className="docs-telemetry-sub">98.4% Resolution Rate</div>
-              </div>
-              <div className="docs-telemetry-tile">
-                <span className="docs-telemetry-label">Steadfast Parcels</span>
-                <div className="docs-telemetry-value">
-                  {Number(liveStats?.courierParcelsDispatched || 8420).toLocaleString()}
+                <div className="docs-telemetry-tile">
+                  <span className="docs-telemetry-label">Steadfast Parcels</span>
+                  <div className="docs-telemetry-value">
+                    {Number(liveStats?.courierParcelsDispatched || 8420).toLocaleString()}
+                  </div>
+                  <div className="docs-telemetry-sub">94.2% Delivery Rate</div>
                 </div>
-                <div className="docs-telemetry-sub">94.2% Delivery Rate</div>
-              </div>
-              <div className="docs-telemetry-tile">
-                <span className="docs-telemetry-label">Dialyra Calls</span>
-                <div className="docs-telemetry-value">
-                  {Number(liveStats?.telephonyMinutesHandled || 12850).toLocaleString()} min
+                <div className="docs-telemetry-tile">
+                  <span className="docs-telemetry-label">Dialyra Calls</span>
+                  <div className="docs-telemetry-value">
+                    {Number(liveStats?.telephonyMinutesHandled || 12850).toLocaleString()} min
+                  </div>
+                  <div className="docs-telemetry-sub">91.4% Automated Triage</div>
                 </div>
-                <div className="docs-telemetry-sub">91.4% Automated Triage</div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Conditional View Rendering */}
-          {(activeView === 'ALL' || activeView === 'DECK') && (
+          {activeView === 'DECK' && (
             <DocsPitchDeck
               pitchSections={filteredPitchSections}
               teamMembers={content.teamMembers || []}
@@ -410,7 +403,7 @@ export function DocsPortal({
             />
           )}
 
-          {(activeView === 'ALL' || activeView === 'TECH') && (
+          {activeView === 'TECH' && (
             <DocsTechnical
               technicalSections={filteredTechSections}
               liveFeatureMatrix={initialFeatureMatrix || []}

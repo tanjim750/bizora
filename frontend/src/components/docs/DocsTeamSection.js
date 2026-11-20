@@ -67,7 +67,7 @@ export function DocsTeamSection({ teamName, members = [] }) {
                     alt={member.name}
                     className="docs-team-avatar-img"
                     onError={() => handleImgError(member.id)}
-                    loading="lazy"
+                    loading="eager"
                   />
                 ) : (
                   <div className="docs-team-avatar-fallback" role="img" aria-label={member.name}>

@@ -450,18 +450,15 @@ export function DocsPitchDeck({ pitchSections = [], teamMembers = [], teamName, 
       <section id="team" className="docs-card">
         <div className="docs-card-header">
           <span className="docs-brand-badge" style={{ marginBottom: 'var(--space-2)' }}>
-            Mandatory Enhancement
+            Team
           </span>
-          <h2 className="docs-card-title">11. Team Showcase & Architecture Leadership</h2>
+          <h2 className="docs-card-title">11. The Team</h2>
           <div className="docs-card-tagline">
-            World-class systems designers and emerging market domain builders
+            The people responsible for product, engineering, domain knowledge, and applied AI
           </div>
         </div>
 
-        <DocsTeamSection
-          teamName={teamName || 'The People Building Bizora'}
-          members={teamMembers}
-        />
+        <DocsTeamSection teamName={teamName || 'The People Building Bizora'} members={teamMembers} />
       </section>
 
       {/* 12. Vision */}
