@@ -887,19 +887,29 @@ export default function Support({
       {/* ============================================================== */}
       {activeTab === 'queue' && (
         <div className="stack-lg">
-          {/* Capabilities Grid (D10 UNAVAILABLE stubs) */}
+          {/* Illustrative metrics until the SLA and BI services are connected. */}
           <div className="queue-capabilities-grid">
-            <UnavailableState
-              owner="SLA Monitor"
-              reason="Real-time overdue SLA detection engine is unmounted."
+            <KpiTile
+              title={
+                <span>
+                  Overdue cases <SimulatedBadge size="sm" />
+                </span>
+              }
+              value="3"
+              subtext="Sample only · SLA Monitor is not connected"
             />
             <UnavailableState
               owner="AI Support Agent"
               reason="Automated escalation classifier requires active provider pipeline."
             />
-            <UnavailableState
-              owner="Business Intelligence"
-              reason="Analytical queue throughput aggregation is unavailable."
+            <KpiTile
+              title={
+                <span>
+                  Cases resolved this week <SimulatedBadge size="sm" />
+                </span>
+              }
+              value="24"
+              subtext="Sample only · Business Intelligence is not connected"
             />
           </div>
 
