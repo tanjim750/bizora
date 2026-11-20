@@ -1,0 +1,12 @@
+[Unit]
+Description=Bizora PostgreSQL 16 database
+
+[Service]
+Type=simple
+ExecStart=%h/.local/opt/postgresql-16/bin/postgres -D %h/.local/state/bizora/postgresql -h 127.0.0.1 -p 15432 -k %h/.local/state/bizora
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

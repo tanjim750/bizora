@@ -13,6 +13,7 @@ The dedicated [Next.js frontend](frontend/README.md) uses the mounted Django API
 [Clean Teal design system](docs/requirements/DESIGN.md). Its [progress ledger](docs/implementations/frontend-progress.md)
 records endpoint coverage and unfinished screens.
 For a fresh Linux server, see the [VPS installation review](docs/setup/vps.md).
+The deployment settings for `bizora.ink` and `api.bizora.ink` are in [deploy/](deploy/README.md).
 See the [team-lead handoff](docs/implementations/TEAM_LEAD_HANDOFF.md) and
 [versioned contracts](docs/implementations/contracts/README.md) before integration.
 

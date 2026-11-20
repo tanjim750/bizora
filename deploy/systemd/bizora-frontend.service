@@ -1,0 +1,14 @@
+[Unit]
+Description=Bizora Next.js frontend
+
+[Service]
+Type=simple
+WorkingDirectory=%h/bizora/frontend
+Environment=DJANGO_API_ORIGIN=http://127.0.0.1:18181
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=%h/.local/opt/node24/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 18180
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

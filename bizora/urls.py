@@ -16,9 +16,26 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.db import DatabaseError, connection
+from django.http import JsonResponse
 from django.urls import include, path
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_safe
+
+
+@never_cache
+@require_safe
+def health(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except DatabaseError:
+        return JsonResponse({'status': 'unavailable'}, status=503)
+    return JsonResponse({'status': 'ok'})
+
 
 urlpatterns = [
+    path('healthz', health, name='health'),
     path('api/', include('app.urls')),
     path('ops/', include('app.operations_urls')),
     path('admin/', admin.site.urls),

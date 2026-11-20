@@ -10,6 +10,8 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN useradd --system --no-create-home bizora \
+    && install -d -o bizora -g bizora /app/staticfiles
 
 EXPOSE 8000
 

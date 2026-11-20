@@ -13,6 +13,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+/staticfiles/
 *.sqlite3
 *.sqlite3-*
 *.db
