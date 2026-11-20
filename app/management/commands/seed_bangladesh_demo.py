@@ -34,6 +34,9 @@ AREAS = [
     ('Shaheb Bazar', 'Rajshahi'), ('Sonadanga', 'Khulna'), ('Sadar Road', 'Barishal'),
     ('Jahaj Company Mor', 'Rangpur'), ('Kandirpar', 'Cumilla'), ('Maijdee', 'Noakhali'),
 ]
+CAMPAIGN_NAMES = (
+    'Eid Collection 2026', 'Handloom Stories', 'Tea and Honey Weekend', 'Nokshi Home Edit',
+)
 
 
 class Command(BaseCommand):
@@ -48,17 +51,21 @@ class Command(BaseCommand):
         user = get_user_model().objects.filter(username=options['username'], is_active=True).first()
         if user is None:
             raise CommandError('Create the local owner user before seeding.')
+        now = timezone.now()
         slug = 'nokshi-bangladesh-demo'
         existing = m.Business.objects.filter(slug=slug).first()
         if existing:
             if not m.BusinessMembership.objects.filter(business=existing, user=user, role='OWNER', is_active=True).exists():
                 raise CommandError('The seed business exists but this user is not its owner.')
-            self.stdout.write(f'Already seeded: business={existing.pk}; no records changed.')
+            if existing.name == 'Nokshi Lifestyle Bangladesh':
+                existing.name = 'Nokshi Lifestyle Bangladesh (Sample)'
+                existing.save(update_fields=['name'])
+            self.seed_workspace_records(existing)
+            self.stdout.write(f'Already seeded: business={existing.pk}; missing workspace records filled.')
             return
 
         rng = Random(2026)
-        now = timezone.now()
-        business = m.Business.objects.create(name='Nokshi Lifestyle Bangladesh', slug=slug)
+        business = m.Business.objects.create(name='Nokshi Lifestyle Bangladesh (Sample)', slug=slug)
         m.BusinessMembership.objects.create(business=business, user=user, role='OWNER')
         source = m.IntegrationSource.objects.create(key=f'nokshi-local-{business.pk}', name='Nokshi online store (sample)', category='COMMERCE')
         connection = m.IntegrationConnection.objects.create(business=business, integration_source=source, name='Nokshi online store', is_mock=True)
@@ -138,7 +145,7 @@ class Command(BaseCommand):
         ], 1):
             campaign = m.Campaign.objects.create(
                 business=business, name=name, platform=platform, objective='SALES',
-                budget=Decimal(budget), currency='BDT', started_at=now - timedelta(days=45),
+                budget=Decimal(budget), currency='BDT', started_at=now - timedelta(days=100),
             )
             for day in range(30):
                 date = (now - timedelta(days=day)).date()
@@ -178,7 +185,183 @@ class Command(BaseCommand):
                   m.Payment.objects.filter(business=business).count())
         if counts != (20, 100, 240, paid):
             raise CommandError(f'Seed verification failed: {counts}.')
+        self.seed_workspace_records(business)
         self.stdout.write(self.style.SUCCESS(
             f'Seeded {business.name}: business={business.pk}, products={counts[0]}, customers={counts[1]}, '
-            f'orders={counts[2]}, payments={counts[3]}, campaigns=4, daily campaign metrics=120, conversations=40.'
+            f'orders={counts[2]}, payments={counts[3]}, campaigns=4, daily campaign metrics=120, '
+            'conversations=40, calls=12, website sessions=60, conversions=15.'
         ))
+
+    def seed_workspace_records(self, business):
+        """Fill the support, calls, and website views for new and existing local demos."""
+        connection = m.IntegrationConnection.objects.get(business=business, is_mock=True)
+        customers = list(m.Customer.objects.filter(business=business, notes__startswith='Sample customer in ').order_by('pk'))
+        products = list(m.Product.objects.filter(business=business, sku__startswith='NOK-').order_by('pk'))
+        orders = list(m.Order.objects.filter(business=business, order_number__startswith='NOK-').select_related('customer').order_by('order_number'))
+        campaigns = list(m.Campaign.objects.filter(business=business, name__in=CAMPAIGN_NAMES).order_by('pk'))
+        conversations = list(m.Conversation.objects.filter(business=business, external_conversation_id__startswith='CHAT-NOK-').order_by('external_conversation_id'))
+        if tuple(map(len, (customers, products, orders, campaigns, conversations))) != (100, 20, 240, 4, 40):
+            raise CommandError('Base sample records are incomplete; refusing to fill workspace records.')
+        first_order_at = min(order.ordered_at for order in orders)
+        for campaign in campaigns:
+            if campaign.started_at > first_order_at:
+                campaign.started_at = first_order_at - timedelta(days=1)
+                campaign.save(update_fields=['started_at'])
+
+        for order in orders:
+            m.OrderStatusHistory.objects.get_or_create(
+                order=order, from_status=None, to_status='PENDING', source='SAMPLE',
+                defaults={'changed_at': order.ordered_at, 'metadata': {'simulated': True}},
+            )
+            if order.status != 'PENDING':
+                m.OrderStatusHistory.objects.get_or_create(
+                    order=order, from_status='PENDING', to_status=order.status, source='SAMPLE',
+                    defaults={'changed_at': order.ordered_at + timedelta(days=1), 'metadata': {'simulated': True}},
+                )
+            m.CustomerTimelineEvent.objects.get_or_create(
+                customer=order.customer, event_type='ORDER_PLACED', entity_type='ORDER', entity_id=order.pk,
+                defaults={
+                    'title': f'Order {order.order_number} placed', 'event_at': order.ordered_at,
+                    'metadata': {'simulated': True},
+                },
+            )
+
+        for shipment in m.Shipment.objects.filter(business=business, external_shipment_id__startswith='SHP-NOK-'):
+            m.ShipmentEvent.objects.get_or_create(
+                shipment=shipment, event_type=shipment.status,
+                defaults={
+                    'status': shipment.status, 'description': 'Sample courier status update.',
+                    'occurred_at': shipment.delivered_at or shipment.submitted_at,
+                    'metadata': {'simulated': True},
+                },
+            )
+
+        for conversation in conversations:
+            if conversation.status == 'RESOLVED' and conversation.resolved_at is None:
+                conversation.resolved_at = conversation.started_at + timedelta(hours=2)
+                conversation.save(update_fields=['resolved_at'])
+
+        for index in range(1, 13):
+            conversation = conversations[index - 1]
+            customer = conversation.customer
+            started = conversation.started_at + timedelta(minutes=20)
+            completed = index % 4 != 0
+            call, _ = m.Call.objects.get_or_create(
+                integration_connection=connection, external_call_id=f'CALL-NOK-{index:05d}',
+                defaults={
+                    'business': business, 'customer': customer, 'conversation': conversation,
+                    'direction': 'INBOUND' if index % 3 else 'OUTBOUND',
+                    'caller_number': customer.customercontact_set.filter(contact_type='PHONE').values_list('value', flat=True).first(),
+                    'status': 'COMPLETED' if completed else 'MISSED',
+                    'started_at': started, 'answered_at': started + timedelta(seconds=12) if completed else None,
+                    'ended_at': started + timedelta(minutes=4) if completed else started + timedelta(seconds=30),
+                    'duration_seconds': 228 if completed else 0,
+                    'source_metadata': {'simulated': True},
+                },
+            )
+            if call.customer_id != customer.pk:
+                call.customer = customer
+                call.save(update_fields=['customer'])
+            if call.started_at != started:
+                call.started_at = started
+                call.answered_at = started + timedelta(seconds=12) if completed else None
+                call.ended_at = started + timedelta(minutes=4) if completed else started + timedelta(seconds=30)
+                call.save(update_fields=['started_at', 'answered_at', 'ended_at'])
+            call_event, _ = m.CallEvent.objects.get_or_create(
+                call=call, event_type='COMPLETED' if completed else 'MISSED',
+                defaults={'event_at': call.ended_at, 'metadata': {'simulated': True}},
+            )
+            if call_event.event_at != call.ended_at:
+                call_event.event_at = call.ended_at
+                call_event.save(update_fields=['event_at'])
+            if completed:
+                transcript, _ = m.CallTranscript.objects.get_or_create(
+                    call=call,
+                    defaults={
+                        'transcript': 'Customer asked about an order. The agent checked its delivery status.',
+                        'summary': 'Order and delivery status inquiry.', 'language': 'en',
+                        'provider': 'SAMPLE', 'generated_at': call.ended_at,
+                        'metadata': {'simulated': True},
+                    },
+                )
+                if transcript.generated_at != call.ended_at:
+                    transcript.generated_at = call.ended_at
+                    transcript.save(update_fields=['generated_at'])
+
+        for campaign_index, campaign in enumerate(campaigns, 1):
+            m.CampaignAdSet.objects.get_or_create(
+                campaign=campaign, external_id=f'ADSET-NOK-{campaign_index:03d}',
+                defaults={
+                    'name': f'{campaign.name} audience', 'audience': {'region': 'Bangladesh', 'simulated': True},
+                    'budget': campaign.budget, 'status': 'ACTIVE',
+                },
+            )
+
+        for index in range(1, 61):
+            product = products[(index * 3) % len(products)]
+            order = orders[(index * 7) % len(orders)]
+            customer = order.customer
+            campaign = campaigns[index % len(campaigns)]
+            started = order.ordered_at - timedelta(minutes=8)
+            converted = index % 4 == 0
+            visitor, _ = m.WebsiteVisitor.objects.get_or_create(
+                business=business, visitor_key=f'NOK-VISITOR-{index:05d}',
+                defaults={
+                    'customer': customer if index % 2 == 0 else None,
+                    'first_seen_at': started, 'last_seen_at': started + timedelta(minutes=12),
+                    'is_anonymous': index % 2 != 0, 'source_metadata': {'simulated': True},
+                },
+            )
+            if visitor.first_seen_at != started:
+                visitor.first_seen_at = started
+                visitor.last_seen_at = started + timedelta(minutes=12)
+                visitor.save(update_fields=['first_seen_at', 'last_seen_at'])
+            session, _ = m.WebsiteSession.objects.get_or_create(
+                integration_connection=connection, external_session_id=f'NOK-SESSION-{index:05d}',
+                defaults={
+                    'business': business, 'visitor': visitor, 'customer': visitor.customer,
+                    'traffic_source': 'GOOGLE' if index % 3 else 'META', 'traffic_medium': 'CPC',
+                    'utm_campaign': campaign.name, 'landing_page_url': '/collections/new',
+                    'exit_page_url': '/checkout' if converted else '/products',
+                    'device_type': 'MOBILE' if index % 3 else 'DESKTOP',
+                    'country': 'Bangladesh', 'city': 'Dhaka',
+                    'started_at': started, 'ended_at': started + timedelta(minutes=12),
+                    'duration_seconds': 720, 'is_converted': converted,
+                    'source_metadata': {'simulated': True},
+                },
+            )
+            if session.started_at != started:
+                session.started_at = started
+                session.ended_at = started + timedelta(minutes=12)
+                session.save(update_fields=['started_at', 'ended_at'])
+            for offset, event_type in enumerate(('PAGE_VIEW', 'PRODUCT_VIEW', 'PURCHASE' if converted else 'ADD_TO_CART')):
+                event_at = started + timedelta(minutes=offset * 4)
+                event, _ = m.WebsiteEvent.objects.get_or_create(
+                    session=session, event_type=event_type,
+                    defaults={
+                        'visitor': visitor, 'customer': visitor.customer,
+                        'product': product if offset else None,
+                        'order': order if converted and offset == 2 else None,
+                        'page_url': '/collections/new' if offset == 0 else f'/products/{product.sku}',
+                        'event_value': order.total_amount if converted and offset == 2 else None,
+                        'currency': 'BDT', 'occurred_at': event_at,
+                        'properties': {'simulated': True},
+                    },
+                )
+                if event.occurred_at != event_at:
+                    event.occurred_at = event_at
+                    event.save(update_fields=['occurred_at'])
+            if converted:
+                conversion, _ = m.CampaignConversion.objects.get_or_create(
+                    campaign=campaign, external_conversion_id=f'CONV-NOK-{index:05d}',
+                    defaults={
+                        'customer': customer, 'order': order, 'website_session_id': session.pk,
+                        'conversion_type': 'PURCHASE', 'conversion_value': order.total_amount,
+                        'currency': 'BDT', 'attribution_type': 'PLATFORM_REPORTED',
+                        'converted_at': order.ordered_at,
+                        'metadata': {'simulated': True},
+                    },
+                )
+                if conversion.converted_at != order.ordered_at:
+                    conversion.converted_at = order.ordered_at
+                    conversion.save(update_fields=['converted_at'])
