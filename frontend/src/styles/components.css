@@ -1,4 +1,5 @@
 /* Bizora Component Styles: Surfaces, Cards, Buttons, Tables, Chips, Alerts, Forms, Screens */
+@import './docs.css';
 
 .page-heading {
   display: flex;

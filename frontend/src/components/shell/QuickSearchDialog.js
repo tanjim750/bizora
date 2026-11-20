@@ -26,6 +26,7 @@ import {
   SunMoon,
   Building2,
   Palette,
+  FileText,
 } from 'lucide-react'
 import { Dialog } from '../ui/Dialog.js'
 import { Input } from '../ui/Input.js'
@@ -112,6 +113,14 @@ export function QuickSearchDialog({ isOpen, onClose, businessId, onToggleTheme }
         subtitle: 'Enterprise design system primitives, forms, tables, and charts',
         href: `/business/${bId}/ui-kit`,
         icon: Palette,
+      },
+      {
+        id: 'ws-docs',
+        category: 'Workspaces',
+        title: 'Live /docs & YC Pitch Deck',
+        subtitle: 'Interactive pitch deck, deep technical whitepaper, and live system state',
+        href: '/docs',
+        icon: FileText,
       },
       {
         id: 'ws-identity',
