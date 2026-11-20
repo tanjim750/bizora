@@ -11,6 +11,8 @@ from .settings import BASE_DIR, REST_FRAMEWORK
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or secrets.token_urlsafe(48)
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 _data_dir = Path(os.environ.get('BIZORA_DATA_DIR', '/tmp/bizora-local'))
 _data_dir.mkdir(parents=True, exist_ok=True)
