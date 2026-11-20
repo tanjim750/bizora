@@ -25,7 +25,7 @@ export default async function SupportWorkspacePage({ params, searchParams }) {
   const currentTab = (tabSegments && tabSegments[0]) || query?.tab || 'inbox'
 
   // Pre-fetch conversations, support queue, and calls in parallel
-  const [conversationsRes, queueRes, callsRes] = await Promise.all([
+  const [conversationsRes, queueRes, callsRes, resolvedRes] = await Promise.all([
     serverApi(businessApiPath(businessId, 'conversations/?page_size=50&ordering=-started_at')).catch(() => ({
       data: { count: 0, results: [] },
     })),
@@ -34,6 +34,9 @@ export default async function SupportWorkspacePage({ params, searchParams }) {
     })),
     serverApi(businessApiPath(businessId, 'calls/?page_size=50&ordering=-started_at')).catch(() => ({
       data: { count: 0, results: [] },
+    })),
+    serverApi(businessApiPath(businessId, 'conversations/?status=RESOLVED&page_size=1')).catch(() => ({
+      data: null,
     })),
   ])
 
@@ -57,6 +60,7 @@ export default async function SupportWorkspacePage({ params, searchParams }) {
         conversationsData={conversationsRes.data}
         queueData={queueRes.data}
         callsData={callsRes.data}
+        resolvedCount={resolvedRes.data?.count}
       />
     </div>
   )

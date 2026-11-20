@@ -33,7 +33,6 @@ import {
   SeverityChip,
   EmptyState,
   UnavailableState,
-  SimulatedBadge,
   Button,
   Dialog,
   Drawer,
@@ -68,6 +67,7 @@ export default function Support({
   conversationsData,
   queueData,
   callsData,
+  resolvedCount,
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -887,29 +887,21 @@ export default function Support({
       {/* ============================================================== */}
       {activeTab === 'queue' && (
         <div className="stack-lg">
-          {/* Illustrative metrics until the SLA and BI services are connected. */}
+          {/* Recorded queue counts are available even though SLA and BI analysis are not. */}
           <div className="queue-capabilities-grid">
             <KpiTile
-              title={
-                <span>
-                  Overdue cases <SimulatedBadge size="sm" />
-                </span>
-              }
-              value="3"
-              subtext="Sample only · SLA Monitor is not connected"
+              title="Open cases"
+              value={queueData?.count ?? queueResults.length}
+              subtext="Recorded queue · SLA monitor not connected"
             />
             <UnavailableState
               owner="AI Support Agent"
               reason="Automated escalation classifier requires active provider pipeline."
             />
             <KpiTile
-              title={
-                <span>
-                  Cases resolved this week <SimulatedBadge size="sm" />
-                </span>
-              }
-              value="24"
-              subtext="Sample only · Business Intelligence is not connected"
+              title="Resolved cases"
+              value={resolvedCount}
+              subtext="Recorded conversations · BI throughput not connected"
             />
           </div>
 

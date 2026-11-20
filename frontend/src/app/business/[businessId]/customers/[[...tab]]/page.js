@@ -36,23 +36,23 @@ export default async function CustomersWorkspacePage({ params, searchParams }) {
     targetCustomerId = query.open.split(':')[1]
   } else if (query?.id) {
     targetCustomerId = query.id
-  } else if (currentTab === '360') {
-    // Default to first customer if on 360 tab
-    targetCustomerId = '1'
   }
 
-  // Fetch customers list, issues, and optionally customer 360 pre-fetch
-  const fetches = [
+  const [listResult, issuesResult] = await Promise.all([
     serverApi(businessApiPath(businessId, 'customers/?page_size=25')),
     serverApi(businessApiPath(businessId, 'issues/')),
-  ]
+  ])
 
-  if (targetCustomerId) {
-    fetches.push(serverApi(businessApiPath(businessId, `customers/${targetCustomerId}/360/`)))
-    fetches.push(serverApi(businessApiPath(businessId, `graph-context/customer/${targetCustomerId}/`)))
+  if (!targetCustomerId && currentTab === '360') {
+    targetCustomerId = listResult.data?.results?.[0]?.id || null
   }
 
-  const [listResult, issuesResult, initial360Res, initialGraphRes] = await Promise.all(fetches)
+  const [initial360Res, initialGraphRes] = targetCustomerId
+    ? await Promise.all([
+        serverApi(businessApiPath(businessId, `customers/${targetCustomerId}/360/`)),
+        serverApi(businessApiPath(businessId, `graph-context/customer/${targetCustomerId}/`)),
+      ])
+    : [null, null]
 
   const initialCustomer360 = initial360Res?.ok && initial360Res?.data ? initial360Res.data : null
   const initialGraphContext = initialGraphRes?.ok && initialGraphRes?.data ? initialGraphRes.data : null
