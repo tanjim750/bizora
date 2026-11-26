@@ -13,13 +13,14 @@ const store = StoreConfigSchema.parse(storeJson);
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
+const mockRouter = { push: mockPush, replace: mockReplace };
 const mockQuote = vi.fn();
 const mockPlaceOrder = vi.fn();
 const mockCartGet = vi.fn();
 const mockMe = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useRouter: () => mockRouter,
   usePathname: () => '/checkout',
   useSearchParams: () => new URLSearchParams(),
 }));

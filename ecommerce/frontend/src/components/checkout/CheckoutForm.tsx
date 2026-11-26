@@ -64,6 +64,9 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
     }
   }, [cartStatus, cart, router]);
 
+  const routerRef = React.useRef(router);
+  routerRef.current = router;
+
   // Sync user email if it becomes available
   const userEmail = sessionUser?.email;
   const [prevUserEmail, setPrevUserEmail] = React.useState(userEmail);
@@ -77,7 +80,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
   const shippingMethodId = values.shippingMethodId;
   const cartUpdatedAt = cart?.updatedAt;
 
-  // Fetch quote
+  // Fetch quote manually (retry)
   const fetchQuote = React.useCallback(async () => {
     if (!cart || cart.lines.length === 0) return;
     setQuoteStatus('loading');
@@ -87,20 +90,36 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
       setQuoteStatus('ready');
     } catch (err) {
       if (isApiError(err) && err.code === 'CART_EMPTY') {
-        router.replace('/cart');
+        routerRef.current.replace('/cart');
         return;
       }
       setQuoteStatus('error');
     }
-  }, [cart, shippingMethodId, router]);
+  }, [cart, shippingMethodId]);
 
   React.useEffect(() => {
-    if (cart && cart.lines.length > 0) {
-      void Promise.resolve().then(() => {
-        fetchQuote();
+    if (!cart || cart.lines.length === 0) return;
+    let active = true;
+    browserApi.checkout
+      .quote(shippingMethodId)
+      .then((q) => {
+        if (!active) return;
+        setQuote(q);
+        setQuoteStatus('ready');
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (isApiError(err) && err.code === 'CART_EMPTY') {
+          routerRef.current.replace('/cart');
+          return;
+        }
+        setQuoteStatus('error');
       });
-    }
-  }, [cart, shippingMethodId, cartUpdatedAt, fetchQuote]);
+
+    return () => {
+      active = false;
+    };
+  }, [cart, shippingMethodId, cartUpdatedAt]);
 
   const handleFieldChange = (name: keyof CheckoutFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -152,9 +171,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
               ? (err.details as Record<string, unknown>)
               : null;
           const rawFields = (err.fields ?? detailsObj?.fields) as
-            | Record<string, string[]>
-            | null
-            | undefined;
+            Record<string, string[]> | null | undefined;
           const mapped = mapApiFieldErrors(rawFields);
           setErrors(mapped);
           summaryRef.current?.focus();
