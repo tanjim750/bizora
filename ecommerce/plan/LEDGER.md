@@ -11,3 +11,4 @@ A card with ANY row here is skipped by `RUN-NEXT.md`. To re-run a `BLOCKED` card
 | SF-05 | DONE | 32fc6bd | tests/unit/sf-05-contract.test.ts | Failed to resolve import @/lib/api/schemas (1 failed) | Tests 59 passed (59) in 6.88s | test=pass typecheck=pass lint=pass format=pass build=pass |
 | SF-06 | DONE | 274c54e | tests/unit/sf-06-fixtures.test.ts | Failed to resolve import @/mocks/fixtures/store.json (1 failed) | Tests 73 passed (73) in 7.41s | test=pass typecheck=pass lint=pass format=pass build=pass |
 | SF-07 | DONE | 22ab627 | tests/unit/sf-07-mock-catalog.test.ts | Failed to resolve import @/mocks/server/db (1 failed) | Tests 90 passed (90) in 4.43s | test=pass typecheck=pass lint=pass format=pass build=pass |
+| SF-08 | DONE | df25f06 | tests/unit/sf-08-mock-stateful.test.ts | Failed to resolve import @/app/api/store/[...path]/route (1 failed) | Tests 109 passed (109) in 4.40s | test=pass typecheck=pass lint=pass format=pass build=pass |
