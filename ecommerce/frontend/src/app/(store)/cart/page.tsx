@@ -10,9 +10,6 @@ export default async function CartPage() {
   const codAvailable = store.paymentMethods.some((m) => m.id === 'cod' && m.enabled);
 
   return (
-    <CartPageView
-      freeShippingThreshold={store.freeShippingThreshold}
-      codAvailable={codAvailable}
-    />
+    <CartPageView freeShippingThreshold={store.freeShippingThreshold} codAvailable={codAvailable} />
   );
 }

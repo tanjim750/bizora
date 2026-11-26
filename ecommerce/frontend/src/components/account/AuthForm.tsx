@@ -7,12 +7,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useSessionStore } from '@/stores/session-store';
 import { isApiError, toUserMessage } from '@/lib/api/errors';
 import { safeNextPath } from '@/lib/auth/redirect';
-import {
-  validateSignIn,
-  validateRegister,
-  type SignInValues,
-  type RegisterValues,
-} from '@/lib/auth/validation';
+import { validateSignIn, validateRegister, type RegisterValues } from '@/lib/auth/validation';
 import { Field } from '@/components/ui/Field';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -176,9 +171,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           {mode === 'sign-in' ? 'Sign in' : 'Create your account'}
         </h1>
         <p className="text-body text-fg-muted">
-          {mode === 'sign-in'
-            ? 'Welcome back.'
-            : 'Track orders and check out faster.'}
+          {mode === 'sign-in' ? 'Welcome back.' : 'Track orders and check out faster.'}
         </p>
       </div>
 
@@ -194,11 +187,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         {mode === 'register' && (
           <div className="grid grid-cols-2 gap-4">
-            <Field
-              id="register-firstName"
-              label="First name"
-              error={errors.firstName}
-            >
+            <Field id="register-firstName" label="First name" error={errors.firstName}>
               {(aria) => (
                 <Input
                   {...aria}
@@ -211,11 +200,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               )}
             </Field>
 
-            <Field
-              id="register-lastName"
-              label="Last name"
-              error={errors.lastName}
-            >
+            <Field id="register-lastName" label="Last name" error={errors.lastName}>
               {(aria) => (
                 <Input
                   {...aria}
@@ -230,11 +215,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </div>
         )}
 
-        <Field
-          id={`${mode}-email`}
-          label="Email"
-          error={errors.email}
-        >
+        <Field id={`${mode}-email`} label="Email" error={errors.email}>
           {(aria) => (
             <div>
               <Input
@@ -271,9 +252,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 {...aria}
                 name="password"
                 type={showPassword ? 'text' : 'password'}
-                autoComplete={
-                  mode === 'sign-in' ? 'current-password' : 'new-password'
-                }
+                autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
                 value={values.password}
                 onChange={handleChange}
                 className="pr-12"
@@ -296,12 +275,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           )}
         </Field>
 
-        <Button
-          type="submit"
-          size="lg"
-          loading={submitting}
-          className="w-full"
-        >
+        <Button type="submit" size="lg" loading={submitting} className="w-full">
           {mode === 'sign-in' ? 'Sign in' : 'Create account'}
         </Button>
       </form>

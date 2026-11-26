@@ -19,7 +19,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api/browser', () => ({
   browserApi: {
     auth: {
-      register: (args: any) => mockRegister(args),
+      register: (args: unknown) => mockRegister(args),
       me: () => mockMe(),
     },
     cart: {
@@ -51,9 +51,10 @@ describe('SF-25 Registration page', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByText('At least 8 characters.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create account' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Sign in' }),
-    ).toHaveAttribute('href', '/account/sign-in');
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/account/sign-in',
+    );
   });
 
   it('validates short password without calling auth.register', () => {
@@ -148,9 +149,7 @@ describe('SF-25 Registration page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText('An account with this email already exists.'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('An account with this email already exists.')).toBeInTheDocument();
       const signInLink = screen.getByRole('link', { name: 'Sign in instead' });
       expect(signInLink).toHaveAttribute('href', '/account/sign-in');
     });

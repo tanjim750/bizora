@@ -20,10 +20,7 @@ export interface CartPageViewProps {
   codAvailable: boolean;
 }
 
-export default function CartPageView({
-  freeShippingThreshold,
-  codAvailable,
-}: CartPageViewProps) {
+export default function CartPageView({ freeShippingThreshold, codAvailable }: CartPageViewProps) {
   const cart = useCartStore((s) => s.cart);
   const status = useCartStore((s) => s.status);
   const error = useCartStore((s) => s.error);
@@ -139,9 +136,7 @@ export default function CartPageView({
             threshold={freeShippingThreshold}
           />
 
-          <p className="text-caption text-fg-muted">
-            Delivery and VAT are calculated at checkout.
-          </p>
+          <p className="text-caption text-fg-muted">Delivery and VAT are calculated at checkout.</p>
 
           <Button asChild size="lg" className="w-full">
             <Link href="/checkout">Checkout</Link>

@@ -1,8 +1,4 @@
-import type {
-  Money,
-  StoreConfig,
-  PlaceOrderBody,
-} from '@/lib/api/types';
+import type { Money, StoreConfig, PlaceOrderBody } from '@/lib/api/types';
 
 export type CheckoutFormValues = {
   email: string;
@@ -34,10 +30,7 @@ export const CHECKOUT_FIELDS: readonly (keyof CheckoutFormValues)[] = [
   'note',
 ] as const;
 
-export function emptyCheckoutValues(
-  store: StoreConfig,
-  email = '',
-): CheckoutFormValues {
+export function emptyCheckoutValues(store: StoreConfig, email = ''): CheckoutFormValues {
   return {
     email,
     phone: '',
@@ -104,8 +97,7 @@ export function validateField(
       return undefined;
 
     case 'shippingMethodId':
-      if (!store.shippingMethods.some((m) => m.id === val))
-        return 'Choose a delivery method.';
+      if (!store.shippingMethods.some((m) => m.id === val)) return 'Choose a delivery method.';
       return undefined;
 
     case 'paymentMethodId':

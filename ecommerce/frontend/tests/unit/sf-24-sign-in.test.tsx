@@ -21,7 +21,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api/browser', () => ({
   browserApi: {
     auth: {
-      signIn: (args: any) => mockSignIn(args),
+      signIn: (args: unknown) => mockSignIn(args),
       me: () => mockMe(),
     },
     cart: {
@@ -144,9 +144,7 @@ describe('SF-24 Auth validation, safe redirect and sign-in page', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
       await waitFor(() => {
-        expect(
-          screen.getByText("That email and password don't match."),
-        ).toBeInTheDocument();
+        expect(screen.getByText("That email and password don't match.")).toBeInTheDocument();
       });
     });
 
@@ -169,10 +167,7 @@ describe('SF-24 Auth validation, safe redirect and sign-in page', () => {
       const createAccountLink = screen.getByRole('link', {
         name: 'Create an account',
       });
-      expect(createAccountLink).toHaveAttribute(
-        'href',
-        '/account/register?next=%2Fcheckout',
-      );
+      expect(createAccountLink).toHaveAttribute('href', '/account/register?next=%2Fcheckout');
     });
   });
 });

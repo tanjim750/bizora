@@ -14,7 +14,7 @@ vi.mock('@/lib/api/browser', () => ({
       get: () => mockCartGet(),
     },
     catalog: {
-      listProducts: (args: any) => mockListProducts(args),
+      listProducts: (args: unknown) => mockListProducts(args),
     },
   },
 }));

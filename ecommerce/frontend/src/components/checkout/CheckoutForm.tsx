@@ -43,13 +43,9 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
   const [values, setValues] = React.useState<CheckoutFormValues>(() =>
     emptyCheckoutValues(store, sessionUser?.email ?? ''),
   );
-  const [errors, setErrors] = React.useState<
-    Partial<Record<keyof CheckoutFormValues, string>>
-  >({});
+  const [errors, setErrors] = React.useState<Partial<Record<keyof CheckoutFormValues, string>>>({});
   const [quote, setQuote] = React.useState<Quote | null>(null);
-  const [quoteStatus, setQuoteStatus] = React.useState<
-    'loading' | 'ready' | 'error'
-  >('loading');
+  const [quoteStatus, setQuoteStatus] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const [submitting, setSubmitting] = React.useState(false);
   const [mobileSummaryOpen, setMobileSummaryOpen] = React.useState(false);
   const [banner, setBanner] = React.useState<null | {
@@ -69,11 +65,14 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
   }, [cartStatus, cart, router]);
 
   // Sync user email if it becomes available
-  React.useEffect(() => {
-    if (sessionUser?.email) {
-      setValues((prev) => (prev.email ? prev : { ...prev, email: sessionUser.email }));
+  const userEmail = sessionUser?.email;
+  const [prevUserEmail, setPrevUserEmail] = React.useState(userEmail);
+  if (userEmail && userEmail !== prevUserEmail) {
+    setPrevUserEmail(userEmail);
+    if (!values.email) {
+      setValues((prev) => ({ ...prev, email: userEmail }));
     }
-  }, [sessionUser]);
+  }
 
   const shippingMethodId = values.shippingMethodId;
   const cartUpdatedAt = cart?.updatedAt;
@@ -97,9 +96,11 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
 
   React.useEffect(() => {
     if (cart && cart.lines.length > 0) {
-      fetchQuote();
+      void Promise.resolve().then(() => {
+        fetchQuote();
+      });
     }
-  }, [shippingMethodId, cartUpdatedAt]);
+  }, [cart, shippingMethodId, cartUpdatedAt, fetchQuote]);
 
   const handleFieldChange = (name: keyof CheckoutFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -146,30 +147,51 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
 
       if (isApiError(err)) {
         if (err.code === 'VALIDATION_FAILED') {
-          const rawFields = err.fields ?? (err.details as any)?.fields;
+          const detailsObj =
+            err.details && typeof err.details === 'object'
+              ? (err.details as Record<string, unknown>)
+              : null;
+          const rawFields = (err.fields ?? detailsObj?.fields) as
+            | Record<string, string[]>
+            | null
+            | undefined;
           const mapped = mapApiFieldErrors(rawFields);
           setErrors(mapped);
           summaryRef.current?.focus();
           keys.current.renew();
         } else if (err.code === 'PRICE_CHANGED') {
-          const newQuote = (err.details?.quote ?? (err as any).fields?.quote) as Quote | undefined;
+          const detailsObj =
+            err.details && typeof err.details === 'object'
+              ? (err.details as Record<string, unknown>)
+              : null;
+          const fieldsObj =
+            err.fields && typeof err.fields === 'object'
+              ? (err.fields as Record<string, unknown>)
+              : null;
+          const newQuote = (detailsObj?.quote ?? fieldsObj?.quote) as Quote | undefined;
           if (newQuote) {
             setQuote(newQuote);
           }
           setBanner({
             kind: 'price',
-            message:
-              'Prices changed since you started checkout. Please review the new total.',
+            message: 'Prices changed since you started checkout. Please review the new total.',
           });
           keys.current.renew();
         } else if (err.code === 'OUT_OF_STOCK') {
-          const rawLines = (err.details?.lines ?? (err as any).fields?.lines) as any[];
-          const lineNames = (rawLines ?? []).map(
-            (l: any) => {
-              const line = cart?.lines.find((cl) => cl.id === l.lineId);
-              return line?.productName ?? 'Item';
-            },
-          );
+          const detailsObj =
+            err.details && typeof err.details === 'object'
+              ? (err.details as Record<string, unknown>)
+              : null;
+          const fieldsObj =
+            err.fields && typeof err.fields === 'object'
+              ? (err.fields as Record<string, unknown>)
+              : null;
+          const rawLines = (detailsObj?.lines ?? fieldsObj?.lines) as
+            Array<{ lineId?: string }> | undefined;
+          const lineNames = (rawLines ?? []).map((l: { lineId?: string }) => {
+            const line = cart?.lines.find((cl) => cl.id === l.lineId);
+            return line?.productName ?? 'Item';
+          });
           setBanner({
             kind: 'stock',
             message: 'Some items are no longer available.',
@@ -197,8 +219,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
         } else if (err.code === 'NETWORK_ERROR') {
           setBanner({
             kind: 'network',
-            message:
-              'You seem to be offline. Your order was not placed. Try again.',
+            message: 'You seem to be offline. Your order was not placed. Try again.',
           });
           // key is NOT renewed on network error
         } else {
@@ -229,9 +250,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
 
   if (!cart) return null;
 
-  const totalStr = quote
-    ? formatMoney(quote.total)
-    : formatMoney(cart.subtotal);
+  const totalStr = quote ? formatMoney(quote.total) : formatMoney(cart.subtotal);
   const hasErrors = Object.keys(errors).length > 0;
 
   return (
@@ -374,58 +393,39 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
                 aria-labelledby="section-delivery"
                 className="space-y-4 pt-6 border-t border-border"
               >
-                <h2
-                  id="section-delivery"
-                  className="text-title font-semibold text-fg"
-                >
+                <h2 id="section-delivery" className="text-title font-semibold text-fg">
                   2. Delivery address
                 </h2>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <Field
-                    id="field-firstName"
-                    label="First name"
-                    error={errors.firstName}
-                  >
+                  <Field id="field-firstName" label="First name" error={errors.firstName}>
                     {(aria) => (
                       <Input
                         {...aria}
                         type="text"
                         autoComplete="given-name"
                         value={values.firstName}
-                        onChange={(e) =>
-                          handleFieldChange('firstName', e.target.value)
-                        }
+                        onChange={(e) => handleFieldChange('firstName', e.target.value)}
                         onBlur={() => handleBlur('firstName')}
                       />
                     )}
                   </Field>
 
-                  <Field
-                    id="field-lastName"
-                    label="Last name"
-                    error={errors.lastName}
-                  >
+                  <Field id="field-lastName" label="Last name" error={errors.lastName}>
                     {(aria) => (
                       <Input
                         {...aria}
                         type="text"
                         autoComplete="family-name"
                         value={values.lastName}
-                        onChange={(e) =>
-                          handleFieldChange('lastName', e.target.value)
-                        }
+                        onChange={(e) => handleFieldChange('lastName', e.target.value)}
                         onBlur={() => handleBlur('lastName')}
                       />
                     )}
                   </Field>
                 </div>
 
-                <Field
-                  id="field-line1"
-                  label="Address"
-                  error={errors.line1}
-                >
+                <Field id="field-line1" label="Address" error={errors.line1}>
                   {(aria) => (
                     <Input
                       {...aria}
@@ -470,39 +470,27 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
                     )}
                   </Field>
 
-                  <Field
-                    id="field-postalCode"
-                    label="Postal code"
-                    error={errors.postalCode}
-                  >
+                  <Field id="field-postalCode" label="Postal code" error={errors.postalCode}>
                     {(aria) => (
                       <Input
                         {...aria}
                         type="text"
                         autoComplete="postal-code"
                         value={values.postalCode}
-                        onChange={(e) =>
-                          handleFieldChange('postalCode', e.target.value)
-                        }
+                        onChange={(e) => handleFieldChange('postalCode', e.target.value)}
                         onBlur={() => handleBlur('postalCode')}
                       />
                     )}
                   </Field>
                 </div>
 
-                <Field
-                  id="field-countryCode"
-                  label="Country"
-                  error={errors.countryCode}
-                >
+                <Field id="field-countryCode" label="Country" error={errors.countryCode}>
                   {(aria) => (
                     <Select
                       {...aria}
                       autoComplete="country"
                       value={values.countryCode}
-                      onChange={(e) =>
-                        handleFieldChange('countryCode', e.target.value)
-                      }
+                      onChange={(e) => handleFieldChange('countryCode', e.target.value)}
                       onBlur={() => handleBlur('countryCode')}
                     >
                       {store.countries.map((c) => (
@@ -520,10 +508,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
                 aria-labelledby="section-method"
                 className="space-y-4 pt-6 border-t border-border"
               >
-                <h2
-                  id="section-method"
-                  className="text-title font-semibold text-fg"
-                >
+                <h2 id="section-method" className="text-title font-semibold text-fg">
                   3. Delivery method
                 </h2>
                 <ShippingMethodPicker
@@ -540,10 +525,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
                 aria-labelledby="section-payment"
                 className="space-y-4 pt-6 border-t border-border"
               >
-                <h2
-                  id="section-payment"
-                  className="text-title font-semibold text-fg"
-                >
+                <h2 id="section-payment" className="text-title font-semibold text-fg">
                   4. Payment
                 </h2>
                 <PaymentMethodPicker
@@ -556,12 +538,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
 
               {/* Order note */}
               <section className="space-y-2 pt-6 border-t border-border">
-                <Field
-                  id="field-note"
-                  label="Order note"
-                  optional
-                  error={errors.note}
-                >
+                <Field id="field-note" label="Order note" optional error={errors.note}>
                   {(aria) => (
                     <div>
                       <textarea
@@ -596,9 +573,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
                       : 'Place order'}
                 </Button>
                 {quoteStatus === 'loading' && (
-                  <p className="mt-2 text-center text-caption text-fg-muted">
-                    Calculating total…
-                  </p>
+                  <p className="mt-2 text-center text-caption text-fg-muted">Calculating total…</p>
                 )}
               </div>
             </fieldset>

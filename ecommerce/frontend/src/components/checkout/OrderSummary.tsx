@@ -47,12 +47,8 @@ export default function OrderSummary({
             </div>
 
             <div className="flex flex-1 flex-col justify-center min-w-0">
-              <p className="font-medium text-body text-fg truncate">
-                {line.productName}
-              </p>
-              <p className="text-small text-fg-muted truncate">
-                {line.variantTitle}
-              </p>
+              <p className="font-medium text-body text-fg truncate">{line.productName}</p>
+              <p className="text-small text-fg-muted truncate">{line.variantTitle}</p>
             </div>
 
             <div className="self-center font-medium text-body text-fg shrink-0">
@@ -93,11 +89,7 @@ export default function OrderSummary({
               <Skeleton className="h-5 w-16" />
             ) : (
               <span className="font-medium text-fg">
-                {quote
-                  ? quote.freeShippingApplied
-                    ? 'Free'
-                    : formatMoney(quote.shipping)
-                  : '—'}
+                {quote ? (quote.freeShippingApplied ? 'Free' : formatMoney(quote.shipping)) : '—'}
               </span>
             )}
           </div>
@@ -109,9 +101,7 @@ export default function OrderSummary({
             {status === 'loading' && !quote ? (
               <Skeleton className="h-5 w-16" />
             ) : (
-              <span className="font-medium text-fg">
-                {quote ? formatMoney(quote.tax) : '—'}
-              </span>
+              <span className="font-medium text-fg">{quote ? formatMoney(quote.tax) : '—'}</span>
             )}
           </div>
 

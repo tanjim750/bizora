@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type SignInValues = {
@@ -15,8 +13,7 @@ export type RegisterValues = {
 };
 
 export type ValidationResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; errors: Record<string, string> };
+  { ok: true; data: T } | { ok: false; errors: Record<string, string> };
 
 export function validateSignIn(values: SignInValues): ValidationResult<SignInValues> {
   const errors: Record<string, string> = {};

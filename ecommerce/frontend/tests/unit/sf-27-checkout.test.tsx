@@ -5,7 +5,7 @@ import CheckoutForm from '@/components/checkout/CheckoutForm';
 import storeJson from '@/mocks/fixtures/store.json';
 import { StoreConfigSchema } from '@/lib/api/schemas';
 import { ApiError } from '@/lib/api/errors';
-import { useCartStore, initialCartState } from '@/stores/cart-store';
+import { useCartStore } from '@/stores/cart-store';
 import { useSessionStore, initialSessionState } from '@/stores/session-store';
 import type { Cart, Quote } from '@/lib/api/types';
 
@@ -28,7 +28,7 @@ vi.mock('@/lib/api/browser', () => ({
   browserApi: {
     checkout: {
       quote: (id: string) => mockQuote(id),
-      placeOrder: (body: any, key: string) => mockPlaceOrder(body, key),
+      placeOrder: (body: unknown, key: string) => mockPlaceOrder(body, key),
     },
     cart: {
       get: () => mockCartGet(),
@@ -93,12 +93,8 @@ describe('SF-27 Checkout page', () => {
     render(<CheckoutForm store={store} />);
 
     expect(screen.getByRole('heading', { name: '1. Contact' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: '2. Delivery address' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: '3. Delivery method' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '2. Delivery address' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '3. Delivery method' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '4. Payment' })).toBeInTheDocument();
 
     const cardRadio = screen.getByRole('radio', { name: /card payment/i });
@@ -106,9 +102,7 @@ describe('SF-27 Checkout page', () => {
 
     await waitFor(() => {
       expect(screen.getByText('VAT (5%)')).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,129' })).toBeInTheDocument();
     });
   });
 
@@ -116,14 +110,10 @@ describe('SF-27 Checkout page', () => {
     render(<CheckoutForm store={store} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,129' })).toBeInTheDocument();
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Place order — ৳3,129' }));
 
     await waitFor(() => {
       expect(screen.getByText('Please fix these fields:')).toBeInTheDocument();
@@ -167,9 +157,7 @@ describe('SF-27 Checkout page', () => {
     render(<CheckoutForm store={store} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,129' })).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByLabelText('Email'), {
@@ -194,9 +182,7 @@ describe('SF-27 Checkout page', () => {
       target: { value: '1209' },
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Place order — ৳3,129' }));
 
     await waitFor(() => {
       expect(mockPlaceOrder).toHaveBeenCalled();
@@ -204,9 +190,7 @@ describe('SF-27 Checkout page', () => {
       expect(body.expectedTotal.amount).toBe(312900);
       expect(key).toMatch(/^[0-9a-f-]{36}$/);
 
-      expect(mockPush).toHaveBeenCalledWith(
-        '/order-confirmation/AUR-100200?token=tok_abc',
-      );
+      expect(mockPush).toHaveBeenCalledWith('/order-confirmation/AUR-100200?token=tok_abc');
       expect(useCartStore.getState().cart).toBeNull();
     });
   });
@@ -226,9 +210,7 @@ describe('SF-27 Checkout page', () => {
     render(<CheckoutForm store={store} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,129' })).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByLabelText('Email'), {
@@ -253,19 +235,13 @@ describe('SF-27 Checkout page', () => {
       target: { value: '1209' },
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Place order — ৳3,129' }));
 
     await waitFor(() => {
       expect(
-        screen.getByText(
-          'Prices changed since you started checkout. Please review the new total.',
-        ),
+        screen.getByText('Prices changed since you started checkout. Please review the new total.'),
       ).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,300' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,300' })).toBeInTheDocument();
     });
 
     // Next submit uses new key
@@ -285,16 +261,12 @@ describe('SF-27 Checkout page', () => {
   });
 
   it('handles NETWORK_ERROR and reuses the same key on retry', async () => {
-    mockPlaceOrder.mockRejectedValueOnce(
-      new ApiError(0, 'NETWORK_ERROR', 'Network down'),
-    );
+    mockPlaceOrder.mockRejectedValueOnce(new ApiError(0, 'NETWORK_ERROR', 'Network down'));
 
     render(<CheckoutForm store={store} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,129' })).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByLabelText('Email'), {
@@ -319,15 +291,11 @@ describe('SF-27 Checkout page', () => {
       target: { value: '1209' },
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Place order — ৳3,129' }));
 
     await waitFor(() => {
       expect(
-        screen.getByText(
-          'You seem to be offline. Your order was not placed. Try again.',
-        ),
+        screen.getByText('You seem to be offline. Your order was not placed. Try again.'),
       ).toBeInTheDocument();
     });
 
@@ -336,9 +304,7 @@ describe('SF-27 Checkout page', () => {
       confirmationToken: 'tok_2',
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Place order — ৳3,129' }));
 
     await waitFor(() => {
       expect(mockPlaceOrder).toHaveBeenCalledTimes(2);
@@ -364,9 +330,7 @@ describe('SF-27 Checkout page', () => {
     render(<CheckoutForm store={store} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Place order — ৳3,129' })).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByLabelText('Email'), {
@@ -391,15 +355,11 @@ describe('SF-27 Checkout page', () => {
       target: { value: '1209' },
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Place order — ৳3,129' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Place order — ৳3,129' }));
 
     await waitFor(() => {
       const alert = screen.getByRole('alert');
-      expect(
-        within(alert).getByText('Some items are no longer available.'),
-      ).toBeInTheDocument();
+      expect(within(alert).getByText('Some items are no longer available.')).toBeInTheDocument();
       expect(within(alert).getByText('Ondo Stoneware Mug')).toBeInTheDocument();
       expect(within(alert).getByRole('link', { name: 'Edit cart' })).toHaveAttribute(
         'href',

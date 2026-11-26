@@ -4,11 +4,7 @@ import SkipLink from '@/components/layout/SkipLink';
 import CheckoutHeader from '@/components/layout/CheckoutHeader';
 import { Container } from '@/components/ui/Container';
 
-export default async function CheckoutLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function CheckoutLayout({ children }: { children: React.ReactNode }) {
   const store = await serverApi.store.get();
 
   return (
