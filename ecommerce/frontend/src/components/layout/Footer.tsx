@@ -2,6 +2,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import ThemeToggle from './ThemeToggle';
+import Newsletter from '@/components/home/Newsletter';
 import type { Category, StoreConfig } from '@/lib/api/types';
 
 export default function Footer({
@@ -20,7 +21,7 @@ export default function Footer({
               {store.name}
             </span>
             <p className="text-body text-fg-muted max-w-sm">{store.tagline}</p>
-            <div id="newsletter-slot" className="pt-2" />
+            <Newsletter variant="footer" className="pt-2" />
           </div>
 
           <div className="space-y-4">
