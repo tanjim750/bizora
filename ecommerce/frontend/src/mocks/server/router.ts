@@ -1,5 +1,9 @@
 import { apiError, type MockRequest, type MockResponse } from './http';
 import * as catalog from './catalog';
+import * as cart from './cart';
+import * as auth from './auth';
+import * as checkout from './checkout';
+import * as orders from './orders';
 
 export async function handleMockRequest(req: MockRequest): Promise<MockResponse> {
   try {
@@ -25,7 +29,7 @@ export async function handleMockRequest(req: MockRequest): Promise<MockResponse>
 
     const method = req.method.toUpperCase();
 
-    // Routes
+    // Catalog & Content
     if (method === 'GET' && cleanPath === '/store') {
       return catalog.getStore();
     }
@@ -60,6 +64,67 @@ export async function handleMockRequest(req: MockRequest): Promise<MockResponse>
 
     if (method === 'GET' && cleanPath === '/search/suggest') {
       return catalog.suggest(req.query?.q);
+    }
+
+    // Cart
+    if (method === 'GET' && cleanPath === '/cart') {
+      return cart.getCart(req);
+    }
+
+    if (method === 'POST' && cleanPath === '/cart/items') {
+      return cart.addItem(req);
+    }
+
+    if (method === 'PATCH' && cleanPath.startsWith('/cart/items/')) {
+      const lineId = cleanPath.slice('/cart/items/'.length);
+      if (lineId && !lineId.includes('/')) {
+        return cart.updateLine(req, lineId);
+      }
+    }
+
+    if (method === 'DELETE' && cleanPath.startsWith('/cart/items/')) {
+      const lineId = cleanPath.slice('/cart/items/'.length);
+      if (lineId && !lineId.includes('/')) {
+        return cart.removeLine(req, lineId);
+      }
+    }
+
+    // Auth
+    if (method === 'POST' && cleanPath === '/auth/register') {
+      return auth.register(req);
+    }
+
+    if (method === 'POST' && cleanPath === '/auth/sign-in') {
+      return auth.signIn(req);
+    }
+
+    if (method === 'POST' && cleanPath === '/auth/sign-out') {
+      return auth.signOut(req);
+    }
+
+    if (method === 'GET' && cleanPath === '/auth/me') {
+      return auth.me(req);
+    }
+
+    // Checkout
+    if (method === 'GET' && cleanPath === '/checkout/quote') {
+      return checkout.getQuote(req);
+    }
+
+    if (method === 'POST' && cleanPath === '/checkout') {
+      return checkout.placeOrder(req);
+    }
+
+    // Orders
+    if (method === 'GET' && cleanPath === '/orders') {
+      return orders.listOrders(req);
+    }
+
+    if (method === 'GET' && cleanPath.startsWith('/orders/')) {
+      const number = cleanPath.slice('/orders/'.length);
+      if (number && !number.includes('/')) {
+        return orders.getOrder(req, number);
+      }
     }
 
     return apiError(404, 'NOT_FOUND', 'Route not found.');
