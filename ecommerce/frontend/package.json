@@ -1,0 +1,58 @@
+{
+  "name": "aurelo-storefront",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:e2e": "playwright test",
+    "images:placeholder": "node scripts/make-placeholder-images.mjs",
+    "contract:check": "vitest run --config vitest.contract.config.ts"
+  },
+  "dependencies": {
+    "@gsap/react": "2.1.2",
+    "clsx": "2.1.1",
+    "gsap": "3.15.1",
+    "lucide-react": "1.80.0",
+    "motion": "14.14.0",
+    "next": "16.4.6",
+    "next-themes": "0.4.6",
+    "radix-ui": "1.8.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "tailwind-merge": "3.7.1",
+    "zod": "4.6.7",
+    "zustand": "5.1.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.1",
+    "@playwright/test": "1.65.1",
+    "@tailwindcss/postcss": "4.3.5",
+    "@testing-library/jest-dom": "8.0.0",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.13",
+    "@types/node": "22.20.7",
+    "@types/react": "19.3.3",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "eslint": "10.15.0",
+    "eslint-config-next": "16.4.6",
+    "jsdom": "31.0.1",
+    "prettier": "3.10.1",
+    "tailwindcss": "4.3.5",
+    "typescript": "5.9.3",
+    "vitest": "5.1.2"
+  }
+}
