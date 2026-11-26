@@ -38,26 +38,49 @@ import type {
   Transport,
 } from './types';
 
+function parseAndThrowError(status: number, body: unknown): never {
+  const errorParsed = ErrorEnvelopeSchema.safeParse(body);
+  if (errorParsed.success) {
+    const err = errorParsed.data.error;
+    throw new ApiError(status, err.code, err.message, err.fields, err.details, err.requestId);
+  }
+  throw new ApiError(
+    status,
+    'UNKNOWN',
+    typeof body === 'string' && body.trim() ? body : 'Unexpected error response',
+  );
+}
+
+function serializeProductListQuery(
+  query: ProductListQuery = {},
+): Record<string, string | string[] | undefined> {
+  const result: Record<string, string | string[] | undefined> = {};
+  if (query.q !== undefined) result.q = query.q;
+  if (query.category !== undefined) result.category = query.category;
+  if (query.collection !== undefined) result.collection = query.collection;
+  if (query.color !== undefined) result.color = query.color;
+  if (query.size !== undefined) result.size = query.size;
+  if (query.minPrice !== undefined) result.minPrice = String(query.minPrice);
+  if (query.maxPrice !== undefined) result.maxPrice = String(query.maxPrice);
+  if (query.inStock === true) result.inStock = 'true';
+  if (query.sort !== undefined) result.sort = query.sort;
+  if (query.page !== undefined) result.page = String(query.page);
+  if (query.pageSize !== undefined) result.pageSize = String(query.pageSize);
+  return result;
+}
+
 async function request<T>(transport: Transport, req: ApiRequest, schema: z.ZodType<T>): Promise<T> {
   const res = await transport(req);
 
   if (res.status < 200 || res.status >= 300) {
-    const errorParsed = ErrorEnvelopeSchema.safeParse(res.body);
-    if (errorParsed.success) {
-      const err = errorParsed.data.error;
-      throw new ApiError(res.status, err.code, err.message, err.fields, err.details, err.requestId);
-    }
-    throw new ApiError(
-      res.status,
-      'UNKNOWN',
-      typeof res.body === 'string' && res.body ? res.body : 'Unexpected error response',
-    );
+    parseAndThrowError(res.status, res.body);
   }
 
   const parsed = schema.safeParse(res.body);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];
-    const pathStr = firstIssue ? firstIssue.path.join('.') : 'root';
+    const pathStr =
+      firstIssue?.path && firstIssue.path.length > 0 ? firstIssue.path.join('.') : 'root';
     const msg = firstIssue ? firstIssue.message : 'Validation failed';
     throw new ApiError(502, 'CONTRACT_MISMATCH', `${pathStr}: ${msg}`);
   }
@@ -68,12 +91,7 @@ async function request<T>(transport: Transport, req: ApiRequest, schema: z.ZodTy
 async function requestNoContent(transport: Transport, req: ApiRequest): Promise<void> {
   const res = await transport(req);
   if (res.status < 200 || res.status >= 300) {
-    const errorParsed = ErrorEnvelopeSchema.safeParse(res.body);
-    if (errorParsed.success) {
-      const err = errorParsed.data.error;
-      throw new ApiError(res.status, err.code, err.message, err.fields, err.details, err.requestId);
-    }
-    throw new ApiError(res.status, 'UNKNOWN', 'Unexpected error response');
+    parseAndThrowError(res.status, res.body);
   }
 }
 
@@ -114,7 +132,7 @@ export function createApi(transport: Transport) {
           {
             method: 'GET',
             path: '/products',
-            query: query as Record<string, string | string[] | undefined>,
+            query: serializeProductListQuery(query),
           },
           ProductListSchema,
         ),

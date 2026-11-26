@@ -56,23 +56,22 @@ export function createHttpTransport(
     }
 
     let res: Response;
+    let text = '';
     try {
       res = await fetch(url, init);
+      if (res.status !== 204) {
+        text = await res.text();
+      }
     } catch {
       throw new ApiError(0, 'NETWORK_ERROR', 'Network request failed');
     }
 
     let body: unknown = null;
-    if (res.status === 204) {
-      body = null;
-    } else {
-      const text = await res.text();
-      if (text) {
-        try {
-          body = JSON.parse(text);
-        } catch {
-          body = null;
-        }
+    if (res.status !== 204 && text) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = text;
       }
     }
 

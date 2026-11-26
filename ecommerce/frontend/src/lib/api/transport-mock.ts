@@ -16,10 +16,22 @@ export const mockTransport: Transport = async function mockTransport(
     headers['content-type'] = 'application/json';
   }
 
+  const query: Record<string, string | string[]> = {};
+  if (req.query) {
+    for (const [k, v] of Object.entries(req.query)) {
+      if (v === undefined) continue;
+      if (Array.isArray(v)) {
+        query[k] = v.map((item) => String(item));
+      } else {
+        query[k] = String(v);
+      }
+    }
+  }
+
   const mockRes = await handleMockRequest({
     method: req.method,
     path: req.path,
-    query: req.query,
+    query,
     body: req.body,
     headers,
     cookies: {},
