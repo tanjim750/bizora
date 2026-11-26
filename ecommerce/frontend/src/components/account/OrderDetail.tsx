@@ -82,9 +82,7 @@ export default function OrderDetail({ orderNumber }: { orderNumber: string }) {
   if (errorStatus === 404) {
     return (
       <Container className="py-12 max-w-4xl mx-auto space-y-4 text-center">
-        <h1 className="font-display text-display-md text-fg">
-          We couldn&apos;t find this order.
-        </h1>
+        <h1 className="font-display text-display-md text-fg">We couldn&apos;t find this order.</h1>
         <div>
           <Button asChild variant="secondary">
             <Link href="/account">All orders</Link>
@@ -130,9 +128,7 @@ export default function OrderDetail({ orderNumber }: { orderNumber: string }) {
           <h1 className="font-display text-display-md text-fg">Order {order.number}</h1>
           <div className="flex items-center gap-3">
             <StatusBadge status={order.status} />
-            <span className="text-body-sm text-fg-muted">
-              {PAYMENT_LABEL[order.paymentStatus]}
-            </span>
+            <span className="text-body-sm text-fg-muted">{PAYMENT_LABEL[order.paymentStatus]}</span>
           </div>
         </div>
         <p className="text-body text-fg-muted">Placed on {formatDate(order.placedAt)}</p>

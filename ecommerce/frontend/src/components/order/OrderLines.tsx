@@ -18,10 +18,7 @@ export default function OrderLines({ lines }: { lines: OrderLine[] }) {
               className="w-16 h-20 object-cover rounded-sm bg-surface-2 shrink-0"
             />
           ) : (
-            <div
-              className="w-16 h-20 rounded-sm bg-surface-2 shrink-0"
-              aria-hidden="true"
-            />
+            <div className="w-16 h-20 rounded-sm bg-surface-2 shrink-0" aria-hidden="true" />
           )}
           <div className="flex-1 min-w-0">
             <Link

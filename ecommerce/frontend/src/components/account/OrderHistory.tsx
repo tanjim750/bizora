@@ -127,9 +127,7 @@ export default function OrderHistory() {
                         </div>
                       )}
                       <div className="text-right">
-                        <p className="font-medium text-body text-fg">
-                          {formatMoney(order.total)}
-                        </p>
+                        <p className="font-medium text-body text-fg">{formatMoney(order.total)}</p>
                         <p className="text-body-sm text-fg-muted">
                           {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
                         </p>
@@ -143,11 +141,7 @@ export default function OrderHistory() {
 
           {page < totalPages && (
             <div className="mt-8 text-center">
-              <Button
-                variant="secondary"
-                onClick={handleLoadMore}
-                loading={loadingMore}
-              >
+              <Button variant="secondary" onClick={handleLoadMore} loading={loadingMore}>
                 Load more
               </Button>
             </div>

@@ -109,7 +109,10 @@ describe('SF-30 Order detail page', () => {
     const currentStep = within(progressList).getByText('Shipped').closest('[aria-current="step"]');
     expect(currentStep).not.toBeNull();
 
-    const deliveryMethodHeading = screen.getByRole('heading', { level: 2, name: 'Delivery method' });
+    const deliveryMethodHeading = screen.getByRole('heading', {
+      level: 2,
+      name: 'Delivery method',
+    });
     const deliveryMethodSection = deliveryMethodHeading.parentElement!;
     expect(within(deliveryMethodSection).getByText('Free')).toBeInTheDocument();
 

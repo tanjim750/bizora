@@ -36,9 +36,7 @@ export default function AccountView() {
       {/* Profile Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-8 border-b border-border">
         <div>
-          <h1 className="font-display text-display-lg text-fg">
-            Hello, {user.firstName}
-          </h1>
+          <h1 className="font-display text-display-lg text-fg">Hello, {user.firstName}</h1>
           <div className="mt-2 text-body text-fg-muted space-y-1">
             <p className="font-medium text-fg">
               {user.firstName} {user.lastName}
@@ -49,11 +47,7 @@ export default function AccountView() {
         </div>
 
         <div>
-          <Button
-            variant="secondary"
-            onClick={handleSignOut}
-            loading={signingOut}
-          >
+          <Button variant="secondary" onClick={handleSignOut} loading={signingOut}>
             Sign out
           </Button>
         </div>
