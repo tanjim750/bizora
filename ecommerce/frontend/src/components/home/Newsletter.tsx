@@ -83,7 +83,7 @@ export default function Newsletter({ variant, className }: NewsletterProps) {
             variant === 'band' ? 'text-body-lg' : 'text-body',
           )}
         >
-          Thanks — you're on the list.
+          Thanks — you&apos;re on the list.
         </motion.p>
       ) : (
         <form noValidate onSubmit={handleSubmit} className="mt-6 text-left">
@@ -122,10 +122,7 @@ export default function Newsletter({ variant, className }: NewsletterProps) {
             <Button
               type="submit"
               loading={loading}
-              className={cn(
-                'shrink-0',
-                variant === 'band' ? 'mt-0 sm:mt-7.5 h-12' : 'w-full h-11',
-              )}
+              className={cn('shrink-0', variant === 'band' ? 'mt-0 sm:mt-7.5 h-12' : 'w-full h-11')}
             >
               Subscribe
             </Button>

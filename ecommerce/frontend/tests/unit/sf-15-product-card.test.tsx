@@ -8,7 +8,8 @@ import ProductCardSkeleton from '@/components/product/ProductCardSkeleton';
 import ProductGrid from '@/components/product/ProductGrid';
 import type { Product } from '@/lib/api/types';
 
-const allProducts = ((productsFixture as { items?: Product[] }).items ?? productsFixture) as Product[];
+const allProducts = ((productsFixture as { items?: Product[] }).items ??
+  productsFixture) as Product[];
 const tideDinnerPlates = toSummary(allProducts.find((p) => p.slug === 'tide-dinner-plates')!);
 const emberTeapot = toSummary(allProducts.find((p) => p.slug === 'ember-teapot')!);
 const wickCandleTrio = toSummary(allProducts.find((p) => p.slug === 'wick-candle-trio')!);

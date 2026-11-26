@@ -21,7 +21,9 @@ export default function Footer({
               {store.name}
             </span>
             <p className="text-body text-fg-muted max-w-sm">{store.tagline}</p>
-            <Newsletter variant="footer" className="pt-2" />
+            <div id="newsletter-slot" className="pt-2">
+              <Newsletter variant="footer" />
+            </div>
           </div>
 
           <div className="space-y-4">

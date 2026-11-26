@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/refs */
 
 import * as React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -33,6 +34,9 @@ export default function ProductGrid({
       ? 'grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-4'
       : 'grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-3 2xl:grid-cols-4';
 
+  // First mount flag for Motion stagger
+  const firstMount = isFirstMount.current;
+
   return (
     <ul className={cn('grid', gridColsClass, className)}>
       <AnimatePresence mode="popLayout">
@@ -51,12 +55,12 @@ export default function ProductGrid({
             <motion.li
               key={product.id}
               layout={animateLayout ? 'position' : undefined}
-              initial={isFirstMount.current ? { opacity: 0, y: distance.reveal } : false}
+              initial={firstMount ? { opacity: 0, y: distance.reveal } : false}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{
                 ...spring.soft,
-                delay: isFirstMount.current ? staggerDelay(index) : 0,
+                delay: firstMount ? staggerDelay(index) : 0,
               }}
             >
               <ProductCard product={product} priority={priority} />

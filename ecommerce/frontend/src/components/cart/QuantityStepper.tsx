@@ -26,11 +26,13 @@ export default function QuantityStepper({
   size = 'md',
   className,
 }: QuantityStepperProps) {
+  const [prevValue, setPrevValue] = React.useState(value);
   const [localValue, setLocalValue] = React.useState(String(value));
 
-  React.useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     setLocalValue(String(value));
-  }, [value]);
+  }
 
   const commitValue = (valStr: string) => {
     const parsed = parseInt(valStr, 10);

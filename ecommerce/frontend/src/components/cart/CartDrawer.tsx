@@ -94,7 +94,7 @@ export default function CartDrawer({ freeShippingThreshold }: CartDrawerProps) {
 
                   {status === 'error' && (
                     <div className="text-center py-12 space-y-4">
-                      <p className="text-body text-fg-muted">We couldn't load your cart.</p>
+                      <p className="text-body text-fg-muted">We couldn&apos;t load your cart.</p>
                       <Button variant="secondary" onClick={() => void hydrate()}>
                         Try again
                       </Button>
