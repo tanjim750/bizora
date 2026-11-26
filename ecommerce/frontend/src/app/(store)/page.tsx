@@ -1,12 +1,9 @@
-import ThemeToggle from '@/components/layout/ThemeToggle';
+import { Container } from '@/components/ui/Container';
 
 export default function HomePage() {
   return (
-    <main id="main" className="p-8">
-      <div className="flex items-center gap-4">
-        <h1 className="text-display-md">Aurelo</h1>
-        <ThemeToggle />
-      </div>
-    </main>
+    <Container className="py-12">
+      <h1 className="font-display text-display-lg">Aurelo</h1>
+    </Container>
   );
 }
