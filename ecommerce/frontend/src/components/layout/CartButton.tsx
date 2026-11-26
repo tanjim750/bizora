@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/stores/cart-store';
+import RollingNumber from '@/components/motion/RollingNumber';
 
 export default function CartButton() {
   const cart = useCartStore((s) => s.cart);
@@ -13,6 +14,7 @@ export default function CartButton() {
   return (
     <button
       id="header-cart-button"
+      data-cart-target
       type="button"
       aria-label={label}
       onClick={openDrawer}
@@ -21,7 +23,7 @@ export default function CartButton() {
       <ShoppingBag size={20} strokeWidth={1.5} aria-hidden="true" />
       {count > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex min-w-5 h-5 px-1 items-center justify-center rounded-pill bg-accent text-accent-fg text-caption font-semibold leading-none">
-          {count}
+          <RollingNumber value={count} />
         </span>
       )}
     </button>
