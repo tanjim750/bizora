@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": "cus_001",
+      "email": "demo@aurelo.test",
+      "firstName": "Nadia",
+      "lastName": "Rahman",
+      "createdAt": "2026-03-14T10:00:00Z",
+      "password": "demo-pass-123"
+    }
+  ]
+}

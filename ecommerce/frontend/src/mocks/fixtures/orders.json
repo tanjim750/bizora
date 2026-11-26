@@ -1,0 +1,267 @@
+{
+  "items": [
+    {
+      "id": "ord_0101",
+      "number": "AUR-100101",
+      "customerId": "cus_001",
+      "confirmationToken": "tok_demo_0101",
+      "status": "delivered",
+      "paymentStatus": "paid",
+      "placedAt": "2026-08-02T11:20:00Z",
+      "email": "demo@aurelo.test",
+      "phone": "+8801712345678",
+      "shippingAddress": {
+        "firstName": "Nadia",
+        "lastName": "Rahman",
+        "line1": "House 12, Road 5",
+        "line2": null,
+        "city": "Dhaka",
+        "postalCode": "1209",
+        "countryCode": "BD"
+      },
+      "shippingMethod": {
+        "id": "standard",
+        "label": "Standard delivery",
+        "price": {
+          "amount": 8000,
+          "currency": "BDT"
+        }
+      },
+      "paymentMethod": {
+        "id": "cod",
+        "label": "Cash on delivery"
+      },
+      "lines": [
+        {
+          "id": "oline_0101_1",
+          "productSlug": "ondo-stoneware-mug",
+          "productName": "Ondo Stoneware Mug",
+          "variantTitle": "Sand",
+          "sku": "AUR-001-SAN",
+          "image": {
+            "url": "/mock/products/ondo-stoneware-mug-1.jpg",
+            "alt": "Ondo Stoneware Mug in Sand, front view",
+            "width": 1600,
+            "height": 2000
+          },
+          "unitPrice": {
+            "amount": 145000,
+            "currency": "BDT"
+          },
+          "quantity": 2,
+          "lineTotal": {
+            "amount": 290000,
+            "currency": "BDT"
+          }
+        },
+        {
+          "id": "oline_0101_2",
+          "productSlug": "field-notebook",
+          "productName": "Field Notebook",
+          "variantTitle": "Moss",
+          "sku": "AUR-016-MOS",
+          "image": {
+            "url": "/mock/products/field-notebook-1.jpg",
+            "alt": "Field Notebook in Moss, front view",
+            "width": 1600,
+            "height": 2000
+          },
+          "unitPrice": {
+            "amount": 95000,
+            "currency": "BDT"
+          },
+          "quantity": 1,
+          "lineTotal": {
+            "amount": 95000,
+            "currency": "BDT"
+          }
+        }
+      ],
+      "subtotal": {
+        "amount": 385000,
+        "currency": "BDT"
+      },
+      "shipping": {
+        "amount": 8000,
+        "currency": "BDT"
+      },
+      "tax": {
+        "amount": 19650,
+        "currency": "BDT"
+      },
+      "total": {
+        "amount": 412650,
+        "currency": "BDT"
+      },
+      "note": null
+    },
+    {
+      "id": "ord_0117",
+      "number": "AUR-100117",
+      "customerId": "cus_001",
+      "confirmationToken": "tok_demo_0117",
+      "status": "shipped",
+      "paymentStatus": "pending",
+      "placedAt": "2026-10-21T15:05:00Z",
+      "email": "demo@aurelo.test",
+      "phone": "+8801712345678",
+      "shippingAddress": {
+        "firstName": "Nadia",
+        "lastName": "Rahman",
+        "line1": "House 12, Road 5",
+        "line2": null,
+        "city": "Dhaka",
+        "postalCode": "1209",
+        "countryCode": "BD"
+      },
+      "shippingMethod": {
+        "id": "standard",
+        "label": "Standard delivery",
+        "price": {
+          "amount": 0,
+          "currency": "BDT"
+        }
+      },
+      "paymentMethod": {
+        "id": "cod",
+        "label": "Cash on delivery"
+      },
+      "lines": [
+        {
+          "id": "oline_0117_1",
+          "productSlug": "drift-linen-throw",
+          "productName": "Drift Linen Throw",
+          "variantTitle": "Oat",
+          "sku": "AUR-006-OAT",
+          "image": {
+            "url": "/mock/products/drift-linen-throw-1.jpg",
+            "alt": "Drift Linen Throw in Oat, front view",
+            "width": 1600,
+            "height": 2000
+          },
+          "unitPrice": {
+            "amount": 680000,
+            "currency": "BDT"
+          },
+          "quantity": 1,
+          "lineTotal": {
+            "amount": 680000,
+            "currency": "BDT"
+          }
+        }
+      ],
+      "subtotal": {
+        "amount": 680000,
+        "currency": "BDT"
+      },
+      "shipping": {
+        "amount": 0,
+        "currency": "BDT"
+      },
+      "tax": {
+        "amount": 34000,
+        "currency": "BDT"
+      },
+      "total": {
+        "amount": 714000,
+        "currency": "BDT"
+      },
+      "note": null
+    },
+    {
+      "id": "ord_0142",
+      "number": "AUR-100142",
+      "customerId": "cus_001",
+      "confirmationToken": "tok_demo_0142",
+      "status": "processing",
+      "paymentStatus": "pending",
+      "placedAt": "2026-11-20T09:40:00Z",
+      "email": "demo@aurelo.test",
+      "phone": "+8801712345678",
+      "shippingAddress": {
+        "firstName": "Nadia",
+        "lastName": "Rahman",
+        "line1": "House 12, Road 5",
+        "line2": null,
+        "city": "Dhaka",
+        "postalCode": "1209",
+        "countryCode": "BD"
+      },
+      "shippingMethod": {
+        "id": "express",
+        "label": "Express delivery",
+        "price": {
+          "amount": 15000,
+          "currency": "BDT"
+        }
+      },
+      "paymentMethod": {
+        "id": "cod",
+        "label": "Cash on delivery"
+      },
+      "lines": [
+        {
+          "id": "oline_0142_1",
+          "productSlug": "arc-table-lamp",
+          "productName": "Arc Table Lamp",
+          "variantTitle": "Brass",
+          "sku": "AUR-011-BRA",
+          "image": {
+            "url": "/mock/products/arc-table-lamp-1.jpg",
+            "alt": "Arc Table Lamp in Brass, front view",
+            "width": 1600,
+            "height": 2000
+          },
+          "unitPrice": {
+            "amount": 1250000,
+            "currency": "BDT"
+          },
+          "quantity": 1,
+          "lineTotal": {
+            "amount": 1250000,
+            "currency": "BDT"
+          }
+        },
+        {
+          "id": "oline_0142_2",
+          "productSlug": "wick-candle-trio",
+          "productName": "Wick Candle Trio",
+          "variantTitle": "Fig",
+          "sku": "AUR-013-FIG",
+          "image": {
+            "url": "/mock/products/wick-candle-trio-1.jpg",
+            "alt": "Wick Candle Trio, front view",
+            "width": 1600,
+            "height": 2000
+          },
+          "unitPrice": {
+            "amount": 220000,
+            "currency": "BDT"
+          },
+          "quantity": 2,
+          "lineTotal": {
+            "amount": 440000,
+            "currency": "BDT"
+          }
+        }
+      ],
+      "subtotal": {
+        "amount": 1690000,
+        "currency": "BDT"
+      },
+      "shipping": {
+        "amount": 15000,
+        "currency": "BDT"
+      },
+      "tax": {
+        "amount": 85250,
+        "currency": "BDT"
+      },
+      "total": {
+        "amount": 1790250,
+        "currency": "BDT"
+      },
+      "note": null
+    }
+  ]
+}

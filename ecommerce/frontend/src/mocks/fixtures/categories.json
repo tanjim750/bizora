@@ -1,0 +1,69 @@
+{
+  "items": [
+    {
+      "id": "cat_ceramics",
+      "slug": "ceramics",
+      "name": "Ceramics",
+      "description": "Hand-thrown stoneware for the table.",
+      "image": {
+        "url": "/mock/products/ondo-stoneware-mug-1.jpg",
+        "alt": "Ondo Stoneware Mug in Sand, front view",
+        "width": 1600,
+        "height": 2000
+      },
+      "productCount": 5
+    },
+    {
+      "id": "cat_linen",
+      "slug": "linen",
+      "name": "Linen & Textiles",
+      "description": "Stonewashed linen that softens with every wash.",
+      "image": {
+        "url": "/mock/products/drift-linen-throw-1.jpg",
+        "alt": "Drift Linen Throw in Oat, front view",
+        "width": 1600,
+        "height": 2000
+      },
+      "productCount": 5
+    },
+    {
+      "id": "cat_lighting",
+      "slug": "lighting",
+      "name": "Lighting",
+      "description": "Warm light for slow evenings.",
+      "image": {
+        "url": "/mock/products/arc-table-lamp-1.jpg",
+        "alt": "Arc Table Lamp in Brass, front view",
+        "width": 1600,
+        "height": 2000
+      },
+      "productCount": 5
+    },
+    {
+      "id": "cat_stationery",
+      "slug": "stationery",
+      "name": "Paper & Desk",
+      "description": "Notebooks and tools for the desk.",
+      "image": {
+        "url": "/mock/products/field-notebook-1.jpg",
+        "alt": "Field Notebook in Moss, front view",
+        "width": 1600,
+        "height": 2000
+      },
+      "productCount": 4
+    },
+    {
+      "id": "cat_bags",
+      "slug": "bags",
+      "name": "Bags & Carry",
+      "description": "Canvas and leather made to be used daily.",
+      "image": {
+        "url": "/mock/products/market-tote-1.jpg",
+        "alt": "Market Tote in Oat, front view",
+        "width": 1600,
+        "height": 2000
+      },
+      "productCount": 5
+    }
+  ]
+}

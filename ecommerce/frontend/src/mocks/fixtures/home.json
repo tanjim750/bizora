@@ -1,0 +1,58 @@
+{
+  "hero": {
+    "eyebrow": "Autumn edit 2026",
+    "headline": "Made slowly. Kept for years.",
+    "subheadline": "Ceramics, linen and light from small workshops, chosen to be used every day.",
+    "image": {
+      "url": "/mock/editorial/hero.jpg",
+      "alt": "Stoneware mugs and a linen throw on an oak table in morning light",
+      "width": 2400,
+      "height": 1600
+    },
+    "cta": {
+      "label": "Shop the collection",
+      "href": "/shop"
+    }
+  },
+  "featuredCategorySlugs": ["ceramics", "linen", "lighting", "bags"],
+  "editorial": {
+    "eyebrow": "From the workshop",
+    "headline": "Every Ondo mug starts as 400 grams of clay",
+    "body": [
+      "Each piece is thrown, trimmed and glazed by hand, so no two are quite the same.",
+      "Small differences in colour and form are part of the object, not a flaw."
+    ],
+    "image": {
+      "url": "/mock/editorial/workshop.jpg",
+      "alt": "Hands shaping a mug on a potter's wheel",
+      "width": 1600,
+      "height": 2000
+    },
+    "cta": {
+      "label": "Shop ceramics",
+      "href": "/shop?category=ceramics"
+    }
+  },
+  "values": [
+    {
+      "icon": "truck",
+      "title": "Delivery across Bangladesh",
+      "body": "Standard in 3–5 days, express in 1–2."
+    },
+    {
+      "icon": "leaf",
+      "title": "Made by small workshops",
+      "body": "Natural materials, made in small batches."
+    },
+    {
+      "icon": "refresh",
+      "title": "Easy returns",
+      "body": "Changed your mind? Return unused items within 14 days."
+    },
+    {
+      "icon": "shield",
+      "title": "Cash on delivery",
+      "body": "Pay when your order arrives."
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "name": "Aurelo",
+  "tagline": "Objects for slow living",
+  "currency": "BDT",
+  "locale": "en-BD",
+  "supportEmail": "help@aurelo.test",
+  "taxRateBps": 500,
+  "taxLabel": "VAT",
+  "maxQuantityPerLine": 10,
+  "freeShippingThreshold": {
+    "amount": 500000,
+    "currency": "BDT"
+  },
+  "shippingMethods": [
+    {
+      "id": "standard",
+      "label": "Standard delivery",
+      "description": "3–5 working days",
+      "price": {
+        "amount": 8000,
+        "currency": "BDT"
+      },
+      "freeOverThreshold": true,
+      "estimatedDays": {
+        "min": 3,
+        "max": 5
+      }
+    },
+    {
+      "id": "express",
+      "label": "Express delivery",
+      "description": "1–2 working days",
+      "price": {
+        "amount": 15000,
+        "currency": "BDT"
+      },
+      "freeOverThreshold": false,
+      "estimatedDays": {
+        "min": 1,
+        "max": 2
+      }
+    }
+  ],
+  "paymentMethods": [
+    {
+      "id": "cod",
+      "label": "Cash on delivery",
+      "description": "Pay when your order arrives.",
+      "enabled": true
+    },
+    {
+      "id": "card",
+      "label": "Card payment",
+      "description": "Coming soon.",
+      "enabled": false
+    }
+  ],
+  "countries": [
+    {
+      "code": "BD",
+      "name": "Bangladesh"
+    }
+  ]
+}

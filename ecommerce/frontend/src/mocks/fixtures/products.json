@@ -1,0 +1,3039 @@
+{
+  "items": [
+    {
+      "id": "prod_001",
+      "slug": "ondo-stoneware-mug",
+      "name": "Ondo Stoneware Mug",
+      "subtitle": "Hand-thrown, 350 ml",
+      "category": {
+        "slug": "ceramics",
+        "name": "Ceramics"
+      },
+      "price": {
+        "amount": 145000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/ondo-stoneware-mug-1.jpg",
+          "alt": "Ondo Stoneware Mug in Sand, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/ondo-stoneware-mug-2.jpg",
+          "alt": "Ondo Stoneware Mug, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/ondo-stoneware-mug-3.jpg",
+          "alt": "Ondo Stoneware Mug in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["bestseller"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Sand",
+          "swatch": "#D8C8B0"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        },
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        }
+      ],
+      "description": [
+        "Hand-thrown, 350 ml. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Ceramics"
+        },
+        {
+          "label": "Care",
+          "value": "Dishwasher safe. Avoid sudden temperature changes."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Sand",
+              "swatch": "#D8C8B0"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            },
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_ondo-stoneware-mug_sand",
+          "sku": "AUR-001-SAN",
+          "title": "Sand",
+          "options": {
+            "Color": "Sand"
+          },
+          "price": {
+            "amount": 145000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_ondo-stoneware-mug_ink",
+          "sku": "AUR-001-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 145000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_ondo-stoneware-mug_moss",
+          "sku": "AUR-001-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 145000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_ondo-stoneware-mug_sand",
+      "createdAt": "2026-06-01T09:00:00Z"
+    },
+    {
+      "id": "prod_002",
+      "slug": "kiln-serving-bowl",
+      "name": "Kiln Serving Bowl",
+      "subtitle": "Speckled glaze, 24 cm",
+      "category": {
+        "slug": "ceramics",
+        "name": "Ceramics"
+      },
+      "price": {
+        "amount": 320000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/kiln-serving-bowl-1.jpg",
+          "alt": "Kiln Serving Bowl in Sand, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/kiln-serving-bowl-2.jpg",
+          "alt": "Kiln Serving Bowl, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/kiln-serving-bowl-3.jpg",
+          "alt": "Kiln Serving Bowl in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["new"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Sand",
+          "swatch": "#D8C8B0"
+        },
+        {
+          "label": "Ash",
+          "swatch": "#B9B4AC"
+        }
+      ],
+      "description": [
+        "Speckled glaze, 24 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Ceramics"
+        },
+        {
+          "label": "Care",
+          "value": "Dishwasher safe. Avoid sudden temperature changes."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Sand",
+              "swatch": "#D8C8B0"
+            },
+            {
+              "label": "Ash",
+              "swatch": "#B9B4AC"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_kiln-serving-bowl_sand",
+          "sku": "AUR-002-SAN",
+          "title": "Sand",
+          "options": {
+            "Color": "Sand"
+          },
+          "price": {
+            "amount": 320000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_kiln-serving-bowl_ash",
+          "sku": "AUR-002-ASH",
+          "title": "Ash",
+          "options": {
+            "Color": "Ash"
+          },
+          "price": {
+            "amount": 320000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_kiln-serving-bowl_sand",
+      "createdAt": "2026-11-01T09:00:00Z"
+    },
+    {
+      "id": "prod_003",
+      "slug": "tide-dinner-plates",
+      "name": "Tide Dinner Plates",
+      "subtitle": "Set of four, 27 cm",
+      "category": {
+        "slug": "ceramics",
+        "name": "Ceramics"
+      },
+      "price": {
+        "amount": 540000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": {
+        "amount": 620000,
+        "currency": "BDT"
+      },
+      "images": [
+        {
+          "url": "/mock/products/tide-dinner-plates-1.jpg",
+          "alt": "Tide Dinner Plates in Ash, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/tide-dinner-plates-2.jpg",
+          "alt": "Tide Dinner Plates, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/tide-dinner-plates-3.jpg",
+          "alt": "Tide Dinner Plates in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["sale"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Ash",
+          "swatch": "#B9B4AC"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Set of four, 27 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Ceramics"
+        },
+        {
+          "label": "Care",
+          "value": "Dishwasher safe. Avoid sudden temperature changes."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Ash",
+              "swatch": "#B9B4AC"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_tide-dinner-plates_ash",
+          "sku": "AUR-003-ASH",
+          "title": "Ash",
+          "options": {
+            "Color": "Ash"
+          },
+          "price": {
+            "amount": 540000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 620000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_tide-dinner-plates_ink",
+          "sku": "AUR-003-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 540000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 620000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_tide-dinner-plates_ash",
+      "createdAt": "2026-06-03T09:00:00Z"
+    },
+    {
+      "id": "prod_004",
+      "slug": "hollow-bud-vase",
+      "name": "Hollow Bud Vase",
+      "subtitle": "Matte, 18 cm",
+      "category": {
+        "slug": "ceramics",
+        "name": "Ceramics"
+      },
+      "price": {
+        "amount": 185000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/hollow-bud-vase-1.jpg",
+          "alt": "Hollow Bud Vase in Sand, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/hollow-bud-vase-2.jpg",
+          "alt": "Hollow Bud Vase, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/hollow-bud-vase-3.jpg",
+          "alt": "Hollow Bud Vase in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "low_stock",
+      "swatches": [
+        {
+          "label": "Sand",
+          "swatch": "#D8C8B0"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Matte, 18 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Ceramics"
+        },
+        {
+          "label": "Care",
+          "value": "Dishwasher safe. Avoid sudden temperature changes."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Sand",
+              "swatch": "#D8C8B0"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_hollow-bud-vase_sand",
+          "sku": "AUR-004-SAN",
+          "title": "Sand",
+          "options": {
+            "Color": "Sand"
+          },
+          "price": {
+            "amount": 185000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "low_stock",
+          "availableQuantity": 3
+        },
+        {
+          "id": "var_hollow-bud-vase_clay",
+          "sku": "AUR-004-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 185000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "low_stock",
+          "availableQuantity": 3
+        },
+        {
+          "id": "var_hollow-bud-vase_ink",
+          "sku": "AUR-004-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 185000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "low_stock",
+          "availableQuantity": 3
+        }
+      ],
+      "defaultVariantId": "var_hollow-bud-vase_sand",
+      "createdAt": "2026-06-04T09:00:00Z"
+    },
+    {
+      "id": "prod_005",
+      "slug": "ember-teapot",
+      "name": "Ember Teapot",
+      "subtitle": "Cast iron lid, 900 ml",
+      "category": {
+        "slug": "ceramics",
+        "name": "Ceramics"
+      },
+      "price": {
+        "amount": 460000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/ember-teapot-1.jpg",
+          "alt": "Ember Teapot in Ink, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/ember-teapot-2.jpg",
+          "alt": "Ember Teapot, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/ember-teapot-3.jpg",
+          "alt": "Ember Teapot in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "out_of_stock",
+      "swatches": [
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Cast iron lid, 900 ml. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Ceramics"
+        },
+        {
+          "label": "Care",
+          "value": "Dishwasher safe. Avoid sudden temperature changes."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_ember-teapot_ink",
+          "sku": "AUR-005-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 460000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "out_of_stock",
+          "availableQuantity": 0
+        }
+      ],
+      "defaultVariantId": "var_ember-teapot_ink",
+      "createdAt": "2026-06-05T09:00:00Z"
+    },
+    {
+      "id": "prod_006",
+      "slug": "drift-linen-throw",
+      "name": "Drift Linen Throw",
+      "subtitle": "Stonewashed, 130 × 180 cm",
+      "category": {
+        "slug": "linen",
+        "name": "Linen & Textiles"
+      },
+      "price": {
+        "amount": 680000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/drift-linen-throw-1.jpg",
+          "alt": "Drift Linen Throw in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/drift-linen-throw-2.jpg",
+          "alt": "Drift Linen Throw, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/drift-linen-throw-3.jpg",
+          "alt": "Drift Linen Throw in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["bestseller"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        }
+      ],
+      "description": [
+        "Stonewashed, 130 × 180 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Linen & Textiles"
+        },
+        {
+          "label": "Care",
+          "value": "Machine wash at 40 °C. Tumble dry low."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_drift-linen-throw_oat",
+          "sku": "AUR-006-OAT",
+          "title": "Oat",
+          "options": {
+            "Color": "Oat"
+          },
+          "price": {
+            "amount": 680000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_drift-linen-throw_moss",
+          "sku": "AUR-006-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 680000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_drift-linen-throw_clay",
+          "sku": "AUR-006-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 680000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_drift-linen-throw_oat",
+      "createdAt": "2026-06-06T09:00:00Z"
+    },
+    {
+      "id": "prod_007",
+      "slug": "meadow-napkins",
+      "name": "Meadow Napkins",
+      "subtitle": "Set of four",
+      "category": {
+        "slug": "linen",
+        "name": "Linen & Textiles"
+      },
+      "price": {
+        "amount": 190000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": {
+        "amount": 240000,
+        "currency": "BDT"
+      },
+      "images": [
+        {
+          "url": "/mock/products/meadow-napkins-1.jpg",
+          "alt": "Meadow Napkins in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/meadow-napkins-2.jpg",
+          "alt": "Meadow Napkins, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/meadow-napkins-3.jpg",
+          "alt": "Meadow Napkins in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["sale"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Sky",
+          "swatch": "#A9BFCB"
+        }
+      ],
+      "description": [
+        "Set of four. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Linen & Textiles"
+        },
+        {
+          "label": "Care",
+          "value": "Machine wash at 40 °C. Tumble dry low."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Sky",
+              "swatch": "#A9BFCB"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_meadow-napkins_oat",
+          "sku": "AUR-007-OAT",
+          "title": "Oat",
+          "options": {
+            "Color": "Oat"
+          },
+          "price": {
+            "amount": 190000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 240000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_meadow-napkins_sky",
+          "sku": "AUR-007-SKY",
+          "title": "Sky",
+          "options": {
+            "Color": "Sky"
+          },
+          "price": {
+            "amount": 190000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 240000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_meadow-napkins_oat",
+      "createdAt": "2026-06-07T09:00:00Z"
+    },
+    {
+      "id": "prod_008",
+      "slug": "still-bed-linen",
+      "name": "Still Bed Linen",
+      "subtitle": "Duvet cover",
+      "category": {
+        "slug": "linen",
+        "name": "Linen & Textiles"
+      },
+      "price": {
+        "amount": 980000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/still-bed-linen-1.jpg",
+          "alt": "Still Bed Linen in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/still-bed-linen-2.jpg",
+          "alt": "Still Bed Linen, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/still-bed-linen-3.jpg",
+          "alt": "Still Bed Linen in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["new"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Ash",
+          "swatch": "#B9B4AC"
+        }
+      ],
+      "description": [
+        "Duvet cover. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Linen & Textiles"
+        },
+        {
+          "label": "Care",
+          "value": "Machine wash at 40 °C. Tumble dry low."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Ash",
+              "swatch": "#B9B4AC"
+            }
+          ]
+        },
+        {
+          "name": "Size",
+          "values": [
+            {
+              "label": "Single",
+              "swatch": null
+            },
+            {
+              "label": "Double",
+              "swatch": null
+            },
+            {
+              "label": "King",
+              "swatch": null
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_still-bed-linen_oat_single",
+          "sku": "AUR-008-OAT-SIN",
+          "title": "Oat / Single",
+          "options": {
+            "Color": "Oat",
+            "Size": "Single"
+          },
+          "price": {
+            "amount": 980000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_still-bed-linen_oat_double",
+          "sku": "AUR-008-OAT-DOU",
+          "title": "Oat / Double",
+          "options": {
+            "Color": "Oat",
+            "Size": "Double"
+          },
+          "price": {
+            "amount": 1180000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_still-bed-linen_oat_king",
+          "sku": "AUR-008-OAT-KIN",
+          "title": "Oat / King",
+          "options": {
+            "Color": "Oat",
+            "Size": "King"
+          },
+          "price": {
+            "amount": 1380000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_still-bed-linen_ash_single",
+          "sku": "AUR-008-ASH-SIN",
+          "title": "Ash / Single",
+          "options": {
+            "Color": "Ash",
+            "Size": "Single"
+          },
+          "price": {
+            "amount": 980000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_still-bed-linen_ash_double",
+          "sku": "AUR-008-ASH-DOU",
+          "title": "Ash / Double",
+          "options": {
+            "Color": "Ash",
+            "Size": "Double"
+          },
+          "price": {
+            "amount": 1180000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_still-bed-linen_ash_king",
+          "sku": "AUR-008-ASH-KIN",
+          "title": "Ash / King",
+          "options": {
+            "Color": "Ash",
+            "Size": "King"
+          },
+          "price": {
+            "amount": 1380000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "out_of_stock",
+          "availableQuantity": 0
+        }
+      ],
+      "defaultVariantId": "var_still-bed-linen_oat_single",
+      "createdAt": "2026-11-02T09:00:00Z"
+    },
+    {
+      "id": "prod_009",
+      "slug": "harbor-apron",
+      "name": "Harbor Apron",
+      "subtitle": "Heavy linen, adjustable",
+      "category": {
+        "slug": "linen",
+        "name": "Linen & Textiles"
+      },
+      "price": {
+        "amount": 260000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/harbor-apron-1.jpg",
+          "alt": "Harbor Apron in Ink, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/harbor-apron-2.jpg",
+          "alt": "Harbor Apron, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/harbor-apron-3.jpg",
+          "alt": "Harbor Apron in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        }
+      ],
+      "description": [
+        "Heavy linen, adjustable. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Linen & Textiles"
+        },
+        {
+          "label": "Care",
+          "value": "Machine wash at 40 °C. Tumble dry low."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_harbor-apron_ink",
+          "sku": "AUR-009-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 260000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_harbor-apron_clay",
+          "sku": "AUR-009-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 260000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_harbor-apron_ink",
+      "createdAt": "2026-06-09T09:00:00Z"
+    },
+    {
+      "id": "prod_010",
+      "slug": "loom-cushion-cover",
+      "name": "Loom Cushion Cover",
+      "subtitle": "50 × 50 cm",
+      "category": {
+        "slug": "linen",
+        "name": "Linen & Textiles"
+      },
+      "price": {
+        "amount": 165000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/loom-cushion-cover-1.jpg",
+          "alt": "Loom Cushion Cover in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/loom-cushion-cover-2.jpg",
+          "alt": "Loom Cushion Cover, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/loom-cushion-cover-3.jpg",
+          "alt": "Loom Cushion Cover in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "50 × 50 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Linen & Textiles"
+        },
+        {
+          "label": "Care",
+          "value": "Machine wash at 40 °C. Tumble dry low."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_loom-cushion-cover_oat",
+          "sku": "AUR-010-OAT",
+          "title": "Oat",
+          "options": {
+            "Color": "Oat"
+          },
+          "price": {
+            "amount": 165000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_loom-cushion-cover_moss",
+          "sku": "AUR-010-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 165000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_loom-cushion-cover_clay",
+          "sku": "AUR-010-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 165000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_loom-cushion-cover_ink",
+          "sku": "AUR-010-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 165000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_loom-cushion-cover_oat",
+      "createdAt": "2026-06-10T09:00:00Z"
+    },
+    {
+      "id": "prod_011",
+      "slug": "arc-table-lamp",
+      "name": "Arc Table Lamp",
+      "subtitle": "Brass and linen shade",
+      "category": {
+        "slug": "lighting",
+        "name": "Lighting"
+      },
+      "price": {
+        "amount": 1250000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/arc-table-lamp-1.jpg",
+          "alt": "Arc Table Lamp in Brass, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/arc-table-lamp-2.jpg",
+          "alt": "Arc Table Lamp, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/arc-table-lamp-3.jpg",
+          "alt": "Arc Table Lamp in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["bestseller"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Brass",
+          "swatch": "#B08D57"
+        },
+        {
+          "label": "Black",
+          "swatch": "#1F1F1F"
+        }
+      ],
+      "description": [
+        "Brass and linen shade. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Lighting"
+        },
+        {
+          "label": "Care",
+          "value": "Dust with a dry cloth. Use bulbs up to 40 W."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Brass",
+              "swatch": "#B08D57"
+            },
+            {
+              "label": "Black",
+              "swatch": "#1F1F1F"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_arc-table-lamp_brass",
+          "sku": "AUR-011-BRA",
+          "title": "Brass",
+          "options": {
+            "Color": "Brass"
+          },
+          "price": {
+            "amount": 1250000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_arc-table-lamp_black",
+          "sku": "AUR-011-BLA",
+          "title": "Black",
+          "options": {
+            "Color": "Black"
+          },
+          "price": {
+            "amount": 1250000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_arc-table-lamp_brass",
+      "createdAt": "2026-06-11T09:00:00Z"
+    },
+    {
+      "id": "prod_012",
+      "slug": "halo-pendant",
+      "name": "Halo Pendant",
+      "subtitle": "Hand-blown glass, 30 cm",
+      "category": {
+        "slug": "lighting",
+        "name": "Lighting"
+      },
+      "price": {
+        "amount": 1580000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": {
+        "amount": 1850000,
+        "currency": "BDT"
+      },
+      "images": [
+        {
+          "url": "/mock/products/halo-pendant-1.jpg",
+          "alt": "Halo Pendant in Smoke, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/halo-pendant-2.jpg",
+          "alt": "Halo Pendant, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/halo-pendant-3.jpg",
+          "alt": "Halo Pendant in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["sale"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Smoke",
+          "swatch": "#6E6A66"
+        },
+        {
+          "label": "Clear",
+          "swatch": "#E8ECEC"
+        }
+      ],
+      "description": [
+        "Hand-blown glass, 30 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Lighting"
+        },
+        {
+          "label": "Care",
+          "value": "Dust with a dry cloth. Use bulbs up to 40 W."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Smoke",
+              "swatch": "#6E6A66"
+            },
+            {
+              "label": "Clear",
+              "swatch": "#E8ECEC"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_halo-pendant_smoke",
+          "sku": "AUR-012-SMO",
+          "title": "Smoke",
+          "options": {
+            "Color": "Smoke"
+          },
+          "price": {
+            "amount": 1580000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 1850000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_halo-pendant_clear",
+          "sku": "AUR-012-CLE",
+          "title": "Clear",
+          "options": {
+            "Color": "Clear"
+          },
+          "price": {
+            "amount": 1580000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 1850000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_halo-pendant_smoke",
+      "createdAt": "2026-06-12T09:00:00Z"
+    },
+    {
+      "id": "prod_013",
+      "slug": "wick-candle-trio",
+      "name": "Wick Candle Trio",
+      "subtitle": "Soy wax, 40 hours each",
+      "category": {
+        "slug": "lighting",
+        "name": "Lighting"
+      },
+      "price": {
+        "amount": 220000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/wick-candle-trio-1.jpg",
+          "alt": "Wick Candle Trio, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/wick-candle-trio-2.jpg",
+          "alt": "Wick Candle Trio, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/wick-candle-trio-3.jpg",
+          "alt": "Wick Candle Trio in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["new"],
+      "stockStatus": "in_stock",
+      "swatches": [],
+      "description": [
+        "Soy wax, 40 hours each. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Lighting"
+        },
+        {
+          "label": "Care",
+          "value": "Dust with a dry cloth. Use bulbs up to 40 W."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Scent",
+          "values": [
+            {
+              "label": "Cedar",
+              "swatch": null
+            },
+            {
+              "label": "Fig",
+              "swatch": null
+            },
+            {
+              "label": "Rain",
+              "swatch": null
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_wick-candle-trio_cedar",
+          "sku": "AUR-013-CED",
+          "title": "Cedar",
+          "options": {
+            "Scent": "Cedar"
+          },
+          "price": {
+            "amount": 220000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_wick-candle-trio_fig",
+          "sku": "AUR-013-FIG",
+          "title": "Fig",
+          "options": {
+            "Scent": "Fig"
+          },
+          "price": {
+            "amount": 220000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_wick-candle-trio_rain",
+          "sku": "AUR-013-RAI",
+          "title": "Rain",
+          "options": {
+            "Scent": "Rain"
+          },
+          "price": {
+            "amount": 220000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_wick-candle-trio_cedar",
+      "createdAt": "2026-11-03T09:00:00Z"
+    },
+    {
+      "id": "prod_014",
+      "slug": "dusk-floor-lamp",
+      "name": "Dusk Floor Lamp",
+      "subtitle": "Oak stem, 150 cm",
+      "category": {
+        "slug": "lighting",
+        "name": "Lighting"
+      },
+      "price": {
+        "amount": 2190000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/dusk-floor-lamp-1.jpg",
+          "alt": "Dusk Floor Lamp in Oak, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/dusk-floor-lamp-2.jpg",
+          "alt": "Dusk Floor Lamp, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/dusk-floor-lamp-3.jpg",
+          "alt": "Dusk Floor Lamp in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "low_stock",
+      "swatches": [
+        {
+          "label": "Oak",
+          "swatch": "#A27B52"
+        }
+      ],
+      "description": [
+        "Oak stem, 150 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Lighting"
+        },
+        {
+          "label": "Care",
+          "value": "Dust with a dry cloth. Use bulbs up to 40 W."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oak",
+              "swatch": "#A27B52"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_dusk-floor-lamp_oak",
+          "sku": "AUR-014-OAK",
+          "title": "Oak",
+          "options": {
+            "Color": "Oak"
+          },
+          "price": {
+            "amount": 2190000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "low_stock",
+          "availableQuantity": 2
+        }
+      ],
+      "defaultVariantId": "var_dusk-floor-lamp_oak",
+      "createdAt": "2026-06-14T09:00:00Z"
+    },
+    {
+      "id": "prod_015",
+      "slug": "glow-tealight-holders",
+      "name": "Glow Tealight Holders",
+      "subtitle": "Set of three",
+      "category": {
+        "slug": "lighting",
+        "name": "Lighting"
+      },
+      "price": {
+        "amount": 135000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/glow-tealight-holders-1.jpg",
+          "alt": "Glow Tealight Holders in Amber, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/glow-tealight-holders-2.jpg",
+          "alt": "Glow Tealight Holders, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/glow-tealight-holders-3.jpg",
+          "alt": "Glow Tealight Holders in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Amber",
+          "swatch": "#C98B3A"
+        },
+        {
+          "label": "Smoke",
+          "swatch": "#6E6A66"
+        }
+      ],
+      "description": [
+        "Set of three. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Lighting"
+        },
+        {
+          "label": "Care",
+          "value": "Dust with a dry cloth. Use bulbs up to 40 W."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Amber",
+              "swatch": "#C98B3A"
+            },
+            {
+              "label": "Smoke",
+              "swatch": "#6E6A66"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_glow-tealight-holders_amber",
+          "sku": "AUR-015-AMB",
+          "title": "Amber",
+          "options": {
+            "Color": "Amber"
+          },
+          "price": {
+            "amount": 135000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_glow-tealight-holders_smoke",
+          "sku": "AUR-015-SMO",
+          "title": "Smoke",
+          "options": {
+            "Color": "Smoke"
+          },
+          "price": {
+            "amount": 135000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_glow-tealight-holders_amber",
+      "createdAt": "2026-06-15T09:00:00Z"
+    },
+    {
+      "id": "prod_016",
+      "slug": "field-notebook",
+      "name": "Field Notebook",
+      "subtitle": "A5, dot grid, 192 pages",
+      "category": {
+        "slug": "stationery",
+        "name": "Paper & Desk"
+      },
+      "price": {
+        "amount": 95000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/field-notebook-1.jpg",
+          "alt": "Field Notebook in Moss, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/field-notebook-2.jpg",
+          "alt": "Field Notebook, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/field-notebook-3.jpg",
+          "alt": "Field Notebook in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["bestseller"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        }
+      ],
+      "description": [
+        "A5, dot grid, 192 pages. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Paper & Desk"
+        },
+        {
+          "label": "Care",
+          "value": "Keep dry. Wipe leather with a soft cloth."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_field-notebook_moss",
+          "sku": "AUR-016-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 95000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_field-notebook_ink",
+          "sku": "AUR-016-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 95000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_field-notebook_clay",
+          "sku": "AUR-016-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 95000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_field-notebook_moss",
+      "createdAt": "2026-06-16T09:00:00Z"
+    },
+    {
+      "id": "prod_017",
+      "slug": "ledger-desk-pad",
+      "name": "Ledger Desk Pad",
+      "subtitle": "Recycled leather, 60 × 30 cm",
+      "category": {
+        "slug": "stationery",
+        "name": "Paper & Desk"
+      },
+      "price": {
+        "amount": 340000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/ledger-desk-pad-1.jpg",
+          "alt": "Ledger Desk Pad in Tan, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/ledger-desk-pad-2.jpg",
+          "alt": "Ledger Desk Pad, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/ledger-desk-pad-3.jpg",
+          "alt": "Ledger Desk Pad in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Tan",
+          "swatch": "#A9784F"
+        },
+        {
+          "label": "Black",
+          "swatch": "#1F1F1F"
+        }
+      ],
+      "description": [
+        "Recycled leather, 60 × 30 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Paper & Desk"
+        },
+        {
+          "label": "Care",
+          "value": "Keep dry. Wipe leather with a soft cloth."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Tan",
+              "swatch": "#A9784F"
+            },
+            {
+              "label": "Black",
+              "swatch": "#1F1F1F"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_ledger-desk-pad_tan",
+          "sku": "AUR-017-TAN",
+          "title": "Tan",
+          "options": {
+            "Color": "Tan"
+          },
+          "price": {
+            "amount": 340000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_ledger-desk-pad_black",
+          "sku": "AUR-017-BLA",
+          "title": "Black",
+          "options": {
+            "Color": "Black"
+          },
+          "price": {
+            "amount": 340000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_ledger-desk-pad_tan",
+      "createdAt": "2026-06-17T09:00:00Z"
+    },
+    {
+      "id": "prod_018",
+      "slug": "quill-pen-set",
+      "name": "Quill Pen Set",
+      "subtitle": "Brass, refillable",
+      "category": {
+        "slug": "stationery",
+        "name": "Paper & Desk"
+      },
+      "price": {
+        "amount": 280000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/quill-pen-set-1.jpg",
+          "alt": "Quill Pen Set in Brass, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/quill-pen-set-2.jpg",
+          "alt": "Quill Pen Set, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/quill-pen-set-3.jpg",
+          "alt": "Quill Pen Set in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["new"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Brass",
+          "swatch": "#B08D57"
+        },
+        {
+          "label": "Black",
+          "swatch": "#1F1F1F"
+        }
+      ],
+      "description": [
+        "Brass, refillable. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Paper & Desk"
+        },
+        {
+          "label": "Care",
+          "value": "Keep dry. Wipe leather with a soft cloth."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Brass",
+              "swatch": "#B08D57"
+            },
+            {
+              "label": "Black",
+              "swatch": "#1F1F1F"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_quill-pen-set_brass",
+          "sku": "AUR-018-BRA",
+          "title": "Brass",
+          "options": {
+            "Color": "Brass"
+          },
+          "price": {
+            "amount": 280000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_quill-pen-set_black",
+          "sku": "AUR-018-BLA",
+          "title": "Black",
+          "options": {
+            "Color": "Black"
+          },
+          "price": {
+            "amount": 280000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_quill-pen-set_brass",
+      "createdAt": "2026-11-04T09:00:00Z"
+    },
+    {
+      "id": "prod_019",
+      "slug": "archive-box",
+      "name": "Archive Box",
+      "subtitle": "Linen-bound, A4",
+      "category": {
+        "slug": "stationery",
+        "name": "Paper & Desk"
+      },
+      "price": {
+        "amount": 210000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": {
+        "amount": 260000,
+        "currency": "BDT"
+      },
+      "images": [
+        {
+          "url": "/mock/products/archive-box-1.jpg",
+          "alt": "Archive Box in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/archive-box-2.jpg",
+          "alt": "Archive Box, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/archive-box-3.jpg",
+          "alt": "Archive Box in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["sale"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Linen-bound, A4. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Paper & Desk"
+        },
+        {
+          "label": "Care",
+          "value": "Keep dry. Wipe leather with a soft cloth."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_archive-box_oat",
+          "sku": "AUR-019-OAT",
+          "title": "Oat",
+          "options": {
+            "Color": "Oat"
+          },
+          "price": {
+            "amount": 210000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 260000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_archive-box_ink",
+          "sku": "AUR-019-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 210000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 260000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_archive-box_oat",
+      "createdAt": "2026-06-19T09:00:00Z"
+    },
+    {
+      "id": "prod_020",
+      "slug": "market-tote",
+      "name": "Market Tote",
+      "subtitle": "Waxed canvas",
+      "category": {
+        "slug": "bags",
+        "name": "Bags & Carry"
+      },
+      "price": {
+        "amount": 390000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/market-tote-1.jpg",
+          "alt": "Market Tote in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/market-tote-2.jpg",
+          "alt": "Market Tote, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/market-tote-3.jpg",
+          "alt": "Market Tote in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["bestseller"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Waxed canvas. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Bags & Carry"
+        },
+        {
+          "label": "Care",
+          "value": "Spot clean only. Re-wax canvas once a year."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_market-tote_oat",
+          "sku": "AUR-020-OAT",
+          "title": "Oat",
+          "options": {
+            "Color": "Oat"
+          },
+          "price": {
+            "amount": 390000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_market-tote_moss",
+          "sku": "AUR-020-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 390000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_market-tote_ink",
+          "sku": "AUR-020-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 390000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_market-tote_oat",
+      "createdAt": "2026-06-20T09:00:00Z"
+    },
+    {
+      "id": "prod_021",
+      "slug": "commute-backpack",
+      "name": "Commute Backpack",
+      "subtitle": "Water-resistant, 20 L",
+      "category": {
+        "slug": "bags",
+        "name": "Bags & Carry"
+      },
+      "price": {
+        "amount": 890000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/commute-backpack-1.jpg",
+          "alt": "Commute Backpack in Ink, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/commute-backpack-2.jpg",
+          "alt": "Commute Backpack, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/commute-backpack-3.jpg",
+          "alt": "Commute Backpack in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["new"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        }
+      ],
+      "description": [
+        "Water-resistant, 20 L. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Bags & Carry"
+        },
+        {
+          "label": "Care",
+          "value": "Spot clean only. Re-wax canvas once a year."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_commute-backpack_ink",
+          "sku": "AUR-021-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 890000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_commute-backpack_clay",
+          "sku": "AUR-021-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 890000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_commute-backpack_ink",
+      "createdAt": "2026-11-05T09:00:00Z"
+    },
+    {
+      "id": "prod_022",
+      "slug": "weekend-duffle",
+      "name": "Weekend Duffle",
+      "subtitle": "Canvas and leather, 40 L",
+      "category": {
+        "slug": "bags",
+        "name": "Bags & Carry"
+      },
+      "price": {
+        "amount": 1350000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": {
+        "amount": 1590000,
+        "currency": "BDT"
+      },
+      "images": [
+        {
+          "url": "/mock/products/weekend-duffle-1.jpg",
+          "alt": "Weekend Duffle in Tan, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/weekend-duffle-2.jpg",
+          "alt": "Weekend Duffle, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/weekend-duffle-3.jpg",
+          "alt": "Weekend Duffle in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": ["sale"],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Tan",
+          "swatch": "#A9784F"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Canvas and leather, 40 L. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Bags & Carry"
+        },
+        {
+          "label": "Care",
+          "value": "Spot clean only. Re-wax canvas once a year."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Tan",
+              "swatch": "#A9784F"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_weekend-duffle_tan",
+          "sku": "AUR-022-TAN",
+          "title": "Tan",
+          "options": {
+            "Color": "Tan"
+          },
+          "price": {
+            "amount": 1350000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 1590000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_weekend-duffle_ink",
+          "sku": "AUR-022-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 1350000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": {
+            "amount": 1590000,
+            "currency": "BDT"
+          },
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_weekend-duffle_tan",
+      "createdAt": "2026-06-22T09:00:00Z"
+    },
+    {
+      "id": "prod_023",
+      "slug": "pocket-pouch",
+      "name": "Pocket Pouch",
+      "subtitle": "Zip pouch, 22 cm",
+      "category": {
+        "slug": "bags",
+        "name": "Bags & Carry"
+      },
+      "price": {
+        "amount": 125000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/pocket-pouch-1.jpg",
+          "alt": "Pocket Pouch in Oat, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/pocket-pouch-2.jpg",
+          "alt": "Pocket Pouch, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/pocket-pouch-3.jpg",
+          "alt": "Pocket Pouch in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Oat",
+          "swatch": "#E3D9C6"
+        },
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        },
+        {
+          "label": "Clay",
+          "swatch": "#B5694A"
+        },
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        }
+      ],
+      "description": [
+        "Zip pouch, 22 cm. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Bags & Carry"
+        },
+        {
+          "label": "Care",
+          "value": "Spot clean only. Re-wax canvas once a year."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Oat",
+              "swatch": "#E3D9C6"
+            },
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            },
+            {
+              "label": "Clay",
+              "swatch": "#B5694A"
+            },
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_pocket-pouch_oat",
+          "sku": "AUR-023-OAT",
+          "title": "Oat",
+          "options": {
+            "Color": "Oat"
+          },
+          "price": {
+            "amount": 125000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_pocket-pouch_moss",
+          "sku": "AUR-023-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 125000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_pocket-pouch_clay",
+          "sku": "AUR-023-CLA",
+          "title": "Clay",
+          "options": {
+            "Color": "Clay"
+          },
+          "price": {
+            "amount": 125000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "low_stock",
+          "availableQuantity": 4
+        },
+        {
+          "id": "var_pocket-pouch_ink",
+          "sku": "AUR-023-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 125000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_pocket-pouch_oat",
+      "createdAt": "2026-06-23T09:00:00Z"
+    },
+    {
+      "id": "prod_024",
+      "slug": "sling-bag",
+      "name": "Sling Bag",
+      "subtitle": "Crossbody, 4 litres",
+      "category": {
+        "slug": "bags",
+        "name": "Bags & Carry"
+      },
+      "price": {
+        "amount": 420000,
+        "currency": "BDT"
+      },
+      "compareAtPrice": null,
+      "images": [
+        {
+          "url": "/mock/products/sling-bag-1.jpg",
+          "alt": "Sling Bag in Ink, front view",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/sling-bag-2.jpg",
+          "alt": "Sling Bag, close-up detail",
+          "width": 1600,
+          "height": 2000
+        },
+        {
+          "url": "/mock/products/sling-bag-3.jpg",
+          "alt": "Sling Bag in use at home",
+          "width": 1600,
+          "height": 2000
+        }
+      ],
+      "badges": [],
+      "stockStatus": "in_stock",
+      "swatches": [
+        {
+          "label": "Ink",
+          "swatch": "#2B2F36"
+        },
+        {
+          "label": "Moss",
+          "swatch": "#6B7A55"
+        }
+      ],
+      "description": [
+        "Crossbody, 4 litres. Made in small batches by independent workshops, finished by hand.",
+        "Designed to be used every day and to look better with age."
+      ],
+      "details": [
+        {
+          "label": "Category",
+          "value": "Bags & Carry"
+        },
+        {
+          "label": "Care",
+          "value": "Spot clean only. Re-wax canvas once a year."
+        },
+        {
+          "label": "Ships in",
+          "value": "1–2 working days"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            {
+              "label": "Ink",
+              "swatch": "#2B2F36"
+            },
+            {
+              "label": "Moss",
+              "swatch": "#6B7A55"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_sling-bag_ink",
+          "sku": "AUR-024-INK",
+          "title": "Ink",
+          "options": {
+            "Color": "Ink"
+          },
+          "price": {
+            "amount": 420000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        },
+        {
+          "id": "var_sling-bag_moss",
+          "sku": "AUR-024-MOS",
+          "title": "Moss",
+          "options": {
+            "Color": "Moss"
+          },
+          "price": {
+            "amount": 420000,
+            "currency": "BDT"
+          },
+          "compareAtPrice": null,
+          "stockStatus": "in_stock",
+          "availableQuantity": 25
+        }
+      ],
+      "defaultVariantId": "var_sling-bag_ink",
+      "createdAt": "2026-06-24T09:00:00Z"
+    }
+  ]
+}
