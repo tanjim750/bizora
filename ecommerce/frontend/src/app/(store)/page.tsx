@@ -1,9 +1,18 @@
-import { Container } from '@/components/ui/Container';
+import { serverApi } from '@/lib/api/server';
+import Hero from '@/components/home/Hero';
+import CategoryTiles from '@/components/home/CategoryTiles';
+import { pick } from '@/components/home/pick-categories';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [home, categories] = await Promise.all([
+    serverApi.content.home(),
+    serverApi.catalog.listCategories(),
+  ]);
+
   return (
-    <Container className="py-12">
-      <h1 className="font-display text-display-lg">Aurelo</h1>
-    </Container>
+    <>
+      <Hero hero={home.hero} />
+      <CategoryTiles categories={pick(home.featuredCategorySlugs, categories)} />
+    </>
   );
 }
