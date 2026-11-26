@@ -50,8 +50,31 @@ export default function OrderHistory() {
   }, []);
 
   React.useEffect(() => {
-    fetchOrders(1);
-  }, [fetchOrders]);
+    let mounted = true;
+    browserApi.orders
+      .list({ page: 1 })
+      .then((data) => {
+        if (!mounted) return;
+        setItems(data.items);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        if (isApiError(err) && err.status === 401) {
+          useSessionStore.setState({ user: null, status: 'guest' });
+          return;
+        }
+        setError("We couldn't load your orders.");
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleLoadMore = () => {
     if (page < totalPages && !loadingMore) {

@@ -51,8 +51,33 @@ export default function ConfirmationView({ orderNumber, token }: ConfirmationVie
   }, [orderNumber, token]);
 
   React.useEffect(() => {
-    fetchOrder();
-  }, [fetchOrder]);
+    let mounted = true;
+    browserApi.orders
+      .get(orderNumber, token)
+      .then((data) => {
+        if (mounted) {
+          setOrder(data);
+        }
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        if (isApiError(err)) {
+          setErrorStatus(err.status);
+          setErrorMessage(toUserMessage(err));
+        } else {
+          setErrorMessage(toUserMessage(err));
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [orderNumber, token]);
 
   if (loading) {
     return (

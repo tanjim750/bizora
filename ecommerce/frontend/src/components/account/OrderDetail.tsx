@@ -63,8 +63,34 @@ export default function OrderDetail({ orderNumber }: { orderNumber: string }) {
   }, [orderNumber]);
 
   React.useEffect(() => {
-    fetchOrder();
-  }, [fetchOrder]);
+    let mounted = true;
+    browserApi.orders
+      .get(orderNumber)
+      .then((data) => {
+        if (!mounted) return;
+        setOrder(data);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        if (isApiError(err)) {
+          if (err.status === 401) {
+            useSessionStore.setState({ user: null, status: 'guest' });
+            return;
+          }
+          setErrorStatus(err.status);
+          setErrorMessage(toUserMessage(err));
+        } else {
+          setErrorMessage(toUserMessage(err));
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [orderNumber]);
 
   if (loading) {
     return (
