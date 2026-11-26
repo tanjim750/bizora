@@ -64,9 +64,6 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
     }
   }, [cartStatus, cart, router]);
 
-  const routerRef = React.useRef(router);
-  routerRef.current = router;
-
   // Sync user email if it becomes available
   const userEmail = sessionUser?.email;
   const [prevUserEmail, setPrevUserEmail] = React.useState(userEmail);
@@ -90,12 +87,12 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
       setQuoteStatus('ready');
     } catch (err) {
       if (isApiError(err) && err.code === 'CART_EMPTY') {
-        routerRef.current.replace('/cart');
+        router.replace('/cart');
         return;
       }
       setQuoteStatus('error');
     }
-  }, [cart, shippingMethodId]);
+  }, [cart, shippingMethodId, router]);
 
   React.useEffect(() => {
     if (!cart || cart.lines.length === 0) return;
@@ -110,7 +107,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
       .catch((err) => {
         if (!active) return;
         if (isApiError(err) && err.code === 'CART_EMPTY') {
-          routerRef.current.replace('/cart');
+          router.replace('/cart');
           return;
         }
         setQuoteStatus('error');
@@ -119,7 +116,7 @@ export default function CheckoutForm({ store }: CheckoutFormProps) {
     return () => {
       active = false;
     };
-  }, [cart, shippingMethodId, cartUpdatedAt]);
+  }, [cart, shippingMethodId, cartUpdatedAt, router]);
 
   const handleFieldChange = (name: keyof CheckoutFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
